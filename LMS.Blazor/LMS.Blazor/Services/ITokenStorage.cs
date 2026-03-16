@@ -1,0 +1,11 @@
+﻿using LMS.Shared.DTOs.AuthDtos;
+
+namespace LMS.Blazor.Services;
+
+public interface ITokenStorage
+{
+    Task StoreTokensAsync(string userId, TokenDto tokens);
+    Task<TokenDto?> GetTokensAsync(string userId);
+    Task<string?> GetAccessTokenAsync(string userId);
+    Task RemoveTokensAsync(string userId);
+}
