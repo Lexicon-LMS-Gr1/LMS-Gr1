@@ -13,10 +13,10 @@ The current boilerplate follows **Clean Architecture** with these projects:
 |---|---|---|
 | `Domain.Models` | Entities & configurations | [ApplicationUser](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/Domain.Models/Entities/ApplicationUser.cs#5-10) (IdentityUser), [JwtSettings](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/Domain.Models/Configurations/JwtSettings.cs#4-20) |
 | `Domain.Contracts` | Repository interfaces | `IRepositoryBase<T>`, `IInternalRepositoryBase<T>`, [IUnitOfWork](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/Domain.Contracts/Repositories/IUnitOfWork.cs#3-7) |
-| `LMS.Services` | Business logic | [AuthService](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Services/AuthService.cs#25-37) (JWT), [ServiceManager](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Services/ServiceManager.cs#10-14) |
+| `LMS.Services` | Business logic | [AuthService](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Services/AuthService.cs#17-179) (JWT), [ServiceManager](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Services/ServiceManager.cs#10-14) |
 | `Service.Contracts` | Service interfaces | [IAuthService](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/Service.Contracts/IAuthService.cs#5-12), [IServiceManager](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/Service.Contracts/IServiceManager.cs#2-6) |
-| `LMS.Infractructure` | Data access & EF Core | [ApplicationDbContext](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Infractructure/Data/ApplicationDbContext.cs#8-16), `RepositoryBase<T>`, [UnitOfWork](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Infractructure/Repositories/UnitOfWork.cs#9-13), [MapperProfile](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Infractructure/Data/MapperProfile.cs#9-13) |
-| `LMS.API` | REST API host | [Program.cs](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Program.cs), extensions (CORS, Swagger, Auth, Identity), [DataSeedHostingService](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Services/DataSeedHostingService.cs#17-123) |
+| `LMS.Infractructure` | Data access & EF Core | [ApplicationDbContext](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Infractructure/Data/ApplicationDbContext.cs#8-16), `RepositoryBase<T>`, [UnitOfWork](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Infractructure/Repositories/UnitOfWork.cs#5-16), [MapperProfile](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Infractructure/Data/MapperProfile.cs#7-14) |
+| `LMS.API` | REST API host | [Program.cs](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Program.cs), extensions (CORS, Swagger, Auth, Identity), [DataSeedHostingService](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Services/DataSeedHostingService.cs#27-33) |
 | `LMS.Presentation` | API Controllers | [AuthController](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Presentation/Controllers/AuthController.cs#17-21), [TokenController](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Presentation/Controllers/TokenController.cs#9-24) |
 | `LMS.Shared` | DTOs shared across layers | Auth DTOs (`TokenDto`, `UserAuthDto`, `UserRegistrationDto`) |
 | `LMS.Blazor` | Frontend (Server + Client WASM) | Identity pages (Login etc.), BFF proxy, [ClientApiService](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.Blazor/LMS.Blazor.Client/Services/ClientApiService.cs#12-23), Layout/Nav |
@@ -32,11 +32,16 @@ erDiagram
     ApplicationUser ||--o| Course : "belongs to (Student)"
     Course ||--|{ Module : "has"
     Module ||--|{ Activity : "has"
+    Activity }|--|| ActivityType : "has type"
     Course ||--o{ Document : "has"
     Module ||--o{ Document : "has"
     Activity ||--o{ Document : "has"
-    Activity }|--|| ActivityType : "has type"
     ApplicationUser ||--o{ Document : "uploads"
+    Activity ||--o{ Submission : "receives"
+    ApplicationUser ||--o{ Submission : "submits (Student)"
+    Submission ||--|| Document : "contains"
+    Submission ||--o| Feedback : "has"
+    ApplicationUser ||--o{ Feedback : "writes (Teacher)"
 
     ApplicationUser {
         string Id PK "from IdentityUser"
@@ -82,13 +87,30 @@ erDiagram
     Document {
         int Id PK
         string Name "required"
-        string Description
+        string Description "optional"
         DateTime UploadTimestamp "auto-set"
         string UploadedByUserId FK "required"
         string FilePath "stored file path"
         int CourseId FK "nullable"
         int ModuleId FK "nullable"
         int ActivityId FK "nullable"
+    }
+
+    Submission {
+        int Id PK
+        int ActivityId FK "required"
+        string StudentId FK "required, ApplicationUser"
+        int DocumentId FK "required"
+        DateTime SubmittedAt "auto-set on creation"
+        bool IsLate "computed: SubmittedAt > Activity.EndDate"
+    }
+
+    Feedback {
+        int Id PK
+        int SubmissionId FK "required, unique"
+        string TeacherId FK "required, ApplicationUser"
+        string Content "required, teacher's written feedback"
+        DateTime CreatedAt "auto-set on creation"
     }
 ```
 
@@ -99,10 +121,10 @@ erDiagram
 **Existing** — Extends `IdentityUser`. Must **add**:
 - `string Name` — full name (required)
 - `int? CourseId` — FK to Course (nullable, only for Students)
-- Navigation: `Course? Course`
+- Navigation: `Course? Course`, `ICollection<Submission>? Submissions`, `ICollection<Feedback>? Feedbacks`
 
 > [!IMPORTANT]
-> Roles ("Teacher" / "Student") are already handled via ASP.NET Identity Roles — no need for a custom role column. The [DataSeedHostingService](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Services/DataSeedHostingService.cs#17-123) already seeds both roles.
+> Roles ("Teacher" / "Student") are managed **exclusively** via ASP.NET Identity's built-in role system (`IdentityRole`, `UserManager.AddToRoleAsync`). **Do NOT add a [Role](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Services/DataSeedHostingService.cs#64-75) string column** to [ApplicationUser](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/Domain.Models/Entities/ApplicationUser.cs#5-10). The [DataSeedHostingService](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Services/DataSeedHostingService.cs#27-33) already seeds both roles.
 
 #### `Course` → **[NEW]** `Domain.Models/Entities/Course.cs`
 
@@ -136,7 +158,7 @@ erDiagram
 |---|---|---|
 | [Id](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Extensions/AuthServiceExtension.cs#52-69) | `int` | PK |
 | `ModuleId` | `int` | FK → Module (required) |
-| `ActivityTypeId` | `int` | FK → ActivityType |
+| `ActivityTypeId` | `int` | FK → ActivityType (required) |
 | `Name` | `string` | Required |
 | `Description` | `string` | Required |
 | `StartDate` | `DateTime` | Must be within module date range |
@@ -144,6 +166,7 @@ erDiagram
 | Navigation | `Module` | Required |
 | Navigation | `ActivityType` | Required |
 | Navigation | `ICollection<Document>` | Activity-level documents |
+| Navigation | `ICollection<Submission>` | Submissions for this activity (Assignment type) |
 
 #### `ActivityType` → **[NEW]** `Domain.Models/Entities/ActivityType.cs`
 
@@ -151,8 +174,9 @@ erDiagram
 |---|---|---|
 | [Id](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Extensions/AuthServiceExtension.cs#52-69) | `int` | PK |
 | `Name` | `string` | E-Learning, Lecture, Exercise, Assignment, Other |
+| Navigation | `ICollection<Activity>` | Activities of this type |
 
-> Seeded via [DataSeedHostingService](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Services/DataSeedHostingService.cs#17-123). Keeps activity type data-driven.
+> Seeded via [DataSeedHostingService](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Services/DataSeedHostingService.cs#27-33). Keeps activity type data-driven.
 
 #### `Document` → **[NEW]** `Domain.Models/Entities/Document.cs`
 
@@ -163,7 +187,7 @@ erDiagram
 | `Description` | `string?` | Optional |
 | `UploadTimestamp` | `DateTime` | Auto-set on creation |
 | `UploadedByUserId` | `string` | FK → ApplicationUser |
-| `FilePath` | `string` | Server file storage path |
+| `FilePath` | `string` | Server file storage path (single source of truth for file location) |
 | `CourseId` | `int?` | Nullable FK → Course |
 | `ModuleId` | `int?` | Nullable FK → Module |
 | `ActivityId` | `int?` | Nullable FK → Activity |
@@ -173,10 +197,47 @@ erDiagram
 > [!NOTE]
 > A Document belongs to **exactly one** parent (Course OR Module OR Activity). This is enforced at the application level — at least one FK must be non-null.
 
+#### `Submission` → **[NEW]** `Domain.Models/Entities/Submission.cs`
+
+Tracks a student submitting an assignment. **Does NOT duplicate `FilePath`** — it references a `Document` entity which owns the file.
+
+| Attribute | Type | Notes |
+|---|---|---|
+| [Id](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Extensions/AuthServiceExtension.cs#52-69) | `int` | PK |
+| `ActivityId` | `int` | FK → Activity (required, must be an Assignment-type activity) |
+| `StudentId` | `string` | FK → ApplicationUser (the student who submitted) |
+| `DocumentId` | `int` | FK → Document (the uploaded file — `FilePath` lives here, not duplicated) |
+| `SubmittedAt` | `DateTime` | Auto-set on creation |
+| `IsLate` | `bool` | Computed at creation: `SubmittedAt > Activity.EndDate` |
+| Navigation | `Activity` | The assignment being submitted to |
+| Navigation | [ApplicationUser](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/Domain.Models/Entities/ApplicationUser.cs#5-10) | The student |
+| Navigation | `Document` | The submitted file |
+| Navigation | `Feedback?` | Optional teacher feedback on this submission |
+
+> [!WARNING]
+> `IsLate` should be computed by the service layer when creating the submission, comparing `SubmittedAt` against `Activity.EndDate`. It is stored as a column (not a computed property) so it can be queried/filtered efficiently.
+
+#### `Feedback` → **[NEW]** `Domain.Models/Entities/Feedback.cs`
+
+Teacher feedback on a student's submission. One-to-one with `Submission`.
+
+| Attribute | Type | Notes |
+|---|---|---|
+| [Id](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/LMS.API/Extensions/AuthServiceExtension.cs#52-69) | `int` | PK |
+| `SubmissionId` | `int` | FK → Submission (required, **unique** — one feedback per submission) |
+| `TeacherId` | `string` | FK → ApplicationUser (the teacher who wrote feedback) |
+| `Content` | `string` | Required — the written feedback text |
+| `CreatedAt` | `DateTime` | Auto-set on creation |
+| Navigation | `Submission` | The submission being reviewed |
+| Navigation | [ApplicationUser](file:///c:/Users/mouni/OneDrive/Desktop/LMS-Gr1/Domain.Models/Entities/ApplicationUser.cs#5-10) | The teacher |
+
 ### Validation Rules (from PDF)
 1. **Modules** must not overlap each other within a course and must not extend outside the course dates
 2. **Activities** must not overlap within a module and must be within the module's date range
 3. All students belong to **exactly one** course
+4. **Submissions** can only target Assignment-type activities
+5. **IsLate** is set automatically: `true` when `SubmittedAt > Activity.EndDate`
+6. **Feedback** is one-to-one with Submission (unique constraint on `SubmissionId`)
 
 ---
 
