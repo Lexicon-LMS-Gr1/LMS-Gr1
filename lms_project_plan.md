@@ -35,6 +35,7 @@ erDiagram
     Course ||--o{ Document : "has"
     Module ||--o{ Document : "has"
     Activity ||--o{ Document : "has"
+    Activity }|--|| ActivityType : "has type"
     ApplicationUser ||--o{ Document : "uploads"
 
     ApplicationUser {
