@@ -24,4 +24,3 @@ public class Module
 	// Navigation Property that represents the relationship between Module and Activity
 	public ICollection<Activity> Activities { get; set; } = new List<Activity>();
 }
-}
