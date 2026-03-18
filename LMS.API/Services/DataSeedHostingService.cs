@@ -77,13 +77,19 @@ public class DataSeedHostingService : IHostedService
         var teacher = new ApplicationUser
         {
             UserName = "teacher@test.com",
-            Email = "teacher@test.com"
+            Email = "teacher@test.com",
+            FirstName = "Teacher",
+            LastName = "Demo"
+
         };
         
         var student = new ApplicationUser
         {
             UserName = "student@test.com",
-            Email = "student@test.com"
+            Email = "student@test.com",
+            FirstName = "Student",
+            LastName = "Demo"
+
         };
 
         await AddUserToDb([teacher, student]);
