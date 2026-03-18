@@ -81,7 +81,7 @@ namespace LMS.Infractructure.Migrations
                         column: x => x.ActivityTypeId,
                         principalTable: "ActivityTypes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(

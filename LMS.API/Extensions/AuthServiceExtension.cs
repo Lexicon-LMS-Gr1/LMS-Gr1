@@ -1,5 +1,5 @@
 ﻿using Domain.Models.Configurations;
-using LMS.Infractructure.Data;
+using LMS.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;

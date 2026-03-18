@@ -14,7 +14,4 @@ public class ApplicationUser : IdentityUser
 
 	// Navigation Property that represents the relationship between ApplicationUser and Course
 	public Course? Course { get; set; }
-
-	// Navigation Property that represents the relationship between ApplicationUser and Course (as Teacher)
-	public ICollection<Course> TeachingCourses { get; set; } = new List<Course>();
 }
