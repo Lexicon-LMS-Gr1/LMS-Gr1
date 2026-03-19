@@ -4,51 +4,205 @@
 
 @inject IApiService Api
 
-<h2>Min kurs</h2>
+<h2 class="mb-4">Min kurs</h2>
 
 @if (isLoading)
 {
-    <p>Laddar kurs...</p>
+    <div class="alert alert-info">
+        Laddar kurs...
+    </div>
 }
 else if (course is null)
 {
-    <p>Kursen kunde inte hämtas.</p>
+    <div class="alert alert-danger">
+        Kursen kunde inte hämtas.
+    </div>
 }
 else
 {
-    <section class="course-header">
-        <h3>@course.Name</h3>
-        <p>@course.Description</p>
-    </section>
+    <div class="container-fluid">
+        <!-- Kursheader -->
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h3 class="card-title">@course.Name</h3>
+                        <p class="card-text text-muted">@course.Description</p>
+                        <div class="d-flex align-items-center text-muted">
+                            <i class="bi bi-calendar3 me-2"></i>
+                            <span>
+                                @course.StartDate.ToShortDateString()
+                                -
+                                @course.EndDate.ToShortDateString()
+                            </span>
+                        </div>
+                    </div>
+                </div>
 
-    <section class="course-modules">
-        <h3>Moduler</h3>
+                <!-- Kursframsteg -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">Kursframsteg</h4>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="fs-3 fw-bold text-primary">
+                                @course.Progress%
+                            </span>
+                            <span class="ms-2 text-muted">avklarat</span>
+                        </div>
+                        <div class="progress" style="height: 12px;">
+                            <div class="progress-bar bg-primary"
+                                 role="progressbar"
+                                 style="width: @course.Progress%;"
+                                 aria-valuenow="@course.Progress"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        @if (course.Modules == null || !course.Modules.Any())
-        {
-            <p>Inga moduler hittades.</p>
-        }
-        else
-        {
-            <ul>
-                @foreach (var module in course.Modules)
+        <!-- Moduler -->
+        <div class="row mb-4">
+            <div class="col-lg-10">
+                <h4 class="mb-3">Moduler</h4>
+
+                @if (course.Modules == null || !course.Modules.Any())
                 {
-                    <li>@module.Name</li>
+                    <div class="alert alert-secondary">
+                        Inga moduler hittades.
+                    </div>
                 }
-            </ul>
-        }
-    </section>
+                else
+                {
+                    @foreach (var module in course.Modules)
+                    {
+                        <div class="card shadow-sm mb-3">
+                            <button class="btn btn-link text-start w-100 p-3 d-flex justify-content-between align-items-center"
+                                    type="button"
+                                    @onclick="() => ToggleModuleExpand(module.Id)">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        @* Icon *@
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                             style="width: 40px; height: 40px; background-color: #e7f1ff;">
+                                            <i class="bi bi-book fs-5 text-primary"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-1">@module.Name</h5>
+                                        <div class="text-muted small d-flex align-items-center">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            <span>
+                                                @module.StartDate.ToShortDateString()
+                                                -
+                                                @module.EndDate.ToShortDateString()
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="small fw-semibold text-muted">
+                                       
+                                    </div>
+                                    <div class="progress mt-1" style="width: 120px; height: 6px;">
+                                        <div class="progress-bar bg-primary"
+                                             role="progressbar"
+                                     
+                                             aria-valuemin="0"
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <i class="bi @(ExpandedModules.Contains(module.Id) ? "bi-chevron-down" : "bi-chevron-right") ms-2"></i>
+                                </div>
+                            </button>
+
+                            @if (ExpandedModules.Contains(module.Id))
+                            {
+                                <div class="card-body bg-light">
+                                    @if (!string.IsNullOrWhiteSpace(module.Description))
+                                    {
+                                        <p class="text-muted">@module.Description</p>
+                                    }
+
+                                    <h6 class="fw-semibold mb-3">Aktiviteter</h6>
+
+                                    @if (module.Activities == null || !module.Activities.Any())
+                                    {
+                                        <div class="alert alert-secondary small mb-0">
+                                            Inga aktiviteter i denna modul.
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="list-group">
+                                            @foreach (var activity in module.Activities)
+                                            {
+                                                <div class="list-group-item mb-2 border rounded">
+                                                    <div class="d-flex justify-content-between">
+                                                        <div>
+                                                            <div class="d-flex align-items-center mb-1">
+                                                                <span class="badge bg-primary me-2">
+                                                                    @activity.ActivityTypeName
+                                                                </span>
+                                                                <span class="fw-semibold">@activity.Name</span>
+                                                            </div>
+                                                            <div class="text-muted small d-flex align-items-center">
+                                                                <i class="bi bi-calendar3 me-1"></i>
+                                                                <span>
+                                                                    @GetActivityDateText(activity)
+                                                                </span>
+                                                            </div>
+                                                            @if (!string.IsNullOrWhiteSpace(activity.Description))
+                                                            {
+                                                                <div class="small text-muted mt-1">
+                                                                    @activity.Description
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        <div class="text-end">
+                                                            @* Completed/Grade *@
+                                                            @if (activity.DueDate != null)
+                                                            {
+                                                                <span class="badge bg-outline-secondary text-muted small">
+                                                                    Deadline: @activity.DueDate?.ToShortDateString()
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
 }
 
 @code {
     private CourseDto? course = null;
     private bool isLoading = true;
 
+    private HashSet<int> ExpandedModules = new();
+
     protected override async Task OnInitializedAsync()
     {
+        isLoading = true;
+
         try
         {
             course = await Api.GetAsync<CourseDto>("api/users/me/course");
+
+            if (course?.Modules != null && course.Modules.Any())
+            {
+                ExpandedModules.Add(course.Modules.First().Id);
+            }
         }
         catch
         {
@@ -56,5 +210,24 @@ else
         }
 
         isLoading = false;
+    }
+
+    private void ToggleModuleExpand(int moduleId)
+    {
+        if (ExpandedModules.Contains(moduleId))
+            ExpandedModules.Remove(moduleId);
+        else
+            ExpandedModules.Add(moduleId);
+    }
+
+    private string GetActivityDateText(ActivityDto activity)
+    {
+        if (activity.DueDate != null)
+            return activity.DueDate.Value.ToShortDateString();
+
+        if (activity.StartTime != null)
+            return activity.StartTime.ToShortDateString();
+
+        return "";
     }
 }
