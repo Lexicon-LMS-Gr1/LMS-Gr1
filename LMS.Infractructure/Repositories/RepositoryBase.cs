@@ -1,5 +1,5 @@
 ﻿using Domain.Contracts.Repositories;
-using LMS.Infractructure.Data;
+using LMS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
