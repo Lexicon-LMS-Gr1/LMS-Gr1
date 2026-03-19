@@ -1,4 +1,5 @@
 ﻿using Bogus;
+using LMS.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -137,12 +138,11 @@ public class DataSeedHostingService : IHostedService
 		context.Courses.Add(course);
 		await context.SaveChangesAsync();
 
-		var teacherEmail = "teacher@test.com";
 		var teacher = new ApplicationUser {
 			FirstName = "Teacher",
 			LastName = "Demo",
-			Email = teacherEmail,
-			UserName = teacherEmail,
+			Email = "teacher@test.com",
+			UserName = "teacher@test.com",
 			CourseId = course.Id
 		};
 
@@ -153,6 +153,22 @@ public class DataSeedHostingService : IHostedService
 		var teacherRoleResult = await userManager.AddToRoleAsync(teacher, TeacherRole);
 		if (!teacherRoleResult.Succeeded)
 			throw new Exception(string.Join("\n", teacherRoleResult.Errors.Select(e => e.Description)));
+
+		var demoStudent = new ApplicationUser {
+			FirstName = "Student",
+			LastName = "Demo",
+			Email = "student@test.com",
+			UserName = "student@test.com",
+			CourseId = course.Id
+		};
+
+		var demoStudentResult = await userManager.CreateAsync(demoStudent, password);
+		if (!demoStudentResult.Succeeded)
+			throw new Exception(string.Join("\n", demoStudentResult.Errors.Select(e => e.Description)));
+
+		var demoStudentRoleResult = await userManager.AddToRoleAsync(demoStudent, StudentRole);
+		if (!demoStudentRoleResult.Succeeded)
+			throw new Exception(string.Join("\n", demoStudentRoleResult.Errors.Select(e => e.Description)));
 
 		var studentFaker = new Faker<ApplicationUser>("sv").Rules((f, u) => {
 			var email = f.Internet.Email();
