@@ -1,0 +1,60 @@
+﻿@page "/student/course"
+@using LMS.Shared.DTOs.Course
+@attribute [Authorize(Roles = "Student")]
+
+@inject IApiService Api
+
+<h2>Min kurs</h2>
+
+@if (isLoading)
+{
+    <p>Laddar kurs...</p>
+}
+else if (course is null)
+{
+    <p>Kursen kunde inte hämtas.</p>
+}
+else
+{
+    <section class="course-header">
+        <h3>@course.Name</h3>
+        <p>@course.Description</p>
+    </section>
+
+    <section class="course-modules">
+        <h3>Moduler</h3>
+
+        @if (course.Modules == null || !course.Modules.Any())
+        {
+            <p>Inga moduler hittades.</p>
+        }
+        else
+        {
+            <ul>
+                @foreach (var module in course.Modules)
+                {
+                    <li>@module.Name</li>
+                }
+            </ul>
+        }
+    </section>
+}
+
+@code {
+    private CourseDto? course = null;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            course = await Api.GetAsync<CourseDto>("api/users/me/course");
+        }
+        catch
+        {
+            course = null;
+        }
+
+        isLoading = false;
+    }
+}

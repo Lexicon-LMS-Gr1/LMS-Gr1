@@ -27,7 +27,9 @@ namespace LMS.Services
             var course = await _context.Courses
                 .Include(c => c.Modules)
                     .ThenInclude(m => m.Activities)
+                        .ThenInclude(a => a.ActivityType)   
                 .FirstOrDefaultAsync(c => c.Id == user.CourseId);
+
 
             if (course == null)
                 return null;
