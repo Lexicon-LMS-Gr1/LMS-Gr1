@@ -1,0 +1,43 @@
+﻿@namespace LMS.Blazor.Client.Components.CourseOverview
+
+<div class="container py-4">
+    <div class="mb-4">
+        <h1 class="h2 fw-bold mb-2">@Course.Name</h1>
+        <p class="text-muted mb-2">@Course.Description</p>
+        <p class="text-muted mb-0">
+            <i class="bi bi-calendar"></i>
+            @Course.DateRange
+        </p>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <h2 class="h4 fw-semibold mb-3">Kursframsteg</h2>
+            <p class="mb-3">
+                <span class="fs-2 fw-bold text-primary">@Course.Progress%</span>
+                <span class="text-muted ms-1">avklarat</span>
+            </p>
+            <div class="progress"
+                 role="progressbar"
+                 aria-valuenow="@Course.Progress"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+                <div class="progress-bar" style="width: @(Course.Progress)%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="h3 fw-semibold mb-3">Moduler</h2>
+
+    <div class="list-group">
+        @foreach (var module in Course.Modules)
+        {
+            <ModuleItem Module="module" />
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public CourseOverviewViewModel Course { get; set; } = new();
+}

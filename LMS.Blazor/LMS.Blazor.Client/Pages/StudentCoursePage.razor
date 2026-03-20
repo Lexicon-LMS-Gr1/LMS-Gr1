@@ -1,0 +1,43 @@
+﻿@page "/student/course"
+@using LMS.Shared.DTOs.Course
+@using LMS.Blazor.Client.Components.CourseOverview
+@attribute [Authorize(Roles = "Student")]
+
+@inject IApiService Api
+
+<h2 class="mb-4">Min kurs</h2>
+
+@if (isLoading)
+{
+    <div class="alert alert-info">Laddar kurs...</div>
+}
+else if (courseVm is null)
+{
+    <div class="alert alert-danger">Kursen kunde inte hämtas.</div>
+}
+else
+{
+    <CourseOverviewView Course="courseVm" />
+}
+
+@code {
+    private CourseOverviewViewModel? courseVm;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            var dto = await Api.GetAsync<CourseDto>("api/users/me/course");
+
+            if (dto != null)
+                courseVm = dto.ToViewModel();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
