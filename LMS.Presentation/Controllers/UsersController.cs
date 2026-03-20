@@ -20,6 +20,7 @@ namespace LMS.Presentation.Controllers
         [Authorize(Roles = "Student")]
         public async Task<IActionResult> GetMyCourse()
         {
+            /*
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (userId == null)
@@ -31,6 +32,8 @@ namespace LMS.Presentation.Controllers
                 return NotFound("Ingen kurs hittades för denna elev.");
 
             return Ok(course);
+            */
+            return Ok();
         }
     }
 }
