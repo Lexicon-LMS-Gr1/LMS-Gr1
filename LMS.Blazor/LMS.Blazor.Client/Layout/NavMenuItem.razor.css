@@ -1,0 +1,51 @@
+﻿.nav-item {
+    position: relative;
+}
+
+    .nav-item ::deep .menu-link {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        width: 100%;
+        min-height: 3.25rem;
+        padding: 0.85rem 1rem;
+        color: #4b5563;
+        text-decoration: none;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        box-sizing: border-box;
+        font-weight: 500;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+        .nav-item ::deep .menu-link:hover {
+            background-color: #f3f6ff;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .nav-item ::deep .menu-link.active {
+            background-color: #eef3ff;
+            color: #2563eb;
+        }
+
+            .nav-item ::deep .menu-link.active::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                right: 0;
+                width: 5px;
+                background-color: #2563eb;
+            }
+
+    .nav-item ::deep .menu-icon {
+        font-size: 1.35rem;
+        width: 1.5rem;
+        min-width: 1.5rem;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }

@@ -1,0 +1,30 @@
+﻿.course-header {
+    margin-bottom: 1.5rem;
+}
+
+.course-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.course-description {
+    color: #6b7280;
+}
+
+.course-date {
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.course-progress-card {
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.course-progress-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2563eb;
+}
