@@ -1,20 +1,52 @@
-﻿using LMS.Shared.DTOs.Course;
-using Service.Contracts;
+﻿using Domain.Contracts.Repositories;
 using LMS.Infrastructure.Data;
+using LMS.Shared.DTOs.Course;
 using Microsoft.EntityFrameworkCore;
+using Service.Contracts;
 
 namespace LMS.Services
 {
-    public class CourseService : ICourseService
+	// https://github.com/Lexicon-NET-2025-HT/CompaniesAPI/blob/master/Companies.Services/EmployeeService.cs
+	public class CourseService : ICourseService
     {
-        private readonly ApplicationDbContext _context;
-
-        public CourseService(ApplicationDbContext context)
+        //private readonly ApplicationDbContext _context;
+		private readonly IUnitOfWork _unitOfWork;
+        /*
+		public CourseService(ApplicationDbContext context)
         {
             _context = context;
         }
+        */
 
-        public async Task<CourseDto?> GetCourseForUserAsync(string userId)
+		public CourseService(IUnitOfWork unitOfWork)
+		{
+			_unitOfWork = unitOfWork;
+		}
+
+		public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
+		{
+            var courses = await _unitOfWork.CourseRepository.GetAllAsync();
+
+			return courses.Select(c => new CourseDto {
+				Id = c.Id,
+				Name = c.Name,
+				Description = c.Description
+			});
+		}
+		/*
+		public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
+		{
+			var courses = await _unitOfWork.Courses.GetAllCoursesAsync();
+
+			return courses.Select(c => new CourseDto {
+				Id = c.Id,
+				Name = c.Name,
+				Description = c.Description
+			});
+		}
+
+
+		public async Task<CourseDto?> GetCourseForUserAsync(string userId)
         {
             // Hämta användaren
             var user = await _context.Users
@@ -67,5 +99,6 @@ namespace LMS.Services
             
             return dto;
         }
-    }
+        */
+	}
 }
