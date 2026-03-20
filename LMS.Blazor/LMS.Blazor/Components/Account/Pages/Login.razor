@@ -48,12 +48,12 @@
                 <div>
                     <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
                 </div>
-                <hr />
+                @* <hr />
                 <div class="d-flex flex-column">
                     <span class="text-secondary mx-auto mt-2">OR</span>
                     <PasskeySubmit Operation="PasskeyOperation.Request" Name="Input.Passkey" EmailName="Input.Email" class="btn btn-link mx-auto">Log in with a passkey</PasskeySubmit>
                 </div>
-                <hr />
+                <hr /> *@
                 <div>
                     <p>
                         <a href="Account/ForgotPassword">Forgot your password?</a>
@@ -68,13 +68,13 @@
             </EditForm>
         </section>
     </div>
-    <div class="col-lg-4 col-lg-offset-2">
+@*     <div class="col-lg-4 col-lg-offset-2">
         <section>
             <h3>Use another service to log in.</h3>
             <hr />
             <ExternalLoginPicker />
         </section>
-    </div>
+    </div> *@
 </div>
 
 @code {
@@ -105,20 +105,20 @@
 
     public async Task LoginUser()
     {
-        if (!string.IsNullOrEmpty(Input.Passkey?.Error))
-        {
-            errorMessage = $"Error: {Input.Passkey.Error}";
-            return;
-        }
+        // if (!string.IsNullOrEmpty(Input.Passkey?.Error))
+        // {
+        //     errorMessage = $"Error: {Input.Passkey.Error}";
+        //     return;
+        // }
 
         SignInResult result;
-        if (!string.IsNullOrEmpty(Input.Passkey?.CredentialJson))
-        {
-            // When performing passkey sign-in, don't perform form validation.
-            result = await SignInManager.PasskeySignInAsync(Input.Passkey.CredentialJson);
-        }
-        else
-        {
+        // if (!string.IsNullOrEmpty(Input.Passkey?.CredentialJson))
+        // {
+        //     // When performing passkey sign-in, don't perform form validation.
+        //     result = await SignInManager.PasskeySignInAsync(Input.Passkey.CredentialJson);
+        // }
+        // else
+        // {
             // If doing a password sign-in, validate the form.
             if (!editContext.Validate())
             {
@@ -128,7 +128,7 @@
             // This doesn't count login failures towards account lockout
             // To enable password failures to trigger account lockout, set lockoutOnFailure: true
             result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
-        }
+        // }
 
         if (result.Succeeded)
         {
@@ -259,6 +259,6 @@
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
 
-        public PasskeyInputModel? Passkey { get; set; }
+        // public PasskeyInputModel? Passkey { get; set; }
     }
 }
