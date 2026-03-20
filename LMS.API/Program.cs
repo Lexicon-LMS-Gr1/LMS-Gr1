@@ -1,6 +1,7 @@
 using LMS.API.Extensions;
 using LMS.API.Services;
 using LMS.Infractructure.Data;
+using LMS.Services;
 using Microsoft.OpenApi;
 
 namespace LMS.API;
@@ -21,6 +22,7 @@ public class Program
         builder.Services.ConfigureIdentity();
 
         builder.Services.AddHostedService<DataSeedHostingService>();
+        builder.Services.AddScoped<ICourseService, CourseService>();
         builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MapperProfile>());
         builder.Services.ConfigureCors();
         builder.Services.ConfigureSwagger();
