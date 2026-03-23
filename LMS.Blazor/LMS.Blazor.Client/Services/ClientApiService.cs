@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using LMS.Shared.DTOs.Course;
+using Microsoft.AspNetCore.Components;
+using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace LMS.Blazor.Client.Services;
@@ -35,4 +37,33 @@ public class ClientApiService : IApiService
 
         return await JsonSerializer.DeserializeAsync<T>(await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
     }
+
+    public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+            response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            _navigationManager.NavigateTo("/Account/Login", forceLoad: true);
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        return await JsonSerializer.DeserializeAsync<TResponse>(
+            await response.Content.ReadAsStreamAsync(ct),
+            _jsonOptions,
+            ct);
+    }
+
+    public async Task<IEnumerable<CourseDto>> GetCoursesAsync()
+    {
+        return await GetAsync<IEnumerable<CourseDto>>("api/course") ?? Enumerable.Empty<CourseDto>();
+    }
+
+    public async Task<CourseDto?> CreateCourseAsync(CourseCreateDto dto, CancellationToken ct = default)
+    {
+        return await PostAsync<CourseCreateDto, CourseDto>("api/course", dto, ct);
+    }
+
 }
