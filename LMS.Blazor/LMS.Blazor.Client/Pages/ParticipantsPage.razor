@@ -91,9 +91,11 @@
         try
         {
             isLoading = true;
-            participants = await Api.GetAsync<List<ParticipantDto>>(
+            participants = (await Api.GetAsync<List<ParticipantDto>>(
                 "api/user/me/course/participants"
-            );
+                ))?
+                .OrderBy(p => p.FullName.Split(' ').Last())
+                .ToList();
         }
         finally
         {
