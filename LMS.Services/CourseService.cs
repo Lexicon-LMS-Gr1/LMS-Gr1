@@ -9,14 +9,7 @@ namespace LMS.Services
 	// https://github.com/Lexicon-NET-2025-HT/CompaniesAPI/blob/master/Companies.Services/EmployeeService.cs
 	public class CourseService : ICourseService
     {
-        //private readonly ApplicationDbContext _context;
 		private readonly IUnitOfWork _unitOfWork;
-        /*
-		public CourseService(ApplicationDbContext context)
-        {
-            _context = context;
-        }
-        */
 
 		public CourseService(IUnitOfWork unitOfWork)
 		{
@@ -33,41 +26,14 @@ namespace LMS.Services
 				Description = c.Description
 			});
 		}
-		/*
-		public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
-		{
-			var courses = await _unitOfWork.Courses.GetAllCoursesAsync();
-
-			return courses.Select(c => new CourseDto {
-				Id = c.Id,
-				Name = c.Name,
-				Description = c.Description
-			});
-		}
-
-
-		public async Task<CourseDto?> GetCourseForUserAsync(string userId)
+        public async Task<CourseDto?> GetCourseForUserAsync(string userId)
         {
-            // Hämta användaren
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Id == userId);
-
-            if (user == null || user.CourseId == null)
-                return null;
-
-            // Ladda kursen med moduler och aktiviteter
-            var course = await _context.Courses
-                .Include(c => c.Modules)
-                    .ThenInclude(m => m.Activities)
-                        .ThenInclude(a => a.ActivityType)   
-                .FirstOrDefaultAsync(c => c.Id == user.CourseId);
-
+            var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(userId);
 
             if (course == null)
                 return null;
 
-            // Mappa till DTO
-            var dto = new CourseDto
+            return new CourseDto
             {
                 Id = course.Id,
                 Name = course.Name,
@@ -90,15 +56,9 @@ namespace LMS.Services
                         EndTime = a.EndTime,
                         DueDate = a.DueDate,
                         ActivityTypeName = a.ActivityType.Name
-
                     }).ToList()
                 }).ToList()
             };
-
-            // ToDo: Progress
-            
-            return dto;
         }
-        */
-	}
+    }
 }

@@ -7,11 +7,11 @@ namespace LMS.Presentation.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UsersController : ControllerBase
+    public class UserController : ControllerBase
     {
         private readonly ICourseService _courseService;
 
-        public UsersController(ICourseService courseService)
+        public UserController(ICourseService courseService)
         {
             _courseService = courseService;
         }
@@ -20,7 +20,6 @@ namespace LMS.Presentation.Controllers
         [Authorize(Roles = "Student")]
         public async Task<IActionResult> GetMyCourse()
         {
-            /*
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (userId == null)
@@ -32,8 +31,6 @@ namespace LMS.Presentation.Controllers
                 return NotFound("Ingen kurs hittades för denna elev.");
 
             return Ok(course);
-            */
-            return Ok();
         }
     }
 }

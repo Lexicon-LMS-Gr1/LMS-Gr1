@@ -8,4 +8,5 @@ namespace Domain.Contracts.Repositories;
 public interface ICourseRepository
 {
 	Task<IEnumerable<Course>> GetAllAsync(bool trackChanges = false);
+    Task<Course?> GetCourseForUserAsync(string userId);
 }

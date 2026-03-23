@@ -9,14 +9,31 @@ namespace LMS.Infractructure.Repositories;
 
 public class CourseRepository : RepositoryBase<Course>, ICourseRepository
 {
+    private readonly ApplicationDbContext context;
 
-	public CourseRepository(ApplicationDbContext context) : base(context) { }
+    public CourseRepository(ApplicationDbContext context) : base(context) 
+    {
+        this.context = context;
+    }
 
 
-	public async Task<IEnumerable<Course>> GetAllAsync(bool trackChanges = false)
+    public async Task<IEnumerable<Course>> GetAllAsync(bool trackChanges = false)
 	{
 		return await FindAll(trackChanges).ToListAsync();
 	}
 
+    public async Task<Course?> GetCourseForUserAsync(string userId)
+    {
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user?.CourseId == null)
+            return null;
+
+        return await context.Courses
+            .Include(c => c.Modules)
+                .ThenInclude(m => m.Activities)
+                    .ThenInclude(a => a.ActivityType)
+            .FirstOrDefaultAsync(c => c.Id == user.CourseId);
+    }
 
 }

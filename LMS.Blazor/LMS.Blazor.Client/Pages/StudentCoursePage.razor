@@ -30,7 +30,7 @@ else
         {
             isLoading = true;
 
-            var dto = await Api.GetAsync<CourseDto>("api/users/me/course");
+            var dto = await Api.GetAsync<CourseDto>("api/user/me/course");
 
             if (dto != null)
                 courseVm = dto.ToViewModel();
