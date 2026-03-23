@@ -19,12 +19,17 @@ public class DataSeedHostingService : IHostedService
 	private readonly IServiceProvider serviceProvider;
 	private readonly IConfiguration configuration;
 	private readonly ILogger<DataSeedHostingService> logger;
+
 	private UserManager<ApplicationUser> userManager = null!;
 	private RoleManager<IdentityRole> roleManager = null!;
+
 	private const string TeacherRole = "Teacher";
 	private const string StudentRole = "Student";
 
-	public DataSeedHostingService(IServiceProvider serviceProvider, IConfiguration configuration, ILogger<DataSeedHostingService> logger)
+	public DataSeedHostingService(
+		IServiceProvider serviceProvider,
+		IConfiguration configuration,
+		ILogger<DataSeedHostingService> logger)
 	{
 		this.serviceProvider = serviceProvider;
 		this.configuration = configuration;
@@ -44,295 +49,308 @@ public class DataSeedHostingService : IHostedService
 		userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 		roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-		ArgumentNullException.ThrowIfNull(roleManager, nameof(roleManager));
-		ArgumentNullException.ThrowIfNull(userManager, nameof(userManager));
-
 		try {
-			await AddRolesAsync([TeacherRole, StudentRole]);
-			await SeedCourseWithTeacherStudentsModulesAndActivitiesAsync(context);
+			await AddRolesAsync();
+			var activityTypes = await SeedActivityTypesAsync(context);
+			var courses = await SeedCoursesAsync(context);
+			await SeedUsersModulesAndActivitiesAsync(context, courses, activityTypes);
+
 			logger.LogInformation("Seed complete");
 		} catch (Exception ex) {
-			logger.LogError($"Data seed fail with error: {ex.Message}");
+			logger.LogError(ex, "Data seed failed");
 			throw;
 		}
 	}
 
-	private async Task AddRolesAsync(string[] rolenames)
-	{
-		foreach (string rolename in rolenames) {
-			if (await roleManager.RoleExistsAsync(rolename)) continue;
-			var role = new IdentityRole { Name = rolename };
-			var res = await roleManager.CreateAsync(role);
+	public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-			if (!res.Succeeded) throw new Exception(string.Join("\n", res.Errors));
+	private async Task AddRolesAsync()
+	{
+		var roles = new[] { TeacherRole, StudentRole };
+
+		foreach (var roleName in roles) {
+			if (await roleManager.RoleExistsAsync(roleName)) continue;
+
+			var result = await roleManager.CreateAsync(new IdentityRole(roleName));
+			if (!result.Succeeded)
+				throw new Exception(string.Join("\n", result.Errors.Select(e => e.Description)));
 		}
 	}
 
-	/*
-	private async Task AddDemoUsersAsync()
+	private async Task<List<ActivityType>> SeedActivityTypesAsync(ApplicationDbContext context)
 	{
-		var teacher = new ApplicationUser {
-			UserName = "teacher@test.com",
-			Email = "teacher@test.com"
+		if (await context.Set<ActivityType>().AnyAsync())
+			return await context.Set<ActivityType>().ToListAsync();
+
+		var activityTypes = new List<ActivityType>
+		{
+			new() { Name = "Lecture" },
+			new() { Name = "Assignment" },
+			new() { Name = "Workshop" },
+			new() { Name = "Exam" }
 		};
 
-		var student = new ApplicationUser {
-			UserName = "student@test.com",
-			Email = "student@test.com"
+		context.Set<ActivityType>().AddRange(activityTypes);
+		await context.SaveChangesAsync();
+
+		return activityTypes;
+	}
+
+	private async Task<List<Course>> SeedCoursesAsync(ApplicationDbContext context)
+	{
+		if (await context.Courses.AnyAsync())
+			return await context.Courses.ToListAsync();
+
+		var today = DateTime.UtcNow.Date;
+
+		var courses = new List<Course>
+		{
+			new()
+			{
+				Name = ".NET 2025",
+				Description = "Backendutveckling",
+				StartDate = today.AddMonths(-12),
+				EndDate = today.AddMonths(-10)
+			},
+			new()
+			{
+				Name = "JavaScript 2025",
+				Description = "Frontendutveckling",
+				StartDate = today.AddMonths(-10),
+				EndDate = today.AddMonths(-8)
+			},
+			new()
+			{
+				Name = "Databasdesign 2025",
+				Description = "Databaser och SQL",
+				StartDate = today.AddMonths(-8),
+				EndDate = today.AddMonths(-6)
+			},
+			new()
+			{
+				Name = ".NET 2026",
+				Description = "Webb och API",
+				StartDate = today.AddDays(-20),
+				EndDate = today.AddMonths(2)
+			},
+			new()
+			{
+				Name = "Cloud 2026",
+				Description = "Azure och molnet",
+				StartDate = today.AddMonths(2),
+				EndDate = today.AddMonths(4)
+			},
+			new()
+			{
+				Name = "AI 2026",
+				Description = "AI och maskininlärning",
+				StartDate = today.AddMonths(4),
+				EndDate = today.AddMonths(6)
+			}
 		};
 
-		await AddUserToDb([teacher, student]);
+		context.Courses.AddRange(courses);
+		await context.SaveChangesAsync();
 
-		var teacherRoleResult = await userManager.AddToRoleAsync(teacher, TeacherRole);
-		if (!teacherRoleResult.Succeeded) throw new Exception(string.Join("\n", teacherRoleResult.Errors));
-
-		var studentRoleResult = await userManager.AddToRoleAsync(student, StudentRole);
-		if (!studentRoleResult.Succeeded) throw new Exception(string.Join("\n", studentRoleResult.Errors));
+		return courses;
 	}
 
-	private async Task AddUsersAsync(int nrOfUsers)
+	private async Task SeedUsersModulesAndActivitiesAsync(
+		ApplicationDbContext context,
+		List<Course> courses,
+		List<ActivityType> activityTypes)
 	{
-		var faker = new Faker<ApplicationUser>("sv").Rules((f, e) => {
-			e.Email = f.Person.Email;
-			e.UserName = f.Person.Email;
-		});
+		var today = DateTime.UtcNow.Date;
+		var password = configuration["password"];
+		ArgumentNullException.ThrowIfNull(password);
 
-		await AddUserToDb(faker.Generate(nrOfUsers));
-	}
+		foreach (var course in courses) {
+			var isOngoing = course.StartDate <= today && course.EndDate >= today;
 
-	private async Task AddUserToDb(IEnumerable<ApplicationUser> users)
-	{
-		var passWord = configuration["password"];
-		ArgumentNullException.ThrowIfNull(passWord, nameof(passWord));
+			if (isOngoing) {
+				await CreateSpecificUserAsync(
+					firstName: "Teacher",
+					lastName: "Demo",
+					email: "teacher@test.com",
+					role: TeacherRole,
+					courseId: course.Id);
 
-		foreach (var user in users) {
-			var result = await userManager.CreateAsync(user, passWord);
-			if (!result.Succeeded) throw new Exception(string.Join("\n", result.Errors));
+				await CreateSpecificUserAsync(
+					firstName: "Student",
+					lastName: "Demo",
+					email: "student@test.com",
+					role: StudentRole,
+					courseId: course.Id);
+			} else {
+				await CreateAndAssignUserAsync(TeacherRole, course.Id);
+			}
+
+			for (int i = 0; i < 19; i++) {
+				await CreateAndAssignUserAsync(StudentRole, course.Id);
+			}
+
+			if (!isOngoing) {
+				await CreateAndAssignUserAsync(StudentRole, course.Id);
+			}
+
+			var modules = await CreateModulesAsync(context, course, 5);
+
+			foreach (var module in modules) {
+				await CreateActivitiesAsync(context, module, activityTypes);
+			}
 		}
+
+		await CreateUsersWithoutCourseAsync(2, TeacherRole);
+		await CreateUsersWithoutCourseAsync(5, StudentRole);
 	}
 
-	*/
-
-	private async Task SeedCourseWithTeacherStudentsModulesAndActivitiesAsync(ApplicationDbContext context)
+	private async Task<ApplicationUser> CreateUserAsync(string role)
 	{
 		var password = configuration["password"];
 		ArgumentNullException.ThrowIfNull(password);
 
-		var courseStart = DateTime.UtcNow.Date;
-		var courseEnd = courseStart.AddMonths(1);
+		var faker = new Faker<ApplicationUser>("sv")
+			.RuleFor(u => u.FirstName, f => f.Name.FirstName())
+			.RuleFor(u => u.LastName, f => f.Name.LastName())
+			.RuleFor(u => u.Email, f => f.Internet.Email())
+			.RuleFor(u => u.UserName, (f, u) => u.Email);
 
-		var lectureType = new ActivityType { Name = "Lecture" };
-		var assignmentType = new ActivityType { Name = "Assignment" };
-		var workshopType = new ActivityType { Name = "Workshop" };
+		var user = faker.Generate();
 
-		context.Set<ActivityType>().AddRange(lectureType, assignmentType, workshopType);
-		await context.SaveChangesAsync();
+		var result = await userManager.CreateAsync(user, password);
+		if (!result.Succeeded)
+			throw new Exception(string.Join("\n", result.Errors.Select(e => e.Description)));
 
-		var course = new Course {
-			Name = "Backendutveckling .NET",
-			Description = "En enkel kurs i ASP.NET Core, EF Core och Web API.",
-			StartDate = courseStart,
-			EndDate = courseEnd
+		var roleResult = await userManager.AddToRoleAsync(user, role);
+		if (!roleResult.Succeeded)
+			throw new Exception(string.Join("\n", roleResult.Errors.Select(e => e.Description)));
+
+		return user;
+	}
+
+	private async Task<ApplicationUser> CreateAndAssignUserAsync(string role, int courseId)
+	{
+		var user = await CreateUserAsync(role);
+		user.CourseId = courseId;
+
+		var updateResult = await userManager.UpdateAsync(user);
+		if (!updateResult.Succeeded)
+			throw new Exception(string.Join("\n", updateResult.Errors.Select(e => e.Description)));
+
+		return user;
+	}
+
+	private async Task<ApplicationUser> CreateSpecificUserAsync(
+		string firstName,
+		string lastName,
+		string email,
+		string role,
+		int? courseId = null)
+	{
+		var password = configuration["password"];
+		ArgumentNullException.ThrowIfNull(password);
+
+		var user = new ApplicationUser {
+			FirstName = firstName,
+			LastName = lastName,
+			Email = email,
+			UserName = email,
+			CourseId = courseId
 		};
 
-		context.Courses.Add(course);
-		await context.SaveChangesAsync();
+		var result = await userManager.CreateAsync(user, password);
+		if (!result.Succeeded)
+			throw new Exception(string.Join("\n", result.Errors.Select(e => e.Description)));
 
-		var teacher = new ApplicationUser {
-			FirstName = "Teacher",
-			LastName = "Demo",
-			Email = "teacher@test.com",
-			UserName = "teacher@test.com",
-			CourseId = course.Id
+		var roleResult = await userManager.AddToRoleAsync(user, role);
+		if (!roleResult.Succeeded)
+			throw new Exception(string.Join("\n", roleResult.Errors.Select(e => e.Description)));
+
+		return user;
+	}
+
+	private async Task CreateUsersWithoutCourseAsync(int count, string role)
+	{
+		for (int i = 0; i < count; i++) {
+			await CreateUserAsync(role);
+		}
+	}
+
+	private async Task<List<Module>> CreateModulesAsync(ApplicationDbContext context, Course course, int count)
+	{
+		var moduleNames = new[]
+		{
+			"Introduktion",
+			"Databasdesign",
+			"Webbutveckling",
+			"API-utveckling",
+			"Autentisering"
 		};
 
-		var teacherResult = await userManager.CreateAsync(teacher, password);
-		if (!teacherResult.Succeeded)
-			throw new Exception(string.Join("\n", teacherResult.Errors.Select(e => e.Description)));
+		var modules = new List<Module>();
+		var totalDays = (course.EndDate - course.StartDate).Days;
+		var daysPerModule = totalDays / count;
 
-		var teacherRoleResult = await userManager.AddToRoleAsync(teacher, TeacherRole);
-		if (!teacherRoleResult.Succeeded)
-			throw new Exception(string.Join("\n", teacherRoleResult.Errors.Select(e => e.Description)));
+		for (int i = 0; i < count; i++) {
+			var startDate = course.StartDate.AddDays(i * daysPerModule);
+			var endDate = i == count - 1
+				? course.EndDate
+				: course.StartDate.AddDays((i + 1) * daysPerModule - 1);
 
-		var demoStudent = new ApplicationUser {
-			FirstName = "Student",
-			LastName = "Demo",
-			Email = "student@test.com",
-			UserName = "student@test.com",
-			CourseId = course.Id
-		};
-
-		var demoStudentResult = await userManager.CreateAsync(demoStudent, password);
-		if (!demoStudentResult.Succeeded)
-			throw new Exception(string.Join("\n", demoStudentResult.Errors.Select(e => e.Description)));
-
-		var demoStudentRoleResult = await userManager.AddToRoleAsync(demoStudent, StudentRole);
-		if (!demoStudentRoleResult.Succeeded)
-			throw new Exception(string.Join("\n", demoStudentRoleResult.Errors.Select(e => e.Description)));
-
-		var studentFaker = new Faker<ApplicationUser>("sv").Rules((f, u) => {
-			var email = f.Internet.Email();
-			u.FirstName = f.Name.FirstName();
-			u.LastName = f.Name.LastName();
-			u.Email = email;
-			u.UserName = email;
-			u.CourseId = course.Id;
-		});
-
-		var students = studentFaker.Generate(20);
-
-		foreach (var student in students) {
-			var createStudentResult = await userManager.CreateAsync(student, password);
-			if (!createStudentResult.Succeeded)
-				throw new Exception(string.Join("\n", createStudentResult.Errors.Select(e => e.Description)));
-
-			var addStudentRoleResult = await userManager.AddToRoleAsync(student, StudentRole);
-			if (!addStudentRoleResult.Succeeded)
-				throw new Exception(string.Join("\n", addStudentRoleResult.Errors.Select(e => e.Description)));
+			modules.Add(new Module {
+				Name = moduleNames[i],
+				Description = "Grundläggande moment",
+				StartDate = startDate,
+				EndDate = endDate,
+				CourseId = course.Id,
+				Course = course
+			});
 		}
 
-		var module1 = new Module {
-			Name = "Intro till ASP.NET Core",
-			Description = "Grundläggande om ASP.NET Core och projektstruktur.",
-			StartDate = courseStart,
-			EndDate = courseStart.AddDays(7),
-			CourseId = course.Id,
-			Course = course
-		};
-
-		var module2 = new Module {
-			Name = "Web API",
-			Description = "Controllers, endpoints och request/response.",
-			StartDate = courseStart.AddDays(7),
-			EndDate = courseStart.AddDays(14),
-			CourseId = course.Id,
-			Course = course
-		};
-
-		var module3 = new Module {
-			Name = "Entity Framework Core",
-			Description = "Databas, DbContext och relationer.",
-			StartDate = courseStart.AddDays(14),
-			EndDate = courseStart.AddDays(21),
-			CourseId = course.Id,
-			Course = course
-		};
-
-		var module4 = new Module {
-			Name = "Autentisering och säkerhet",
-			Description = "Identity, JWT och skydd av endpoints.",
-			StartDate = courseStart.AddDays(21),
-			EndDate = courseEnd,
-			CourseId = course.Id,
-			Course = course
-		};
-
-		context.Modules.AddRange(module1, module2, module3, module4);
+		context.Modules.AddRange(modules);
 		await context.SaveChangesAsync();
 
-		var activities = new List<Activity>
+		return modules;
+	}
+
+	private async Task<List<Activity>> CreateActivitiesAsync(
+		ApplicationDbContext context,
+		Module module,
+		List<ActivityType> activityTypes)
+	{
+		var names = new[]
 		{
-		new Activity
-		{
-			Name = "Introduktionsföreläsning",
-			Description = "Genomgång av kursens upplägg och mål.",
-			StartTime = module1.StartDate.AddHours(9),
-			EndTime = module1.StartDate.AddHours(11),
-			DueDate = null,
-			ActivityTypeId = lectureType.Id,
-			ActivityType = lectureType,
-			ModuleId = module1.Id,
-			Module = module1
-		},
-		new Activity
-		{
-			Name = "Installera utvecklingsmiljö",
-			Description = "Installera Visual Studio, SQL Server och testa första projektet.",
-			StartTime = module1.StartDate.AddDays(1).AddHours(10),
-			EndTime = module1.StartDate.AddDays(1).AddHours(12),
-			DueDate = module1.EndDate,
-			ActivityTypeId = assignmentType.Id,
-			ActivityType = assignmentType,
-			ModuleId = module1.Id,
-			Module = module1
-		},
-		new Activity
-		{
-			Name = "Skapa första API",
-			Description = "Bygg ett enkelt API med en controller och några endpoints.",
-			StartTime = module2.StartDate.AddHours(9),
-			EndTime = module2.StartDate.AddHours(12),
-			DueDate = null,
-			ActivityTypeId = workshopType.Id,
-			ActivityType = workshopType,
-			ModuleId = module2.Id,
-			Module = module2
-		},
-		new Activity
-		{
-			Name = "API-uppgift",
-			Description = "Skapa CRUD-endpoints för en enkel resurs.",
-			StartTime = module2.StartDate.AddDays(2).AddHours(13),
-			EndTime = module2.StartDate.AddDays(2).AddHours(15),
-			DueDate = module2.EndDate,
-			ActivityTypeId = assignmentType.Id,
-			ActivityType = assignmentType,
-			ModuleId = module2.Id,
-			Module = module2
-		},
-		new Activity
-		{
-			Name = "EF Core-föreläsning",
-			Description = "Introduktion till migrationer, relationer och queries.",
-			StartTime = module3.StartDate.AddHours(9),
-			EndTime = module3.StartDate.AddHours(11),
-			DueDate = null,
-			ActivityTypeId = lectureType.Id,
-			ActivityType = lectureType,
-			ModuleId = module3.Id,
-			Module = module3
-		},
-		new Activity
-		{
-			Name = "Databaslabb",
-			Description = "Skapa modeller, migrationer och koppla till databas.",
-			StartTime = module3.StartDate.AddDays(2).AddHours(10),
-			EndTime = module3.StartDate.AddDays(2).AddHours(13),
-			DueDate = module3.EndDate,
-			ActivityTypeId = workshopType.Id,
-			ActivityType = workshopType,
-			ModuleId = module3.Id,
-			Module = module3
-		},
-		new Activity
-		{
-			Name = "JWT-föreläsning",
-			Description = "Genomgång av autentisering och auktorisering.",
-			StartTime = module4.StartDate.AddHours(9),
-			EndTime = module4.StartDate.AddHours(11),
-			DueDate = null,
-			ActivityTypeId = lectureType.Id,
-			ActivityType = lectureType,
-			ModuleId = module4.Id,
-			Module = module4
-		},
-		new Activity
-		{
-			Name = "Säkerhetsuppgift",
-			Description = "Skydda endpoints med JWT och roller.",
-			StartTime = module4.StartDate.AddDays(2).AddHours(10),
-			EndTime = module4.StartDate.AddDays(2).AddHours(12),
-			DueDate = module4.EndDate,
-			ActivityTypeId = assignmentType.Id,
-			ActivityType = assignmentType,
-			ModuleId = module4.Id,
-			Module = module4
+			"Introduktion",
+			"Workshop",
+			"Inlämning",
+			"Examination"
+		};
+
+		var activities = new List<Activity>();
+
+		for (int i = 0; i < activityTypes.Count; i++) {
+			var type = activityTypes[i];
+			var day = module.StartDate.AddDays(i);
+
+			var startTime = day.AddHours(9);
+			var endTime = day.AddHours(11);
+
+			activities.Add(new Activity {
+				Name = names[i],
+				Description = "Planerat moment",
+				StartTime = startTime,
+				EndTime = endTime,
+				DueDate = type.Name == "Assignment" || type.Name == "Exam" ? endTime : null,
+				ActivityTypeId = type.Id,
+				ActivityType = type,
+				ModuleId = module.Id,
+				Module = module
+			});
 		}
-	};
 
 		context.Set<Activity>().AddRange(activities);
 		await context.SaveChangesAsync();
-	}
 
-	public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+		return activities;
+	}
 }
