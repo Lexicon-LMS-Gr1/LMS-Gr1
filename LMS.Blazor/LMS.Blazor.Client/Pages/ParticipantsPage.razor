@@ -1,11 +1,30 @@
 ﻿@page "/participants"
 @using LMS.Shared.DTOs.Course
 @inject IApiService Api
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Student")]
 
-<h2>Deltagare</h2>
+<h2 class="mb-3">Deltagare</h2>
 
-<ParticipantsList Participants="participants" IsLoading="isLoading" />
+@if (isLoading)
+{
+    <div class="alert alert-info">Laddar deltagare...</div>
+}
+else if (participants is null || participants.Count == 0)
+{
+    <div class="alert alert-warning">Inga deltagare hittades.</div>
+}
+else
+{
+    <ul class="list-group mt-3">
+        @foreach (var p in participants)
+        {
+            <li class="list-group-item d-flex justify-content-between">
+                <span>@p.FullName</span>
+                <span class="text-muted">@p.Email</span>
+            </li>
+        }
+    </ul>
+}
 
 @code {
     private List<ParticipantDto>? participants;
@@ -17,14 +36,9 @@
         {
             isLoading = true;
 
-            // Student mode (default)
             participants = await Api.GetAsync<List<ParticipantDto>>(
                 "api/user/me/course/participants"
             );
-
-            // FUTURE: Teacher mode
-            // Add @page "/participants/{courseId:int?}"
-            // If courseId.HasValue -> call api/course/{courseId}/participants
         }
         finally
         {
