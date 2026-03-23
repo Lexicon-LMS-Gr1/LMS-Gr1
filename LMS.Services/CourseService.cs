@@ -64,8 +64,6 @@ namespace LMS.Services
             };
         }
 
-<<<<<<< HEAD
-
         public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
         {
             if (string.IsNullOrWhiteSpace(courseCreateDto.Name))
@@ -93,7 +91,9 @@ namespace LMS.Services
                 StartDate = course.StartDate,
                 EndDate = course.EndDate
             };
-=======
+        }
+
+
         public async Task<IEnumerable<ParticipantDto>> GetParticipantsForUserCourseAsync(string userId)
         {
             var users = await _unitOfWork.CourseRepository.GetParticipantsForUserCourseAsync(userId);
@@ -104,7 +104,6 @@ namespace LMS.Services
                 FullName = $"{u.FirstName} {u.LastName}",
                 Email = u.Email!
             });
->>>>>>> 4162c50 (Backend is done, fontend is partially done)
         }
     }
 }

@@ -3,28 +3,84 @@
 @inject IApiService Api
 @attribute [Authorize(Roles = "Student")]
 
-<h2 class="mb-3">Deltagare</h2>
+<PageTitle>Deltagare — Lexicon LMS</PageTitle>
 
-@if (isLoading)
-{
-    <div class="alert alert-info">Laddar deltagare...</div>
-}
-else if (participants is null || participants.Count == 0)
-{
-    <div class="alert alert-warning">Inga deltagare hittades.</div>
-}
-else
-{
-    <ul class="list-group mt-3">
-        @foreach (var p in participants)
-        {
-            <li class="list-group-item d-flex justify-content-between">
-                <span>@p.FullName</span>
-                <span class="text-muted">@p.Email</span>
-            </li>
-        }
-    </ul>
-}
+<div class="container-fluid py-4">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <span class="bi bi-people-fill me-2"></span>Deltagare i min kurs
+            </h2>
+            <p class="text-muted mb-0">Lista över alla elever i din kurs</p>
+        </div>
+    </div>
+
+    <!-- LOADING -->
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Laddar...</span>
+            </div>
+        </div>
+    }
+    else if (participants == null || participants.Count == 0)
+    {
+        <div class="alert alert-info">
+            <span class="bi bi-info-circle me-2"></span>
+            Inga deltagare hittades.
+        </div>
+    }
+    else
+    {
+        <!-- CARD -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">
+                    <span class="bi bi-list-ul me-2"></span>Deltagarlista
+                </h5>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Namn</th>
+                                <th>E‑post</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in participants)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center"
+                                                 style="width: 36px; height: 36px; font-size: 0.85rem; font-weight: 600;">
+                                                @p.FullName[0]
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">@p.FullName</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@p.Email</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card-footer bg-white text-muted py-2 px-4">
+                Visar @participants.Count deltagare
+            </div>
+        </div>
+    }
+</div>
 
 @code {
     private List<ParticipantDto>? participants;
@@ -35,7 +91,6 @@ else
         try
         {
             isLoading = true;
-
             participants = await Api.GetAsync<List<ParticipantDto>>(
                 "api/user/me/course/participants"
             );
