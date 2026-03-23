@@ -1,4 +1,5 @@
-﻿using LMS.Infractructure.Repositories;
+using Domain.Contracts.Repositories;
+using LMS.Infractructure.Repositories;
 using LMS.Infrastructure.Data;
 using LMS.Presentation;
 using LMS.Services;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
+using Service.Contracts;
 using Swashbuckle.AspNetCore.Filters;
 
 
@@ -99,6 +101,9 @@ public static class ServiceExtensions
 
 		services.AddScoped<ICourseService, CourseService>();
 		services.AddScoped(provider => new Lazy<ICourseService>(() => provider.GetRequiredService<ICourseService>()));
+
+		services.AddScoped<IUserManagementService, UserManagementService>();
+		services.AddScoped(provider => new Lazy<IUserManagementService>(() => provider.GetRequiredService<IUserManagementService>()));
 	}
 }
 

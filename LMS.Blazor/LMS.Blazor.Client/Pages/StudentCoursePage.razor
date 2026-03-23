@@ -7,13 +7,9 @@
 
 <h2 class="mb-4">Min kurs</h2>
 
-@if (isLoading)
+@if (courseVm is null)
 {
     <div class="alert alert-info">Laddar kurs...</div>
-}
-else if (courseVm is null)
-{
-    <div class="alert alert-danger">Kursen kunde inte hämtas.</div>
 }
 else
 {
@@ -26,18 +22,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            isLoading = true;
+        var dto = await Api.GetAsync<CourseDto>("api/user/me/course");
 
-            var dto = await Api.GetAsync<CourseDto>("api/user/me/course");
-
-            if (dto != null)
-                courseVm = dto.ToViewModel();
-        }
-        finally
-        {
-            isLoading = false;
-        }
+        if (dto != null)
+            courseVm = dto.ToViewModel();
     }
 }
