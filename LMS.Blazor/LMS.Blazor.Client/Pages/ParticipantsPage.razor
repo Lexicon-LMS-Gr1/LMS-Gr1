@@ -1,0 +1,34 @@
+﻿@page "/participants"
+@using LMS.Shared.DTOs.Course
+@inject IApiService Api
+@attribute [Authorize]
+
+<h2>Deltagare</h2>
+
+<ParticipantsList Participants="participants" IsLoading="isLoading" />
+
+@code {
+    private List<ParticipantDto>? participants;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            // Student mode (default)
+            participants = await Api.GetAsync<List<ParticipantDto>>(
+                "api/user/me/course/participants"
+            );
+
+            // FUTURE: Teacher mode
+            // Add @page "/participants/{courseId:int?}"
+            // If courseId.HasValue -> call api/course/{courseId}/participants
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

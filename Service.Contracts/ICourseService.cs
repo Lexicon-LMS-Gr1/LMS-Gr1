@@ -9,8 +9,12 @@ namespace Service.Contracts
     {
         Task<CourseDto?> GetCourseForUserAsync(string userId);
         Task<IEnumerable<CourseDto>> GetAllCoursesAsync();
+<<<<<<< HEAD
 
         Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto);
+=======
+        Task<IEnumerable<ParticipantDto>> GetParticipantsForUserCourseAsync(string userId);
+>>>>>>> 4162c50 (Backend is done, fontend is partially done)
     }
 
 }
