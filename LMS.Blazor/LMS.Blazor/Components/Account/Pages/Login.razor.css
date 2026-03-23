@@ -1,86 +1,123 @@
-﻿.login-container {
+.login-container {
+    width: 100%;
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #f3f4f6;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    padding: 1rem;
 }
 
 .login-card {
-    background: white;
-    padding: 2.5rem 2rem;
-    border-radius: 0.75rem;
+    background: #ffffff;
+    padding: 2.75rem 2.25rem 2.5rem;
+    border-radius: 1rem;
     width: 100%;
     max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .login-icon {
     display: flex;
     justify-content: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .login-title {
     text-align: center;
-    font-size: 1.75rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    color: #1f2937;
+    color: #1a1a2e;
     margin-bottom: 2rem;
+    letter-spacing: -0.01em;
 }
 
 .form-group {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.35rem;
 }
 
-label {
-    display: block;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.5rem;
-}
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.45rem;
+        font-size: 0.88rem;
+    }
 
 .form-control {
     width: 100%;
-    padding: 0.6rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    padding: 0.65rem 0.85rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 0.55rem;
+    font-size: 0.95rem;
+    background: #fafbfc;
+    color: #1f2937;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
     .form-control:focus {
         outline: none;
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        background: #ffffff;
     }
+
+    .form-control::placeholder {
+        color: #9ca3af;
+    }
+
+.remember-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    margin-top: -0.25rem;
+}
+
+.remember-label {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0 !important;
+    font-weight: 400;
+    cursor: pointer;
+}
 
 .login-button {
     width: 100%;
-    background-color: #2563eb;
-    color: white;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #ffffff;
     font-weight: 600;
     padding: 0.75rem;
     border: none;
-    border-radius: 0.5rem;
-    margin-top: 0.5rem;
-    transition: background-color 0.15s ease;
+    border-radius: 0.55rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
 }
 
     .login-button:hover {
-        background-color: #1e4fd1;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    .login-button:active {
+        transform: scale(0.985);
     }
 
 .login-footer {
     text-align: center;
-    margin-top: 1rem;
+    margin-top: 1.25rem;
 }
 
 .forgot-link {
-    color: #2563eb;
-    font-size: 0.9rem;
+    color: #3b82f6;
+    font-size: 0.85rem;
     text-decoration: none;
+    font-weight: 500;
 }
 
     .forgot-link:hover {
         text-decoration: underline;
+        color: #2563eb;
     }

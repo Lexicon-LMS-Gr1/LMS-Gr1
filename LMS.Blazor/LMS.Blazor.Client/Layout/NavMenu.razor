@@ -1,82 +1,87 @@
 @implements IDisposable
 @inject NavigationManager NavigationManager
 
-<div class="top-row ps-3 navbar">
-    <div class="container-fluid">
-        <div class="d-flex align-items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 width="30"
-                 height="30"
-                 viewBox="0 0 24 24"
-                 fill="none"
-                 stroke="#2563eb"
-                 stroke-width="2"
-                 stroke-linecap="round"
-                 stroke-linejoin="round"
-                 class="lucide lucide-book-open text-blue-600"
-                 aria-hidden="true">
-                <path d="M12 7v14"></path>
-                <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path>
-            </svg>
-
-            <a class="navbar-brand fw-semibold mb-0" href="">Lexicon LMS</a>
-        </div>
+<div class="sidebar-wrapper">
+    <div class="sidebar-logo">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             width="26" height="26" viewBox="0 0 24 24"
+             fill="none" stroke="#3b82f6" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true">
+            <path d="M12 7v14"></path>
+            <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path>
+        </svg>
+        <span class="brand-text">Lexicon LMS</span>
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    <input type="checkbox" title="Navigation menu" class="nav-toggler" />
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
+    <div class="sidebar-scroll">
         <AuthorizeView>
             <Authorized Context="authState">
-                @if (authState.User.IsInRole("Student"))
-                {
-                    @foreach (var item in StudentMenuItems)
-                    {
-                        <NavMenuItem Icon="@item.Icon"
-                                     Text="@item.Text"
-                                     Href="@item.Href"
-                                     Match="@item.Match" />
-                    }
-                }
-                else if (authState.User.IsInRole("Teacher"))
-                {
-                    @foreach (var item in TeacherMenuItems)
-                    {
-                        <NavMenuItem Icon="@item.Icon"
-                                     Text="@item.Text"
-                                     Href="@item.Href"
-                                     Match="@item.Match" />
-                    }
-                }
+                
+                <div class="section-label">HANTERING</div>
 
-                <div class="nav-item">
-                    <NavLink class="menu-link" href="Account/Manage">
-                        <span class="bi bi-person-circle" aria-hidden="true"></span>
-                        <span>@authState.User.Identity?.Name</span>
-                    </NavLink>
-                </div>
 
-                <div class="nav-item">
-                    <form action="Account/Logout" method="post" class="logout-form">
+                <nav>
+                    @{
+                        var items = authState.User.IsInRole("Teacher")
+                            ? TeacherMenuItems
+                            : StudentMenuItems;
+                    }
+                    @foreach (var item in items)
+                    {
+                        <div class="nav-entry">
+                            <NavLink class="nav-btn" href="@item.Href" Match="@item.Match">
+                                <i class="@item.Icon nav-btn-icon"></i>
+                                <span class="nav-btn-text">@item.Text</span>
+                            </NavLink>
+                        </div>
+                    }
+                </nav>
+
+               
+                <div class="profile-area">
+                    <div class="profile-card">
+                        <div class="profile-avatar">
+                            @{
+                                var uName = authState.User.Identity?.Name ?? "?";
+                                var uInitials = uName.Length >= 2
+                                    ? uName.Substring(0, 2).ToUpper()
+                                    : uName.ToUpper();
+                            }
+                            @uInitials
+                        </div>
+                        <div class="profile-info">
+                            <div class="profile-name">@uName</div>
+                            <div class="profile-role">
+                                @(authState.User.IsInRole("Teacher") ? "Lärare" : "Elev")
+                            </div>
+                        </div>
+                    </div>
+                    <form action="Account/Logout" method="post">
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="menu-link logout-button">
-                            <span class="bi bi-arrow-bar-left menu-icon" aria-hidden="true"></span>
-                            <span>Logout</span>
+                        <button type="submit" class="btn-logout">
+                            <i class="bi bi-box-arrow-left"></i>
+                            Logga ut
                         </button>
                     </form>
                 </div>
             </Authorized>
 
             <NotAuthorized>
-                <NavMenuItem Icon="bi bi-person-badge-nav-menu"
-                             Text="Login"
-                             Href="Account/Login" />
+                <nav class="mt-3">
+                    <div class="nav-entry">
+                        <NavLink class="nav-btn" href="Account/Login">
+                            <i class="bi bi-box-arrow-in-right nav-btn-icon"></i>
+                            <span class="nav-btn-text">Logga in</span>
+                        </NavLink>
+                    </div>
+                </nav>
             </NotAuthorized>
         </AuthorizeView>
-    </nav>
+    </div>
 </div>
 
 @code {
@@ -84,18 +89,18 @@
 
     private List<NavMenuItemModel> StudentMenuItems => new()
     {
-        new("bi bi-house", "Dashboard", "", NavLinkMatch.All),
-        new("bi bi-book", "Min kurs", "student/course"),
-        new("bi bi-file-earmark-text", "Inlämningar", "counter"),
-        new("bi bi-people", "Kursdeltagare", "auth")
+        new("bi bi-grid-1x2-fill", "Dashboard", "", NavLinkMatch.All),
+        new("bi bi-book-fill", "Min kurs", "student/course"),
+        new("bi bi-file-earmark-text-fill", "Inlämningar", "counter"),
+        new("bi bi-people-fill", "Kursdeltagare", "auth")
     };
 
     private List<NavMenuItemModel> TeacherMenuItems => new()
     {
-        new("bi bi-house", "Dashboard", "", NavLinkMatch.All),
-        new("bi bi-book", "Kurser", "teacher/courses"),
-        new("bi bi-plus-circle", "Skapa ny kurs", "teacher/courses/create"),
-        new("bi bi-people", "Användare", "teacher/users"),
+        new("bi bi-grid-1x2-fill", "Dashboard", "", NavLinkMatch.All),
+        new("bi bi-book-fill", "Kurser", "teacher/courses"),
+        new("bi bi-plus-circle-fill", "Skapa ny kurs", "teacher/courses/create"),
+        new("bi bi-people-fill", "Användare", "teacher/users"),
         new("bi bi-list-task", "Inlämningar", "demoauth")
     };
 
