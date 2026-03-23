@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Domain.Contracts.Repositories;
 
-public interface ICourseRepository
+public interface ICourseRepository: IRepositoryBase<Course>
 {
 	Task<IEnumerable<Course>> GetAllAsync(bool trackChanges = false);
     Task<Course?> GetCourseForUserAsync(string userId);

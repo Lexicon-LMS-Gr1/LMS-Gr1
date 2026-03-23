@@ -1,4 +1,5 @@
 ﻿using Domain.Contracts.Repositories;
+using Domain.Models.Entities;
 using LMS.Infrastructure.Data;
 using LMS.Shared.DTOs.Course;
 using Microsoft.EntityFrameworkCore;
@@ -40,8 +41,10 @@ namespace LMS.Services
 			return courses.Select(c => new CourseDto {
 				Id = c.Id,
 				Name = c.Name,
-				Description = c.Description
-			});
+				Description = c.Description,                
+                StartDate = c.StartDate,
+                EndDate = c.EndDate
+            });
 		}
         public async Task<CourseDto?> GetCourseForUserAsync(string userId)
         {
@@ -75,6 +78,36 @@ namespace LMS.Services
                         ActivityTypeName = a.ActivityType.Name
                     }).ToList()
                 }).ToList()
+            };
+        }
+
+
+        public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
+        {
+            if (string.IsNullOrWhiteSpace(courseCreateDto.Name))
+                throw new ArgumentException("Course name is required.");
+
+            if (courseCreateDto.StartDate > courseCreateDto.EndDate)
+                throw new ArgumentException("Start date cannot be later than end date.");
+
+            var course = new Course
+            {
+                Name = courseCreateDto.Name,
+                Description = courseCreateDto.Description,
+                StartDate = courseCreateDto.StartDate,
+                EndDate = courseCreateDto.EndDate
+            };
+
+            _unitOfWork.CourseRepository.Create(course);
+            await _unitOfWork.CompleteAsync();
+
+            return new CourseDto
+            {
+                Id = course.Id,
+                Name = course.Name,
+                Description = course.Description,
+                StartDate = course.StartDate,
+                EndDate = course.EndDate
             };
         }
     }

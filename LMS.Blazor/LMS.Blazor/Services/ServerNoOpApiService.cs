@@ -1,4 +1,5 @@
 using LMS.Blazor.Client.Services;
+using LMS.Shared.DTOs.Course;
 
 namespace LMS.Blazor.Services;
 
@@ -10,6 +11,20 @@ public class ServerNoOpApiService(ILogger<ServerNoOpApiService> logger) : IApiSe
     {
         _logger.LogWarning("ServerNoOpApiService.GetAsync called for: {Endpoint}", endpoint);
         return Task.FromResult<T?>(default);
+    }
+
+ 
+
+    public Task<IEnumerable<CourseDto>> GetCoursesAsync()
+    {
+        _logger.LogWarning("ServerNoOpApiService.GetCoursesAsync called");
+        return Task.FromResult(Enumerable.Empty<CourseDto>());
+    }
+
+    public Task<CourseDto?> CreateCourseAsync(CourseCreateDto dto, CancellationToken ct = default)
+    {
+        _logger.LogWarning("ServerNoOpApiService.CreateCourseAsync called");
+        return Task.FromResult<CourseDto?>(default);
     }
 
     public Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)

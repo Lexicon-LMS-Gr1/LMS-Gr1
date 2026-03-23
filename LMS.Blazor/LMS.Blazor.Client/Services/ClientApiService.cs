@@ -1,3 +1,4 @@
+using LMS.Shared.DTOs.Course;
 using Microsoft.AspNetCore.Components;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -33,17 +34,6 @@ public class ClientApiService : IApiService
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
     }
 
-    public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
-    {
-        var response = await _httpClient.PostAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
-
-        if (HandleUnauthorized(response)) return default;
-
-        response.EnsureSuccessStatusCode();
-
-        return await JsonSerializer.DeserializeAsync<TResponse>(
-            await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
-    }
 
     public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
     {
@@ -76,4 +66,28 @@ public class ClientApiService : IApiService
         }
         return false;
     }
+
+
+    public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
+
+        if (HandleUnauthorized(response)) return default;
+
+        response.EnsureSuccessStatusCode();
+
+        return await JsonSerializer.DeserializeAsync<TResponse>(
+            await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+    }
+
+    public async Task<IEnumerable<CourseDto>> GetCoursesAsync()
+    {
+        return await GetAsync<IEnumerable<CourseDto>>("api/course") ?? Enumerable.Empty<CourseDto>();
+    }
+
+    public async Task<CourseDto?> CreateCourseAsync(CourseCreateDto dto, CancellationToken ct = default)
+    {
+        return await PostAsync<CourseCreateDto, CourseDto>("api/course", dto, ct);
+    }
+
 }
