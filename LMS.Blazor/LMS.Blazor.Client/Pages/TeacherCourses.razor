@@ -1,0 +1,81 @@
+﻿@page "/teacher/courses"
+@attribute [Authorize(Roles = "Teacher")]
+
+@using LMS.Blazor.Client.Services
+@using LMS.Shared.DTOs.Course
+@inject IApiService ApiService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Kurser</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 fw-bold mb-1">Kurser</h1>
+            <p class="text-muted mb-0">Hantera utbildningar och skapa nya kurser.</p>
+        </div>
+
+        <button class="btn btn-primary" @onclick="GoToCreateCourse">
+            Skapa kurs
+        </button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="alert alert-secondary">Laddar kurser...</div>
+    }
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+    else if (!courses.Any())
+    {
+        <div class="alert alert-info">Inga kurser hittades.</div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var course in courses)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body">
+                            <h5 class="card-title">@course.Name</h5>
+                            <p class="card-text text-muted">@course.Description</p>
+                            <p class="small text-muted mb-0">
+                                @course.StartDate.ToString("yyyy-MM-dd") – @course.EndDate.ToString("yyyy-MM-dd")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<CourseDto> courses = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            courses = (await ApiService.GetCoursesAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Kunde inte hämta kurser: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoToCreateCourse()
+    {
+        NavigationManager.NavigateTo("/teacher/courses/create");
+    }
+}
