@@ -43,4 +43,15 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
 			.ToListAsync();
 	}
 
+    public async Task<IEnumerable<ApplicationUser>> GetParticipantsForUserCourseAsync(string userId)
+    {
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user?.CourseId == null)
+            return Enumerable.Empty<ApplicationUser>();
+
+        return await context.Users
+            .Where(u => u.CourseId == user.CourseId)
+            .ToListAsync();
+    }
 }
