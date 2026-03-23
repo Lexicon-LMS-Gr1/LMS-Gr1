@@ -31,4 +31,11 @@ public class CourseController : ControllerBase
 		var courses = await _serviceManager.CourseService.GetAllCoursesAsync();
 		return Ok(courses);
 	}
+
+	[HttpGet("list")]
+	public async Task<IActionResult> GetCoursesAsList()
+	{
+		var courses = await _serviceManager.CourseService.GetAllCoursesAsListAsync();
+		return Ok(courses);
+	}
 }

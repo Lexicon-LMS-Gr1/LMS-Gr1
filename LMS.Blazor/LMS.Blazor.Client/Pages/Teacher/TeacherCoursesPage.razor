@@ -1,0 +1,49 @@
+﻿@page "/teacher/courses"
+@using LMS.Shared.DTOs.Course
+@inject IApiService ApiService
+
+<h3>TeacherCoursesPage</h3>
+
+@if (courses is null) {
+    <div class="alert alert-info">Laddar kurser...</div>
+} else {
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Namn</th>
+                <th>Beskrivning</th>
+                <th>Period</th>
+                <th>Elever</th>
+                <th>Moduler</th>
+                <th>Status</th>
+                <th>Aktiv</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var course in courses) {
+                <tr>
+                    <td>@course.Name</td>
+                    <td>@course.Description</td>
+                    <td>
+                        @course.StartDate.ToString("yyyy-MM-dd")
+                        -
+                        @course.EndDate.ToString("yyyy-MM-dd")
+                    </td>
+                    <td>@course.StudentCount</td>
+                    <td>@course.ModuleCount</td>
+                    <td>@course.Status</td>
+                    <td>@course.IsActive</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<CourseListDto>? courses;
+
+    protected override async Task OnInitializedAsync()
+    {
+        courses = await ApiService.GetAsync<List<CourseListDto>>("api/Course/list");
+    }
+}
