@@ -1,0 +1,39 @@
+﻿@page "/dashboard"
+@inject IApiService Api
+@using LMS.Shared.DTOs.StudentDashboard
+
+<h1>Välkommen tillbaka!</h1>
+
+@if (dashboard == null)
+{
+    <p>Laddar...</p>
+}
+else
+{
+    <h2>Veckans aktiviteter</h2>
+
+    @if (dashboard.WeeklyActivities.Count == 0)
+    {
+        <p class="placeholder">Inga aktiviteter denna vecka</p>
+    }
+    else
+    {
+        @foreach (var a in dashboard.WeeklyActivities)
+        {
+            <div class="activity-card">
+                <h3>@a.ActivityType: @a.Title</h3>
+                <p>@a.ModuleName</p>
+                <p>@a.Start.ToString("yyyy-MM-dd HH:mm") – @a.End.ToString("HH:mm")</p>
+            </div>
+        }
+    }
+}
+
+@code {
+    private StudentDashboardDto? dashboard;
+
+    protected override async Task OnInitializedAsync()
+    {
+        dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
+    }
+}

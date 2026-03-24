@@ -104,6 +104,9 @@ public static class ServiceExtensions
 
 		services.AddScoped<IUserManagementService, UserManagementService>();
 		services.AddScoped(provider => new Lazy<IUserManagementService>(() => provider.GetRequiredService<IUserManagementService>()));
-	}
+
+        services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped(provider => new Lazy<IDashboardService>(() => provider.GetRequiredService<IDashboardService>()));
+    }
 }
 
