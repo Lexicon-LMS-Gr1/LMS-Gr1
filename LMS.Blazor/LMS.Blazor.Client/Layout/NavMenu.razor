@@ -89,18 +89,18 @@
 
     private List<NavMenuItemModel> StudentMenuItems => new()
     {
-        new("bi bi-grid-1x2-fill", "Dashboard", "", NavLinkMatch.All),
-        new("bi bi-book-fill", "Min kurs", "student/course"),
-        new("bi bi-file-earmark-text-fill", "Inlämningar", "counter"),
-        new("bi bi-people-fill", "Kursdeltagare", "auth")
+        new("bi bi-house", "Dashboard", "", NavLinkMatch.All),
+        new("bi bi-book", "Min kurs", "student/course"),
+        new("bi bi-file-earmark-text", "Inlämningar", "counter"),
+        new("bi bi-people", "Kursdeltagare", "/participants")
     };
 
     private List<NavMenuItemModel> TeacherMenuItems => new()
     {
-        new("bi bi-grid-1x2-fill", "Dashboard", "", NavLinkMatch.All),
-        new("bi bi-book-fill", "Kurser", "teacher/courses"),
-        new("bi bi-plus-circle-fill", "Skapa ny kurs", "teacher/courses/create"),
-        new("bi bi-people-fill", "Användare", "teacher/users"),
+        new("bi bi-house", "Dashboard", "", NavLinkMatch.All),
+        new("bi bi-book", "Kurser", "teacher/courses"),
+        new("bi bi-plus-circle", "Skapa ny kurs", "teacher/courses/create"),
+        new("bi bi-people", "Användare", "teacher/users"),
         new("bi bi-list-task", "Inlämningar", "demoauth")
     };
 

@@ -32,5 +32,19 @@ namespace LMS.Presentation.Controllers
 
             return Ok(course);
         }
+
+        [HttpGet("me/course/participants")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> GetMyCourseParticipants()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+                return Unauthorized();
+
+            var participants = await _courseService.GetParticipantsForUserCourseAsync(userId);
+
+            return Ok(participants);
+        }
     }
 }

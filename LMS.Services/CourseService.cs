@@ -17,6 +17,23 @@ namespace LMS.Services
 			_unitOfWork = unitOfWork;
 		}
 
+		public async Task<IEnumerable<CourseListDto>> GetAllCoursesAsListAsync()
+		{
+			var courses = await _unitOfWork.CourseRepository.GetAllWithStudentsAndModulesAsync();
+
+			return courses.Select(c => new CourseListDto {
+				Id = c.Id,
+				Name = c.Name,
+				Description = c.Description,
+				StartDate = c.StartDate,
+				EndDate = c.EndDate,
+				StudentCount = c.Students.Count,
+				ModuleCount = c.Modules.Count
+			});
+		}
+
+
+
 		public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
 		{
             var courses = await _unitOfWork.CourseRepository.GetAllAsync();
@@ -64,7 +81,6 @@ namespace LMS.Services
             };
         }
 
-
         public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
         {
             if (string.IsNullOrWhiteSpace(courseCreateDto.Name))
@@ -92,6 +108,19 @@ namespace LMS.Services
                 StartDate = course.StartDate,
                 EndDate = course.EndDate
             };
+        }
+
+
+        public async Task<IEnumerable<ParticipantDto>> GetParticipantsForUserCourseAsync(string userId)
+        {
+            var users = await _unitOfWork.CourseRepository.GetParticipantsForUserCourseAsync(userId);
+
+            return users.Select(u => new ParticipantDto
+            {
+                Id = u.Id,
+                FullName = $"{u.FirstName} {u.LastName}",
+                Email = u.Email!
+            });
         }
     }
 }
