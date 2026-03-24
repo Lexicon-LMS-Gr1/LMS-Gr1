@@ -11,6 +11,6 @@ public interface IApiService
     Task<bool> DeleteAsync(string endpoint, CancellationToken ct = default);
     Task<IEnumerable<CourseDto>> GetCoursesAsync();
     Task<CourseDto?> CreateCourseAsync(CourseCreateDto dto, CancellationToken ct = default);
-    Task<StudentDashboardDto?> GetDashboardAsync(CancellationToken ct = default);
+  
 
 }
