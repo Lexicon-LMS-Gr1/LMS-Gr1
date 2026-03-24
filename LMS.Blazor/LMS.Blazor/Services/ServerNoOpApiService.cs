@@ -14,12 +14,6 @@ public class ServerNoOpApiService(ILogger<ServerNoOpApiService> logger) : IApiSe
         return Task.FromResult<T?>(default);
     }
 
-    public Task<StudentDashboardDto?> GetDashboardAsync(CancellationToken ct = default)
-    {
-        _logger.LogWarning("ServerNoOpApiService.GetDashboardAsync called");
-        return Task.FromResult<StudentDashboardDto?>(default);
-    }
-
     public Task<IEnumerable<CourseDto>> GetCoursesAsync()
     {
         _logger.LogWarning("ServerNoOpApiService.GetCoursesAsync called");
