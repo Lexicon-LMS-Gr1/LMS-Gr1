@@ -14,11 +14,11 @@ public class CourseCreateDto
 
     [Required(ErrorMessage = "Startdatum måste anges.")]
     [DataType(DataType.Date)]
-    public DateTime StartDate { get; set; } = DateTime.Today;
+    public DateTime StartDate { get; set; }
 
     [Required(ErrorMessage = "Slutdatum måste anges.")]
     [DataType(DataType.Date)]
-    public DateTime EndDate { get; set; } = DateTime.Today.AddMonths(6);
+    public DateTime EndDate { get; set; }
 
     // Custom validation will be done in service layer:
     // - EndDate must be after StartDate
