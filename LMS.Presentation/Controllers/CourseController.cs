@@ -32,13 +32,17 @@ public class CourseController : ControllerBase
 		return Ok(courses);
 	}
 
+
 	[HttpGet("list")]
-	public async Task<IActionResult> GetCoursesAsList()
+	public async Task<ActionResult<IEnumerable<CourseListDto>>> GetCoursesList()
 	{
-		var courses = await _serviceManager.CourseService.GetAllCoursesAsListAsync();
+		var courses = await _serviceManager.CourseService.GetAllCoursesListAsync();
 		return Ok(courses);
 	}
-    [HttpPost]    
+
+
+
+	[HttpPost]    
 	public async Task<ActionResult<CourseDto>> CreateCourse([FromBody] CourseCreateDto courseCreateDto)
     {
         var createdCourse = await _serviceManager.CourseService.CreateCourseAsync(courseCreateDto);
