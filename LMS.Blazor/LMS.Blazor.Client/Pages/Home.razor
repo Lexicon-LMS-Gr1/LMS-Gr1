@@ -15,7 +15,7 @@
         }
 
         if (user.IsInRole("Student"))
-            Navigation.NavigateTo("/student/course", true);
+            Navigation.NavigateTo("/dashboard", true);
         else if (user.IsInRole("Teacher"))
             Navigation.NavigateTo("/teacher/courses", true);
         else

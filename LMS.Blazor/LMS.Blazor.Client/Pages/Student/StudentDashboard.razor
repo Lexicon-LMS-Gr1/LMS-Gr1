@@ -1,0 +1,117 @@
+﻿@page "/dashboard"
+@inject IApiService Api
+@using LMS.Shared.DTOs.StudentDashboard
+
+<PageTitle>Dashboard — Lexicon LMS</PageTitle>
+
+<div class="container-fluid py-4">
+
+
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                Välkommen tillbaka!
+            </h2>
+            <p class="text-muted mb-0">Översikt över dina aktiviteter och framsteg</p>
+        </div>
+    </div>
+
+
+    @if (dashboard == null)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Laddar...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Weekly Activities -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-semibold">Veckans aktiviteter</h4>
+                <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">
+                    Vecka @currentWeek
+                </span>
+            </div>
+
+            @foreach (var moduleGroup in dashboard.WeeklyActivities.GroupBy(a => a.ModuleName))
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold">Modul: @moduleGroup.Key</h5>
+            <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">
+                Vecka @currentWeek
+            </span>
+        </div>
+
+        <div class="list-group list-group-flush">
+            @foreach (var a in moduleGroup)
+            {
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="badge bg-primary bg-opacity-10 text-primary me-2">
+                                    @a.ActivityType
+                                </span>
+                                <span class="fw-semibold">@a.Title</span>
+                            </div>
+
+                            <div class="text-muted small">
+                                @a.Start.ToString("yyyy-MM-dd")
+                                <span class="mx-1">•</span>
+                                @a.Start.ToString("HH:mm") – @a.End.ToString("HH:mm")
+                            </div>
+                        </div>
+
+                        
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+        </div>
+
+        <!-- Upcoming Deadlines -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h4 class="mb-0 fw-semibold">Kommande inlämningar</h4>
+            </div>
+
+            <div class="p-4 text-center text-muted">
+                Inga kommande inlämningar
+            </div>
+        </div>
+
+        <!-- Module Progress -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h4 class="mb-0 fw-semibold">Modulframsteg</h4>
+            </div>
+
+            <div class="p-4 text-center text-muted">
+                Modulframsteg kommer senare
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private StudentDashboardDto? dashboard;
+    private int currentWeek;
+
+    protected override async Task OnInitializedAsync()
+    {
+        dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
+
+        var today = DateTime.Today;
+        var culture = new System.Globalization.CultureInfo("sv-SE");
+        currentWeek = culture.Calendar.GetWeekOfYear(today,
+            System.Globalization.CalendarWeekRule.FirstFourDayWeek,
+            DayOfWeek.Monday);
+    }
+}

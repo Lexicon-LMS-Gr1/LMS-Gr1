@@ -1,5 +1,6 @@
 using LMS.Blazor.Client.Services;
 using LMS.Shared.DTOs.Course;
+using LMS.Shared.DTOs.StudentDashboard;
 
 namespace LMS.Blazor.Services;
 
@@ -13,7 +14,11 @@ public class ServerNoOpApiService(ILogger<ServerNoOpApiService> logger) : IApiSe
         return Task.FromResult<T?>(default);
     }
 
- 
+    public Task<StudentDashboardDto?> GetDashboardAsync(CancellationToken ct = default)
+    {
+        _logger.LogWarning("ServerNoOpApiService.GetDashboardAsync called");
+        return Task.FromResult<StudentDashboardDto?>(default);
+    }
 
     public Task<IEnumerable<CourseDto>> GetCoursesAsync()
     {
