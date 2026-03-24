@@ -1,125 +1,196 @@
-.navbar-toggler {
+/* ========================================
+   Lexicon LMS — Dark Sidebar
+   ======================================== */
+
+.sidebar-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: #1a1a2e;
+    color: #8b8fa3;
+    font-family: inherit;
+    overflow: hidden;
+}
+
+/* ---- Logo ---- */
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1.15rem 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+}
+
+.brand-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.01em;
+}
+
+/* ---- Mobile toggler ---- */
+.nav-toggler {
     appearance: none;
     cursor: pointer;
     width: 3.5rem;
     height: 2.5rem;
-    color: white;
     position: absolute;
     top: 0.5rem;
     right: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.5' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") no-repeat center/2rem transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.375rem;
+    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%238b8fa3' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.5' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") no-repeat center/1.75rem transparent;
 }
 
-    .navbar-toggler:checked {
-        background-color: rgba(255, 255, 255, 0.5);
+    .nav-toggler:checked {
+        background-color: rgba(255, 255, 255, 0.08);
     }
 
-.top-row {
-    min-height: 3.5rem;
-    border-bottom: 1px solid #d6d5d5;
+/* ---- Scrollable body ---- */
+.sidebar-scroll {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    padding-top: 0.15rem;
 }
 
-.navbar-brand {
-    font-size: 1.1rem;
+.nav-toggler:checked ~ .sidebar-scroll {
+    display: flex;
 }
 
-.bi {
-    display: inline-block;
-    position: relative;
-    width: 1.25rem;
-    height: 1.25rem;
-    margin-right: 0.75rem;
-    top: -1px;
-    background-size: cover;
+/* ---- Section label ---- */
+.section-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #565a6e;
+    padding: 1rem 1.2rem 0.45rem;
 }
 
-.nav-item {
-    position: relative;
-    font-size: 0.95rem;
+/* ---- Nav entries ---- */
+.nav-entry {
+    padding: 0.12rem 0.6rem;
 }
 
-    .nav-item:first-of-type {
-        padding-top: 1rem;
-    }
-
-    .nav-item:last-of-type {
-        padding-bottom: 1rem;
-    }
-
-    .nav-item ::deep .menu-link {
-        position: relative;
+    .nav-entry ::deep a {
         display: flex;
         align-items: center;
-        gap: 0.9rem;
-        width: 100%;
-        min-height: 3.25rem;
-        padding: 0.85rem 1rem;
-        color: #4b5563;
+        gap: 0.7rem;
+        padding: 0.55rem 0.7rem;
+        color: #8b8fa3;
         text-decoration: none;
-        background: transparent;
-        border: none;
-        border-radius: 0;
-        box-sizing: border-box;
+        font-size: 0.88rem;
         font-weight: 500;
-        transition: background-color 0.15s ease, color 0.15s ease;
+        border-radius: 0.45rem;
+        transition: background-color 0.12s ease, color 0.12s ease;
     }
 
-        .nav-item ::deep .menu-link:hover {
-            background-color: #f3f6ff;
-            color: #3b5bdb;
-        }
-
-        .nav-item ::deep .menu-link.active {
-            background-color: #eef3ff;
-            color: #2563eb;
-        }
-
-            .nav-item ::deep .menu-link.active::after {
-                content: "";
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                right: 0;
-                width: 5px;
-                background-color: #2563eb;
-            }
-
-    .nav-item ::deep .menu-icon {
-        font-size: 1.35rem;
-        width: 1.5rem;
-        min-width: 1.5rem;
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
+    .nav-entry ::deep a:hover {
+        background-color: rgba(59, 130, 246, 0.08);
+        color: #c4c7d5;
+        text-decoration: none;
     }
 
-.logout-form {
+    .nav-entry ::deep a.active {
+        background-color: #3b82f6;
+        color: #ffffff;
+    }
+
+.nav-btn-icon {
+    font-size: 1.1rem;
+    width: 1.3rem;
+    min-width: 1.3rem;
+    text-align: center;
+    line-height: 1;
+}
+
+.nav-btn-text {
+    line-height: 1;
+}
+
+/* ---- Profile area (footer) ---- */
+.profile-area {
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 0.85rem 1.2rem 1rem;
+    flex-shrink: 0;
+}
+
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.65rem;
+}
+
+.profile-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    letter-spacing: 0.04em;
+}
+
+.profile-info {
+    overflow: hidden;
+    min-width: 0;
+}
+
+.profile-name {
+    color: #e0e1e8;
+    font-weight: 600;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-role {
+    color: #565a6e;
+    font-size: 0.72rem;
+}
+
+/* ---- Logout button ---- */
+.btn-logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
     width: 100%;
-}
-
-.logout-button {
+    padding: 0.45rem;
+    background: rgba(255, 255, 255, 0.04);
+    color: #8b8fa3;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.45rem;
+    font-size: 0.82rem;
+    font-weight: 500;
     cursor: pointer;
-    font: inherit;
-    text-align: left;
+    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
-.nav-scrollable {
-    display: none;
-}
+    .btn-logout:hover {
+        background: rgba(239, 68, 68, 0.12);
+        color: #fca5a5;
+        border-color: rgba(239, 68, 68, 0.2);
+    }
 
-.navbar-toggler:checked ~ .nav-scrollable {
-    display: block;
-}
-
+/* ---- Desktop ---- */
 @media (min-width: 641px) {
-    .navbar-toggler {
+    .nav-toggler {
         display: none;
     }
 
-    .nav-scrollable {
-        display: block;
-        height: calc(100vh - 3.5rem);
-        overflow-y: auto;
+    .sidebar-scroll {
+        display: flex;
     }
 }
