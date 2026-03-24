@@ -81,9 +81,4 @@ public class ClientApiService : IApiService
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
     }
 
-    public async Task<IEnumerable<CourseDto>> GetCoursesAsync()
-    {
-        return await GetAsync<IEnumerable<CourseDto>>("api/course") ?? Enumerable.Empty<CourseDto>();
-    }
-
 }
