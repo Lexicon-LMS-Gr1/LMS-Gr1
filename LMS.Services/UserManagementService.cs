@@ -93,6 +93,9 @@ public class UserManagementService : IUserManagementService
         if (dto.Role == "Teacher" && dto.CourseId.HasValue)
             throw new ArgumentException("A Teacher cannot be assigned to a course.");
 
+        if (dto.Role == "Student" && !dto.CourseId.HasValue)
+            throw new ArgumentException("A Student must be assigned to a course.");
+
         var user = new ApplicationUser
         {
             FirstName = dto.FirstName,
@@ -145,6 +148,9 @@ public class UserManagementService : IUserManagementService
         if (currentRole == "Teacher" && dto.CourseId.HasValue)
             throw new ArgumentException("A Teacher cannot be assigned to a course.");
 
+        if (currentRole == "Student" && !dto.CourseId.HasValue)
+            throw new ArgumentException("A Student must be assigned to a course.");
+
         user.FirstName = dto.FirstName;
         user.LastName = dto.LastName;
         user.Email = dto.Email;
@@ -165,6 +171,16 @@ public class UserManagementService : IUserManagementService
     {
         var user = await _userManager.FindByIdAsync(id);
         if (user == null) return false;
+
+        // Prevent deleting the last teacher
+        var roles = await _userManager.GetRolesAsync(user);
+        if (roles.Contains("Teacher"))
+        {
+            var teacherCount = (await _userManager.GetUsersInRoleAsync("Teacher")).Count;
+            if (teacherCount <= 1)
+                throw new InvalidOperationException(
+                    "Cannot delete the last teacher in the system. At least one teacher must exist.");
+        }
 
         var result = await _userManager.DeleteAsync(user);
         return result.Succeeded;

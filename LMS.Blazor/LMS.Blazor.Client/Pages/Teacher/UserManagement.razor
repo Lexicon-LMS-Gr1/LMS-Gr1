@@ -1,12 +1,13 @@
 @page "/teacher/users"
 @inject IApiService ApiService
 @using LMS.Shared.DTOs.User
+@using LMS.Shared.DTOs.Course
 @attribute [Authorize(Roles = "Teacher")]
 
 <PageTitle>Användarhantering — Lexicon LMS</PageTitle>
 
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
             <h2 class="mb-1">
                 <span class="bi bi-people-fill me-2"></span>Användarhantering
@@ -47,9 +48,9 @@
     {
         <div class="card shadow-sm">
             <div class="card-header bg-white py-3">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <div class="input-group" style="max-width: 350px;">
+                <div class="row align-items-center g-2">
+                    <div class="col-12 col-md">
+                        <div class="input-group">
                             <span class="input-group-text bg-white"><span class="bi bi-search"></span></span>
                             <input type="text"
                                    class="form-control"
@@ -59,7 +60,7 @@
                         </div>
                     </div>
                     <div class="col-auto">
-                        <select class="form-select" style="width: auto;" @bind="roleFilter">
+                        <select class="form-select" @bind="roleFilter">
                             <option value="">Alla roller</option>
                             <option value="Teacher">Lärare</option>
                             <option value="Student">Elev</option>
@@ -68,7 +69,9 @@
                 </div>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
+
+                @* ===== DESKTOP TABLE (hidden on mobile) ===== *@
+                <div class="d-none d-md-block table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
@@ -89,9 +92,7 @@
                                                  style="width: 36px; height: 36px; font-size: 0.85rem; font-weight: 600;">
                                                 @user.FirstName[0]@user.LastName[0]
                                             </div>
-                                            <div>
-                                                <div class="fw-semibold">@user.FullName</div>
-                                            </div>
+                                            <div class="fw-semibold">@user.FullName</div>
                                         </div>
                                     </td>
                                     <td>@user.Email</td>
@@ -123,6 +124,42 @@
                         </tbody>
                     </table>
                 </div>
+
+                @* ===== MOBILE CARD VIEW (hidden on desktop) ===== *@
+                <div class="d-md-none">
+                    @foreach (var user in FilteredUsers)
+                    {
+                        <div class="border-bottom p-3">
+                            <div class="d-flex align-items-start gap-3 mb-3">
+                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width: 42px; height: 42px; font-size: 0.9rem; font-weight: 600;">
+                                    @user.FirstName[0]@user.LastName[0]
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-semibold text-truncate">@user.FullName</div>
+                                    <div class="text-muted small text-truncate">@user.Email</div>
+                                    <div class="d-flex align-items-center flex-wrap gap-2 mt-1">
+                                        <span class="badge rounded-pill @(user.Role == "Teacher" ? "bg-warning text-dark" : "bg-info text-dark")" style="font-size: 0.7rem;">
+                                            @(user.Role == "Teacher" ? "Lärare" : "Elev")
+                                        </span>
+                                        @if (!string.IsNullOrEmpty(user.CourseName))
+                                        {
+                                            <span class="text-muted small">@user.CourseName</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end gap-2">
+                                <button class="btn btn-sm btn-outline-primary px-3" title="Redigera" @onclick="() => OpenEditModal(user)">
+                                    <span class="bi bi-pencil-fill me-1"></span> Redigera
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger px-3" title="Ta bort" @onclick="() => OpenDeleteModal(user)">
+                                    <span class="bi bi-trash-fill me-1"></span> Ta bort
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
             </div>
             <div class="card-footer bg-white text-muted py-2 px-4">
                 Visar @FilteredUsers.Count() av @users.Count() användare
@@ -135,7 +172,7 @@
 @if (showFormModal)
 {
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
@@ -204,6 +241,35 @@
                                 <div class="form-text">Roll kan inte ändras efter skapande.</div>
                             </div>
                         }
+
+                        @* ---- Course dropdown (visible only for Students) ---- *@
+                        @if (ShowCourseDropdown)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Kurs <span class="text-danger">*</span></label>
+                                @if (courses == null || !courses.Any())
+                                {
+                                    <div class="alert alert-warning py-2 mb-0">
+                                        <span class="bi bi-exclamation-triangle me-1"></span>
+                                        Inga kurser tillgängliga. Skapa en kurs först.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <select class="form-select" @bind="selectedCourseId">
+                                        <option value="0">— Välj kurs —</option>
+                                        @foreach (var course in courses)
+                                        {
+                                            <option value="@course.Id">@course.Name (@course.StartDate.ToString("yyyy-MM-dd") – @course.EndDate.ToString("yyyy-MM-dd"))</option>
+                                        }
+                                    </select>
+                                    @if (!string.IsNullOrEmpty(courseError))
+                                    {
+                                        <div class="text-danger small mt-1">@courseError</div>
+                                    }
+                                }
+                            </div>
+                        }
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @onclick="CloseFormModal" disabled="@isSaving">Avbryt</button>
@@ -235,6 +301,12 @@
                     <button type="button" class="btn-close" @onclick="CloseDeleteModal"></button>
                 </div>
                 <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(deleteError))
+                    {
+                        <div class="alert alert-danger py-2">
+                            <span class="bi bi-shield-exclamation me-1"></span> @deleteError
+                        </div>
+                    }
                     <p>Är du säker på att du vill ta bort följande användare?</p>
                     <div class="card bg-light">
                         <div class="card-body py-2">
@@ -267,6 +339,7 @@
 
 @code {
     private List<UserDto>? users;
+    private List<CourseListDto>? courses;
     private bool isLoading = true;
 
     // Alert state
@@ -287,13 +360,21 @@
     private string selectedRole = string.Empty;
     private string? passwordError;
     private string? roleError;
+    private string? courseError;
+    private int selectedCourseId;
     private string editUserId = string.Empty;
     private string editUserRole = string.Empty;
 
     // Delete modal state
     private bool showDeleteModal;
     private bool isDeleting;
+    private string? deleteError;
     private UserDto? userToDelete;
+
+    // Show course dropdown when creating a Student or editing a Student
+    private bool ShowCourseDropdown =>
+        (!isEditMode && selectedRole == "Student") ||
+        (isEditMode && editUserRole == "Student");
 
     private IEnumerable<UserDto> FilteredUsers
     {
@@ -322,21 +403,27 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUsersAsync();
+        await LoadDataAsync();
     }
 
-    private async Task LoadUsersAsync()
+    private async Task LoadDataAsync()
     {
         isLoading = true;
         try
         {
-            var result = await ApiService.GetAsync<List<UserDto>>("api/users");
-            users = result ?? new List<UserDto>();
+            var usersTask = ApiService.GetAsync<List<UserDto>>("api/users");
+            var coursesTask = ApiService.GetAsync<List<CourseListDto>>("api/Course/list");
+
+            await Task.WhenAll(usersTask, coursesTask);
+
+            users = await usersTask ?? new List<UserDto>();
+            courses = await coursesTask ?? new List<CourseListDto>();
         }
         catch (Exception)
         {
-            ShowAlert("Kunde inte hämta användare. Försök igen.", "danger");
+            ShowAlert("Kunde inte hämta data. Försök igen.", "danger");
             users = new List<UserDto>();
+            courses = new List<CourseListDto>();
         }
         finally
         {
@@ -351,9 +438,11 @@
         formModel = new FormModel();
         createPassword = string.Empty;
         selectedRole = string.Empty;
+        selectedCourseId = 0;
         formError = null;
         passwordError = null;
         roleError = null;
+        courseError = null;
         showFormModal = true;
     }
 
@@ -363,6 +452,7 @@
         isEditMode = true;
         editUserId = user.Id;
         editUserRole = user.Role;
+        selectedCourseId = user.CourseId ?? 0;
         formModel = new FormModel
         {
             FirstName = user.FirstName,
@@ -370,6 +460,7 @@
             Email = user.Email
         };
         formError = null;
+        courseError = null;
         showFormModal = true;
     }
 
@@ -384,6 +475,7 @@
         formError = null;
         passwordError = null;
         roleError = null;
+        courseError = null;
 
         if (isEditMode)
         {
@@ -417,6 +509,13 @@
             return;
         }
 
+        // Validate course for students
+        if (selectedRole == "Student" && selectedCourseId <= 0)
+        {
+            courseError = "Du måste välja en kurs för eleven.";
+            return;
+        }
+
         isSaving = true;
         try
         {
@@ -426,7 +525,8 @@
                 LastName = formModel.LastName,
                 Email = formModel.Email,
                 Password = createPassword,
-                Role = selectedRole
+                Role = selectedRole,
+                CourseId = selectedRole == "Student" ? selectedCourseId : null
             };
 
             var result = await ApiService.PostAsync<UserCreateDto, UserDto>("api/users", createDto);
@@ -435,7 +535,7 @@
             {
                 ShowAlert($"Användare \"{result.FullName}\" skapades.", "success");
                 CloseFormModal();
-                await LoadUsersAsync();
+                await LoadDataAsync();
             }
             else
             {
@@ -458,6 +558,13 @@
 
     private async Task HandleUpdate()
     {
+        // Validate course for students
+        if (editUserRole == "Student" && selectedCourseId <= 0)
+        {
+            courseError = "Du måste välja en kurs för eleven.";
+            return;
+        }
+
         isSaving = true;
         try
         {
@@ -466,7 +573,8 @@
                 Id = editUserId,
                 FirstName = formModel.FirstName,
                 LastName = formModel.LastName,
-                Email = formModel.Email
+                Email = formModel.Email,
+                CourseId = editUserRole == "Student" ? selectedCourseId : null
             };
 
             var result = await ApiService.PutAsync<UserUpdateDto, UserDto>($"api/users/{editUserId}", updateDto);
@@ -475,7 +583,7 @@
             {
                 ShowAlert($"Användare \"{result.FullName}\" uppdaterades.", "success");
                 CloseFormModal();
-                await LoadUsersAsync();
+                await LoadDataAsync();
             }
             else
             {
@@ -500,6 +608,7 @@
     private void OpenDeleteModal(UserDto user)
     {
         userToDelete = user;
+        deleteError = null;
         showDeleteModal = true;
     }
 
@@ -507,6 +616,7 @@
     {
         showDeleteModal = false;
         userToDelete = null;
+        deleteError = null;
     }
 
     private async Task ConfirmDelete()
@@ -514,6 +624,7 @@
         if (userToDelete == null) return;
 
         isDeleting = true;
+        deleteError = null;
         try
         {
             var success = await ApiService.DeleteAsync($"api/users/{userToDelete.Id}");
@@ -522,16 +633,16 @@
             {
                 ShowAlert($"Användare \"{userToDelete.FullName}\" togs bort.", "success");
                 CloseDeleteModal();
-                await LoadUsersAsync();
+                await LoadDataAsync();
             }
             else
             {
-                ShowAlert("Kunde inte ta bort användaren. Försök igen.", "danger");
+                deleteError = "Kunde inte ta bort användaren. Det kan vara den sista läraren i systemet.";
             }
         }
         catch (Exception)
         {
-            ShowAlert("Ett fel uppstod vid borttagning. Försök igen.", "danger");
+            deleteError = "Ett fel uppstod vid borttagning. Försök igen.";
         }
         finally
         {
