@@ -101,11 +101,18 @@ public class UserManagementController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(string id)
     {
-        var result = await _serviceManager.UserManagementService.DeleteUserAsync(id);
+        try
+        {
+            var result = await _serviceManager.UserManagementService.DeleteUserAsync(id);
 
-        if (!result)
-            return NotFound($"User with ID '{id}' not found.");
+            if (!result)
+                return NotFound($"User with ID '{id}' not found.");
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }
