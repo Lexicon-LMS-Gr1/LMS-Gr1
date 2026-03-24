@@ -86,15 +86,4 @@ public class ClientApiService : IApiService
         return await GetAsync<IEnumerable<CourseDto>>("api/course") ?? Enumerable.Empty<CourseDto>();
     }
 
-    public async Task<CourseDto?> CreateCourseAsync(CourseCreateDto dto, CancellationToken ct = default)
-    {
-        return await PostAsync<CourseCreateDto, CourseDto>("api/course", dto, ct);
-    }
-
-    public async Task<StudentDashboardDto?> GetDashboardAsync(CancellationToken ct = default)
-    {
-        return await GetAsync<StudentDashboardDto>("api/user/me/dashboard", ct);
-    }
-
-
 }

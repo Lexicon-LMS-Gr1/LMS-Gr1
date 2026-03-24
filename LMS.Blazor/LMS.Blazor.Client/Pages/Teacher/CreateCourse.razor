@@ -68,8 +68,11 @@
 </div>
 
 @code {
-    // private CreateCourseFormModel model = new();
-    private CourseCreateDto model = new();
+    private CourseCreateDto model = new()
+    {
+        StartDate = DateTime.Today,
+        EndDate = DateTime.Today.AddMonths(6)
+    };
     private string? errorMessage;
     private bool isSubmitting;
 
@@ -80,14 +83,7 @@
 
         try
         {
-            var dto = new CourseCreateDto() { 
-                Name = model.Name,
-                Description = model.Description,
-                StartDate = model.StartDate,
-                EndDate = model.EndDate 
-            };
-
-            var result = await ApiService.CreateCourseAsync(dto);
+			var result = await ApiService.PostAsync<CourseCreateDto, CourseDto>("api/course", model);
 
             if (result is null)
             {
@@ -110,24 +106,5 @@
     private void Cancel()
     {
         NavigationManager.NavigateTo("/teacher/courses");
-    }
-
-    private sealed class CreateCourseFormModel
-    {
-        [Required(ErrorMessage = "Kursnamn måste anges.")]
-        [StringLength(100, MinimumLength = 3, ErrorMessage = "Kursnamn måste vara mellan 3 och 100 tecken")]
-        public string Name { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Beskrivning måste anges.")]
-        [StringLength(500, MinimumLength = 10, ErrorMessage = "Kursbeskrivning måste vara mellan 10 och 500 tecken")]
-        public string Description { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Startdatum måste anges.")]
-        [DataType(DataType.Date)]
-        public DateTime StartDate { get; set; } = DateTime.Today;
-
-        [Required(ErrorMessage = "Slutdatum måste anges.")]
-        [DataType(DataType.Date)]
-        public DateTime EndDate { get; set; } = DateTime.Today.AddMonths(6);
     }
 }
