@@ -35,7 +35,7 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
                     .ThenInclude(a => a.ActivityType)
             .FirstOrDefaultAsync(c => c.Id == user.CourseId);
     }
-	public async Task<IEnumerable<Course>> GetAllWithStudentsAndModulesAsync(bool trackChanges = false)
+	public async Task<IEnumerable<Course>> GetCoursesForListAsync(bool trackChanges = false)
 	{
 		return await context.Courses
 			.Include(c => c.Students)

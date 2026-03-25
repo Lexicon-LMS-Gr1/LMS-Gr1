@@ -17,9 +17,9 @@ namespace LMS.Services
 			_unitOfWork = unitOfWork;
 		}
 
-		public async Task<IEnumerable<CourseListDto>> GetAllCoursesAsListAsync()
+		public async Task<IEnumerable<CourseListDto>> GetAllCoursesListAsync()
 		{
-			var courses = await _unitOfWork.CourseRepository.GetAllWithStudentsAndModulesAsync();
+			var courses = await _unitOfWork.CourseRepository.GetCoursesForListAsync();
 
 			return courses.Select(c => new CourseListDto {
 				Id = c.Id,
