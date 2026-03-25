@@ -48,4 +48,17 @@ public class CourseController : ControllerBase
         var createdCourse = await _serviceManager.CourseService.CreateCourseAsync(courseCreateDto);
         return Ok(createdCourse);
     }
+
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<CourseDto>> UpdateCourse(int id, [FromBody] CourseUpdateDto dto)
+    {
+        if (id != dto.Id)
+            return BadRequest("Course ID mismatch");
+
+        var updated = await _serviceManager.CourseService.UpdateCourseAsync(dto);
+
+        return Ok(updated);
+    }
+
 }

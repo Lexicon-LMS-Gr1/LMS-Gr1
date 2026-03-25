@@ -111,6 +111,36 @@ namespace LMS.Services
         }
 
 
+        public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
+        {
+            var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseUpdateDto.Id);
+
+            if (course == null)
+                throw new Exception("Course not found");
+
+            if (courseUpdateDto.EndDate < courseUpdateDto.StartDate)
+                throw new Exception("End date must be after start date");
+
+            course.Name = courseUpdateDto.Name;
+            course.Description = courseUpdateDto.Description;
+            course.StartDate = courseUpdateDto.StartDate;
+            course.EndDate = courseUpdateDto.EndDate;
+
+            _unitOfWork.CourseRepository.Update(course);
+            await _unitOfWork.CompleteAsync();
+
+            return new CourseDto
+            {
+                Id = course.Id,
+                Name = course.Name,
+                Description = course.Description,
+                StartDate = course.StartDate,
+                EndDate = course.EndDate
+            };
+        }
+
+
+
         public async Task<IEnumerable<ParticipantDto>> GetParticipantsForUserCourseAsync(string userId)
         {
             var users = await _unitOfWork.CourseRepository.GetParticipantsForUserCourseAsync(userId);

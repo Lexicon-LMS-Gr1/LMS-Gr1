@@ -13,6 +13,7 @@ namespace Service.Contracts
 
 		Task<IEnumerable<CourseListDto>> GetAllCoursesListAsync();
         Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto);
+        Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto);
         Task<IEnumerable<ParticipantDto>> GetParticipantsForUserCourseAsync(string userId);
     }
 

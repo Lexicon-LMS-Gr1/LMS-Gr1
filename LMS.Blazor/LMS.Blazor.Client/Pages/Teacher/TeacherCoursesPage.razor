@@ -57,7 +57,8 @@
                                 <th>Elever</th>
                                 <th>Moduler</th>
                                 <th>Status</th>
-                                <th class="text-end pe-4">Aktiv</th>
+                                <th class="text-end pe-4">Åtgärder</th>
+
                             </tr>
                         </thead>
 
@@ -96,15 +97,12 @@
                                     </td>
 
                                     <td class="text-end pe-4">
-                                        @if (course.IsActive)
-                                        {
-                                            <span class="badge bg-success">Ja</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger">Nej</span>
-                                        }
+                                        <button class="btn btn-sm btn-outline-primary me-2"
+                                                @onclick="() => OpenEditModal(course)">
+                                            <span class="bi bi-pencil-fill me-1"></span> Redigera
+                                        </button>
                                     </td>
+
                                 </tr>
                             }
                         </tbody>
@@ -116,13 +114,143 @@
     }
 </div>
 
+@* ==================== UPDATE MODAL ==================== *@
+@if (showEditModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="bi bi-pencil-square me-2"></span>
+                        Redigera kurs
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditModal"></button>
+                </div>
+
+                <EditForm Model="formModel" OnValidSubmit="HandleUpdate">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+
+                        @if (!string.IsNullOrEmpty(formError))
+                        {
+                            <div class="alert alert-danger py-2">
+                                <span class="bi bi-exclamation-triangle me-1"></span> @formError
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Namn</label>
+                            <InputText class="form-control" @bind-Value="formModel.Name" />
+                            <ValidationMessage For="() => formModel.Name" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Beskrivning</label>
+                            <InputTextArea class="form-control" @bind-Value="formModel.Description" rows="3" />
+                            <ValidationMessage For="() => formModel.Description" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Startdatum</label>
+                            <InputDate class="form-control" @bind-Value="formModel.StartDate" />
+                            <ValidationMessage For="() => formModel.StartDate" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Slutdatum</label>
+                            <InputDate class="form-control" @bind-Value="formModel.EndDate" />
+                            <ValidationMessage For="() => formModel.EndDate" class="text-danger small" />
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseEditModal" disabled="@isSaving">Avbryt</button>
+                        <button type="submit" class="btn btn-primary d-flex align-items-center gap-2" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                            }
+                            <span>Spara ändringar</span>
+                        </button>
+                    </div>
+
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
 
 
 @code {
     private List<CourseListDto>? courses;
+    private bool showEditModal;
+    private bool isSaving;
+    private string? formError;
+
+    private CourseUpdateDto formModel = new();
+
 
     protected override async Task OnInitializedAsync()
     {
         courses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
     }
+
+    private void OpenEditModal(CourseListDto course)
+    {
+        formModel = new CourseUpdateDto
+        {
+            Id = course.Id,
+            Name = course.Name,
+            Description = course.Description,
+            StartDate = course.StartDate,
+            EndDate = course.EndDate
+        };
+
+        formError = null;
+        showEditModal = true;
+    }
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        formError = null;
+    }
+
+    private async Task HandleUpdate()
+    {
+        isSaving = true;
+        formError = null;
+
+        try
+        {
+            var result = await ApiService.PutAsync<CourseUpdateDto, CourseDto>(
+                $"api/course/{formModel.Id}", formModel);
+
+            if (result != null)
+            {
+                showEditModal = false;
+                courses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+            }
+            else
+            {
+                formError = "Kunde inte uppdatera kursen.";
+            }
+        }
+        catch (Exception ex)
+        {
+            formError = ex.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+
 }

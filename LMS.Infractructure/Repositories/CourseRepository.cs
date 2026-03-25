@@ -16,6 +16,12 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
         this.context = context;
     }
 
+    public async Task<Course?> GetByIdAsync(int id, bool trackChanges = false)
+    {
+        return await FindByCondition(c => c.Id == id, trackChanges)
+            .FirstOrDefaultAsync();
+    }
+
 
     public async Task<IEnumerable<Course>> GetAllAsync(bool trackChanges = false)
 	{
