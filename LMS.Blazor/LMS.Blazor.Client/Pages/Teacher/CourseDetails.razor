@@ -1,0 +1,34 @@
+﻿@page "/teacher/courses/{courseId:int}"
+@using LMS.Shared.DTOs.Course
+@inject IApiService ApiService
+
+<h3>CourseDetails</h3>
+
+@if (course == null)
+{
+    <p>Laddar...</p>
+}
+else
+{
+    <h3>@course.Name</h3>
+    <p>@course.Description</p>
+
+    <h4>Moduler</h4>
+    <ul>
+        @foreach (var module in course.Modules)
+        {
+            <li>@module.Name</li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter]
+    public int courseId { get; set; }
+    private CourseDto? course;
+
+    protected override async Task OnInitializedAsync()
+    {
+        course = await ApiService.GetAsync<CourseDto>($"api/course/{courseId}");
+    }
+}
