@@ -58,3 +58,27 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Make all Bootstrap buttons smaller on mobile */
+@media (max-width: 1380px) {
+    .btn {
+        padding: 4px 8px !important;
+        font-size: 0.75rem !important;
+        border-radius: 4px !important;
+    }
+
+        .btn .bi {
+            font-size: 0.8rem;
+            margin-right: 2px;
+        }
+
+        /* Reduce spacing between buttons */
+        .btn + .btn {
+            margin-left: 4px !important;
+        }
+
+    /* Tables: prevent buttons from breaking layout */
+    td.text-end .btn {
+        white-space: nowrap;
+    }
+}

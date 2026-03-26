@@ -7,10 +7,14 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext context;
 	private readonly Lazy<ICourseRepository> courseRepository;
+	private readonly Lazy<IModuleRepository> moduleRepository;
 	public ICourseRepository CourseRepository => courseRepository.Value;
-	public UnitOfWork(ApplicationDbContext context, Lazy<ICourseRepository> courseRepository)
+	public IModuleRepository ModuleRepository => moduleRepository.Value;
+	public UnitOfWork(ApplicationDbContext context, Lazy<ICourseRepository> courseRepository, Lazy<IModuleRepository> moduleRepository)
     {
 		this.courseRepository = courseRepository ?? throw new ArgumentNullException(nameof(UnitOfWork.courseRepository));
+		this.moduleRepository = moduleRepository ?? throw new ArgumentNullException(nameof(UnitOfWork.moduleRepository));
+
 		this.context = context ?? throw new ArgumentNullException(nameof(context));
     }
 

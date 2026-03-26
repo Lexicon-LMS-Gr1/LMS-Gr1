@@ -48,13 +48,23 @@ public class ClientApiService : IApiService
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
     }
 
-    public async Task<bool> DeleteAsync(string endpoint, CancellationToken ct = default)
+    public async Task<(bool Success, string? Error)> DeleteAsync(string endpoint, CancellationToken ct = default)
     {
         var response = await _httpClient.DeleteAsync($"api/proxy/{endpoint}", ct);
 
-        if (HandleUnauthorized(response)) return false;
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            _navigationManager.NavigateTo("/Account/Login", forceLoad: true);
+            return (false, null);
+        }
 
-        return response.IsSuccessStatusCode;
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
+        // Read the error message returned by the API
+        var errorBody = await response.Content.ReadAsStringAsync(ct);
+        var errorMessage = errorBody.Trim('"'); // strip JSON string quotes if any
+        return (false, string.IsNullOrWhiteSpace(errorMessage) ? null : errorMessage);
     }
 
     private bool HandleUnauthorized(HttpResponseMessage response)

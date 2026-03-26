@@ -36,7 +36,7 @@
 
         <h1 class="login-title">Lexicon LMS</h1>
 
-        <StatusMessage Message="@errorMessage" />
+        <StatusMessage Message="@errorMessage" IsError="true" />
 
         <EditForm EditContext="editContext"
                   OnValidSubmit="LoginUser"
@@ -140,7 +140,7 @@
 
         if (result.Succeeded)
         {
-            Logger.LogInformation("User logged in.");
+            Logger.LogInformation("Användaren har loggat in.");
 
             var user = await UserManager.FindByEmailAsync(Input.Email);
             if(user != null)
@@ -150,7 +150,7 @@
                 if (!tokenSuccess)
                 {
                     await SignInManager.SignOutAsync();
-                    errorMessage = "Error: Unable to connect to API. Please ensure the API is running and try again.";
+                    errorMessage = "Kunde inte ansluta till API:t. Kontrollera att API:t körs och försök igen.";
                     return;
                 }
             }
@@ -166,12 +166,12 @@
         }
         else if (result.IsLockedOut)
         {
-            Logger.LogWarning("User account locked out.");
+            Logger.LogWarning("Ditt konto är låst. Försök igen senare.");
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else
         {
-            errorMessage = "Error: Invalid login attempt.";
+            errorMessage = "Ogiltigt användarnamn eller lösenord.";
         }
     }
 
@@ -256,9 +256,10 @@
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "E‑postadress är obligatorisk.")]
+        [EmailAddress(ErrorMessage = "Ogiltig e‑postadress.")]
         public string Email { get; set; } = "";
+
 
         [Required]
         [DataType(DataType.Password)]

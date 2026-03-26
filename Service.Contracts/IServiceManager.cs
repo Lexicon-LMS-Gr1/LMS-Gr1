@@ -3,6 +3,7 @@ public interface IServiceManager
 {
     IAuthService AuthService { get; }
     ICourseService CourseService { get; }
-    IUserManagementService UserManagementService { get; }
+	IModuleService ModuleService { get; }
+	IUserManagementService UserManagementService { get; }
     IDashboardService DashboardService { get; }
 }

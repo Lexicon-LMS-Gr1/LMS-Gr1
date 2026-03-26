@@ -1,5 +1,6 @@
 @page "/teacher/users"
 @inject IApiService ApiService
+@inject AuthenticationStateProvider AuthStateProvider
 @using LMS.Shared.DTOs.User
 @using LMS.Shared.DTOs.Course
 @attribute [Authorize(Roles = "Teacher")]
@@ -115,9 +116,16 @@
                                         <button class="btn btn-sm btn-outline-primary me-2" title="Redigera" @onclick="() => OpenEditModal(user)">
                                             <span class="bi bi-pencil-fill me-1"></span> Redigera
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger" title="Ta bort" @onclick="() => OpenDeleteModal(user)">
-                                            <span class="bi bi-trash-fill me-1"></span> Ta bort
-                                        </button>
+                                        @if (user.Id == currentUserId)
+                                        {
+                                            <span class="badge bg-secondary px-3 py-2" title="Du kan inte ta bort dig själv">Du</span>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger" title="Ta bort" @onclick="() => OpenDeleteModal(user)">
+                                                <span class="bi bi-trash-fill me-1"></span> Ta bort
+                                            </button>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -150,12 +158,22 @@
                                 </div>
                             </div>
                             <div class="d-flex justify-content-end gap-2">
-                                <button class="btn btn-sm btn-outline-primary px-3" title="Redigera" @onclick="() => OpenEditModal(user)">
-                                    <span class="bi bi-pencil-fill me-1"></span> Redigera
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger px-3" title="Ta bort" @onclick="() => OpenDeleteModal(user)">
-                                    <span class="bi bi-trash-fill me-1"></span> Ta bort
-                                </button>
+                                @if (user.Id == currentUserId)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary px-3" title="Redigera" @onclick="() => OpenEditModal(user)">
+                                        <span class="bi bi-pencil-fill me-1"></span> Redigera
+                                    </button>
+                                    <span class="badge bg-secondary px-3 py-2" title="Du kan inte ta bort dig själv">Du</span>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-primary px-3" title="Redigera" @onclick="() => OpenEditModal(user)">
+                                        <span class="bi bi-pencil-fill me-1"></span> Redigera
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger px-3" title="Ta bort" @onclick="() => OpenDeleteModal(user)">
+                                        <span class="bi bi-trash-fill me-1"></span> Ta bort
+                                    </button>
+                                }
                             </div>
                         </div>
                     }
@@ -341,6 +359,7 @@
     private List<UserDto>? users;
     private List<CourseListDto>? courses;
     private bool isLoading = true;
+    private string? currentUserId;
 
     // Alert state
     private string? alertMessage;
@@ -383,7 +402,7 @@
             if (users == null) return Enumerable.Empty<UserDto>();
 
             var filtered = users.AsEnumerable();
-
+            // filter acording to course name will be added ass will comming soon !
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 var query = searchQuery.Trim().ToLower();
@@ -403,6 +422,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Get current user ID to prevent self-deletion
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
         await LoadDataAsync();
     }
 
@@ -411,13 +435,8 @@
         isLoading = true;
         try
         {
-            var usersTask = ApiService.GetAsync<List<UserDto>>("api/users");
-            var coursesTask = ApiService.GetAsync<List<CourseListDto>>("api/Course/list");
-
-            await Task.WhenAll(usersTask, coursesTask);
-
-            users = await usersTask ?? new List<UserDto>();
-            courses = await coursesTask ?? new List<CourseListDto>();
+            users = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new List<UserDto>();
+            courses = await ApiService.GetAsync<List<CourseListDto>>("api/Course/list") ?? new List<CourseListDto>();
         }
         catch (Exception)
         {
@@ -627,7 +646,7 @@
         deleteError = null;
         try
         {
-            var success = await ApiService.DeleteAsync($"api/users/{userToDelete.Id}");
+            var (success, error) = await ApiService.DeleteAsync($"api/users/{userToDelete.Id}");
 
             if (success)
             {
@@ -637,7 +656,7 @@
             }
             else
             {
-                deleteError = "Kunde inte ta bort användaren. Det kan vara den sista läraren i systemet.";
+                deleteError = error ?? "Kunde inte ta bort användaren. Försök igen.";
             }
         }
         catch (Exception)

@@ -10,4 +10,6 @@ public interface IModuleService
     Task<ModuleDto> CreateModuleAsync(ModuleCreateDto moduleDto);
     Task<ModuleDto> UpdateModuleAsync(ModuleUpdateDto moduleDto);
     Task<bool> DeleteModuleAsync(int id);
+
+	Task<IEnumerable<ActivityDto>> GetActivitiesAsync(int moduleId);
 }
