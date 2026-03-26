@@ -12,6 +12,7 @@ namespace LMS.Shared.DTOs.Course
         public string Description { get; set; } = "";
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public string DateRange => $"{StartDate:yyyy-MM-dd} – {EndDate:yyyy-MM-dd}";
 
         public List<ModuleDto> Modules { get; set; } = new();
         public int Progress { get; set; }
