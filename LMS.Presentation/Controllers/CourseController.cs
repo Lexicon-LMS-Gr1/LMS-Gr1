@@ -57,6 +57,17 @@ public class CourseController : ControllerBase
     }
 
 
+    [HttpPut("{id}")]
+    public async Task<ActionResult<CourseDto>> UpdateCourse(int id, [FromBody] CourseUpdateDto dto)
+    {
+        if (id != dto.Id)
+            return BadRequest("Course ID mismatch");
+
+        var updated = await _serviceManager.CourseService.UpdateCourseAsync(dto);
+
+        return Ok(updated);
+    }
+
 	[HttpGet("{courseId}/modules")]
 	public async Task<IActionResult> GetModulesByCourseId(int courseId)
 	{
