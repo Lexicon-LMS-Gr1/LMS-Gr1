@@ -60,8 +60,30 @@ public class ModuleService : IModuleService
 		throw new NotImplementedException();
 	}
 
-	public Task<ModuleDto> UpdateModuleAsync(ModuleUpdateDto moduleDto)
-	{
-		throw new NotImplementedException();
-	}
+    public async Task<ModuleDto?> UpdateModuleAsync(ModuleUpdateDto dto)
+    {
+        var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(dto.Id, trackChanges: true);
+
+        if (module == null)
+            return null;
+
+        module.Name = dto.Name;
+        module.Description = dto.Description;
+        module.StartDate = dto.StartDate;
+        module.EndDate = dto.EndDate;
+        module.CourseId = dto.CourseId;
+
+        await _unitOfWork.CompleteAsync();
+
+        return new ModuleDto
+        {
+            Id = module.Id,
+            Name = module.Name,
+            Description = module.Description,
+            StartDate = module.StartDate,
+            EndDate = module.EndDate,
+            CourseId = module.CourseId
+        };
+    }
+
 }
