@@ -12,7 +12,6 @@ namespace LMS.Shared.DTOs.Course
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string DateRange => $"{StartDate:yyyy-MM-dd} – {EndDate:yyyy-MM-dd}";
-        public int CourseId { get; set; }
 
         public List<ActivityDto> Activities { get; set; } = new();
     }

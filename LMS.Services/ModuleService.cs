@@ -81,8 +81,7 @@ public class ModuleService : IModuleService
             Name = module.Name,
             Description = module.Description,
             StartDate = module.StartDate,
-            EndDate = module.EndDate,
-            CourseId = module.CourseId
+            EndDate = module.EndDate
         };
     }
 
