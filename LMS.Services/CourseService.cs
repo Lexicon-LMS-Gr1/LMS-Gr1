@@ -200,7 +200,7 @@ namespace LMS.Services
                 throw new Exception("Course not found");
 
             if (courseUpdateDto.EndDate < courseUpdateDto.StartDate)
-                throw new Exception("End date must be after start date");
+                throw new Exception("End date must not be earlier than start date");
 
             course.Name = courseUpdateDto.Name;
             course.Description = courseUpdateDto.Description;
