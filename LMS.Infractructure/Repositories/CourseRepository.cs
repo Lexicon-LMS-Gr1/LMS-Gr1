@@ -23,7 +23,15 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
     }
 
 
-    public async Task<IEnumerable<Course>> GetAllAsync(bool trackChanges = false)
+	public async Task<Course?> GetCourseAsync(int courseId)
+	{
+		return await FindByCondition(c => c.Id == courseId)
+			.Include(c => c.Modules)               
+				.ThenInclude(m => m.Activities)     
+			.FirstOrDefaultAsync();
+	}
+
+	public async Task<IEnumerable<Course>> GetAllAsync(bool trackChanges = false)
 	{
 		return await FindAll(trackChanges).ToListAsync();
 	}
