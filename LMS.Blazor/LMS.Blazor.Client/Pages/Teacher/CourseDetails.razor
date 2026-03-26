@@ -1,6 +1,8 @@
 ﻿@page "/teacher/courses/{courseId:int}"
 @using LMS.Shared.DTOs.Course
 @inject IApiService ApiService
+@inject NavigationManager Navigation
+@attribute [Authorize(Roles = "Teacher")]
 
 <h3>CourseDetails</h3>
 
@@ -18,6 +20,7 @@ else
         @foreach (var module in course.Modules)
         {
             <li>@module.Name</li>
+            <button @onclick="() => GoToActivities(module.Id)">Aktiviteter</button>
         }
     </ul>
 }
@@ -30,5 +33,9 @@ else
     protected override async Task OnInitializedAsync()
     {
         course = await ApiService.GetAsync<CourseDto>($"api/course/{courseId}");
+    }
+    private void GoToActivities(int moduleId)
+    {
+        Navigation.NavigateTo($"/teacher/modules/{moduleId}/activities");
     }
 }

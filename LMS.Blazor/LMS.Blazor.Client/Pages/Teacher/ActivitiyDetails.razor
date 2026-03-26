@@ -1,0 +1,28 @@
+﻿@page "/teacher/modules/{moduleId:int}/activities"
+@using LMS.Shared.DTOs.Course
+@inject IApiService ApiService
+@attribute [Authorize(Roles = "Teacher")]
+
+<h3>Aktiviteter</h3>
+
+@if (activities == null) {
+    <p>Laddar...</p>
+} else {
+    <ul>
+        @foreach (var activity in activities) {
+            <li>@activity.Name</li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter]
+    public int moduleId { get; set; }
+
+    private List<ActivityDto>? activities;
+
+    protected override async Task OnInitializedAsync()
+    {
+        activities = await ApiService.GetAsync<List<ActivityDto>>($"api/module/{moduleId}/activities");
+    }
+}

@@ -1,4 +1,5 @@
 ﻿using LMS.Shared.DTOs.Course;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using System;
@@ -18,6 +19,7 @@ public class ModuleController : ControllerBase
 		_serviceManager = serviceManager;
 	}
 
+	[Authorize(Roles = "Teacher")]
 	[HttpGet("{moduleId}/activities")]
 	public async Task<ActionResult<IEnumerable<ActivityDto>>> GetActivities(int moduleId)
 	{
