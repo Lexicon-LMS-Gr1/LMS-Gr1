@@ -1,4 +1,5 @@
 ﻿@namespace LMS.Blazor.Client.Components.CourseOverview
+@using LMS.Shared.DTOs.Course
 
 <div class="container py-4">
     <div class="mb-4">
@@ -39,5 +40,6 @@
 
 @code {
     [Parameter, EditorRequired]
-    public CourseOverviewViewModel Course { get; set; } = new();
+    public CourseDto Course { get; set; } = new();
+
 }

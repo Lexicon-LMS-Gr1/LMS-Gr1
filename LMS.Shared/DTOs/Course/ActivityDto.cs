@@ -13,6 +13,7 @@ namespace LMS.Shared.DTOs.Course
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public DateTime? DueDate { get; set; }
+        public string DateRange => $"{StartTime:yyyy-MM-dd HH:mm} – {EndTime:HH:mm}";
 
         public string ActivityTypeName { get; set; } = "";
     }
