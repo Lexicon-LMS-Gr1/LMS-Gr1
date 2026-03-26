@@ -1,6 +1,7 @@
 ﻿@page "/teacher/courses"
 @using LMS.Shared.DTOs.Course
 @inject IApiService ApiService
+@inject NavigationManager Navigation
 @attribute [Authorize(Roles = "Teacher")]
 
 <PageTitle>Kurshantering — Lexicon LMS</PageTitle>
@@ -97,6 +98,10 @@
                                     </td>
 
                                     <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-outline-primary me-2"
+                                                @onclick="() => GoToDetails(course.Id)">
+                                            <span class="bi bi-pencil-fill me-1"></span> Detaljer
+                                        </button>
                                         <button class="btn btn-sm btn-outline-primary me-2"
                                                 @onclick="() => OpenEditModal(course)">
                                             <span class="bi bi-pencil-fill me-1"></span> Redigera
@@ -250,6 +255,11 @@
         {
             isSaving = false;
         }
+    }
+
+    private void GoToDetails(int courseId)
+    {
+        Navigation.NavigateTo($"/teacher/courses/{courseId}");
     }
 
 
