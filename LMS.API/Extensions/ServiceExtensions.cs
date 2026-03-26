@@ -1,11 +1,13 @@
-﻿using LMS.Infractructure.Data;
+using Domain.Contracts.Repositories;
 using LMS.Infractructure.Repositories;
+using LMS.Infrastructure.Data;
 using LMS.Presentation;
 using LMS.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
+using Service.Contracts;
 using Swashbuckle.AspNetCore.Filters;
 
 
@@ -81,7 +83,12 @@ public static class ServiceExtensions
 
     public static void AddRepositories(this IServiceCollection services)
     {
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
+		services.AddScoped<ICourseRepository, CourseRepository>();
+		services.AddScoped(provider =>
+	   new Lazy<ICourseRepository>(() => provider.GetRequiredService<ICourseRepository>()));
+
+		services.AddScoped<IUnitOfWork, UnitOfWork>();
+
     }
 
     public static void AddServiceLayer(this IServiceCollection services)
@@ -90,5 +97,16 @@ public static class ServiceExtensions
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped(provider => new Lazy<IAuthService>(() => provider.GetRequiredService<IAuthService>()));
+
+
+		services.AddScoped<ICourseService, CourseService>();
+		services.AddScoped(provider => new Lazy<ICourseService>(() => provider.GetRequiredService<ICourseService>()));
+
+		services.AddScoped<IUserManagementService, UserManagementService>();
+		services.AddScoped(provider => new Lazy<IUserManagementService>(() => provider.GetRequiredService<IUserManagementService>()));
+
+        services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped(provider => new Lazy<IDashboardService>(() => provider.GetRequiredService<IDashboardService>()));
     }
 }
+

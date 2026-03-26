@@ -1,0 +1,28 @@
+﻿@page "/student/course"
+@using LMS.Shared.DTOs.Course
+@using LMS.Blazor.Client.Components.CourseOverview
+@attribute [Authorize(Roles = "Student")]
+
+@inject IApiService Api
+
+@if (courseVm is null)
+{
+    <div class="alert alert-info">Laddar kurs...</div>
+}
+else
+{
+    <CourseOverviewView Course="courseVm" />
+}
+
+@code {
+    private CourseOverviewViewModel? courseVm;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var dto = await Api.GetAsync<CourseDto>("api/user/me/course");
+
+        if (dto != null)
+            courseVm = dto.ToViewModel();
+    }
+}

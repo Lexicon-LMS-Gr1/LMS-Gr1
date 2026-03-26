@@ -1,0 +1,41 @@
+﻿.module-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: background-color 0.15s ease;
+}
+
+.module-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+    .module-header:hover {
+        background-color: #f3f6ff;
+    }
+
+    .module-header.expanded {
+        background-color: #eef3ff;
+        border-right: 5px solid #2563eb;
+    }
+
+.module-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.module-date {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.module-body {
+    background-color: #f9fafb;
+    padding: 1rem 1.25rem;
+}

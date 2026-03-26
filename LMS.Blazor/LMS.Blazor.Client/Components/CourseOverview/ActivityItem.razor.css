@@ -1,0 +1,37 @@
+﻿.list-group-item {
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem 1.25rem;
+    transition: background-color 0.15s ease;
+}
+
+    .list-group-item:hover {
+        background-color: #f3f6ff;
+    }
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
+}
+
+.activity-title {
+    font-weight: 600;
+    color: #374151;
+}
+
+.activity-type {
+    background-color: #eef3ff;
+    color: #2563eb;
+    font-weight: 500;
+}
+
+.activity-date {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.activity-status {
+    font-weight: 500;
+}

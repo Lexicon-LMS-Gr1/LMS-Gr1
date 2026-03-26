@@ -2,5 +2,6 @@
 
 public interface IUnitOfWork
 {
-    Task CompleteAsync();
+	ICourseRepository CourseRepository { get; }
+	Task CompleteAsync();
 }

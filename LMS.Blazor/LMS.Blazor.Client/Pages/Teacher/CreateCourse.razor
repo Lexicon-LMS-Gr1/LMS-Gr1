@@ -1,0 +1,110 @@
+﻿@page "/teacher/courses/create"
+@attribute [Authorize(Roles = "Teacher")]
+
+@using System.ComponentModel.DataAnnotations
+@using LMS.Blazor.Client.Services
+@using LMS.Shared.DTOs.Course
+@inject IApiService ApiService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Skapa kurs</PageTitle>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h1 class="h3 fw-bold mb-3">Skapa ny kurs</h1>
+                    <p class="text-muted mb-4">Fyll i uppgifterna för att skapa en ny utbildning.</p>
+
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+
+                    <EditForm Model="model" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label">Kursnamn</label>
+                            <InputText class="form-control" @bind-Value="model.Name" />
+                            <ValidationMessage For="() => model.Name" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Beskrivning</label>
+                            <InputTextArea class="form-control" @bind-Value="model.Description" />
+                            <ValidationMessage For="() => model.Description" class="text-danger" />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Startdatum</label>
+                                <InputDate class="form-control" @bind-Value="model.StartDate" />
+                                <ValidationMessage For="() => model.StartDate" class="text-danger" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Slutdatum</label>
+                                <InputDate class="form-control" @bind-Value="model.EndDate" />
+                                <ValidationMessage For="() => model.EndDate" class="text-danger" />
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                                @(isSubmitting ? "Sparar..." : "Skapa kurs")
+                            </button>
+
+                            <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">
+                                Avbryt
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CourseCreateDto model = new()
+    {
+        StartDate = DateTime.Today,
+        EndDate = DateTime.Today.AddMonths(6)
+    };
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    private async Task HandleValidSubmit()
+    {
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+			var result = await ApiService.PostAsync<CourseCreateDto, CourseDto>("api/course", model);
+
+            if (result is null)
+            {
+                errorMessage = "Kursen kunde inte skapas.";
+                return;
+            }
+
+            NavigationManager.NavigateTo("/teacher/courses");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fel vid skapande av kurs: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/teacher/courses");
+    }
+}

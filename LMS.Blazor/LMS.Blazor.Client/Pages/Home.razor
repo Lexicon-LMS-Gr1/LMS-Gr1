@@ -1,7 +1,24 @@
-﻿@page "/"
+@page "/"
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Home</PageTitle>
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = auth.User;
 
-<h1>Hello, world!</h1>
+        if (user.Identity == null || !user.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/Account/Login", true);
+            return;
+        }
 
-Welcome to your new app.
+        if (user.IsInRole("Student"))
+            Navigation.NavigateTo("/dashboard", true);
+        else if (user.IsInRole("Teacher"))
+            Navigation.NavigateTo("/teacher/courses", true);
+        else
+            Navigation.NavigateTo("/Account/Login", true);
+    }
+}

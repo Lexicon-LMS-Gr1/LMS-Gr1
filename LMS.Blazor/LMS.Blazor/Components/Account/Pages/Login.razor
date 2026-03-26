@@ -1,4 +1,5 @@
-﻿@page "/Account/Login"
+@page "/Account/Login"
+@layout LMS.Blazor.Client.Layout.LoginLayout
 
 @using System.ComponentModel.DataAnnotations
 @using LMS.Blazor.Services
@@ -17,63 +18,70 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject ITokenStorage TokenStorage
 
-<PageTitle>Log in</PageTitle>
 
-<h1>Log in</h1>
-<div class="row">
-    <div class="col-lg-6">
-        <section>
-            <StatusMessage Message="@errorMessage" />
-            <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login">
-                <DataAnnotationsValidator />
-                <h2>Use a local account to log in.</h2>
-                <hr />
-                <ValidationSummary class="text-danger" role="alert" />
-                <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username webauthn" aria-required="true" placeholder="name@example.com" />
-                    <label for="Input.Email" class="form-label">Email</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger" />
-                </div>
-                <div class="form-floating mb-3">
-                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label for="Input.Password" class="form-label">Password</label>
-                    <ValidationMessage For="() => Input.Password" class="text-danger" />
-                </div>
-                <div class="checkbox mb-3">
-                    <label class="form-label">
-                        <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
-                        Remember me
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <hr />
-                <div class="d-flex flex-column">
-                    <span class="text-secondary mx-auto mt-2">OR</span>
-                    <PasskeySubmit Operation="PasskeyOperation.Request" Name="Input.Passkey" EmailName="Input.Email" class="btn btn-link mx-auto">Log in with a passkey</PasskeySubmit>
-                </div>
-                <hr />
-                <div>
-                    <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div>
-            </EditForm>
-        </section>
-    </div>
-    <div class="col-lg-4 col-lg-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
+<PageTitle>Logga in</PageTitle>
+
+<div class="login-container">
+    <div class="login-card shadow-lg">
+
+        <div class="login-icon">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 width="48" height="48" viewBox="0 0 24 24"
+                 fill="none" stroke="#2563eb" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 7v14"></path>
+                <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path>
+            </svg>
+        </div>
+
+        <h1 class="login-title">Lexicon LMS</h1>
+
+        <StatusMessage Message="@errorMessage" />
+
+        <EditForm EditContext="editContext"
+                  OnValidSubmit="LoginUser"
+                  FormName="login">
+
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger mb-3" />
+
+            <div class="form-group">
+                <label for="Input.Email">E‑postadress</label>
+                <InputText id="Input.Email"
+                           class="form-control"
+                           autocomplete="username"
+                           @bind-Value="Input.Email" />
+                <ValidationMessage For="() => Input.Email" class="text-danger" />
+            </div>
+
+            <div class="form-group">
+                <label for="Input.Password">Lösenord</label>
+                <InputText id="Input.Password"
+                           type="password"
+                           class="form-control"
+                           autocomplete="current-password"
+                           @bind-Value="Input.Password" />
+                <ValidationMessage For="() => Input.Password" class="text-danger" />
+            </div>
+
+            <div class="remember-row">
+                <InputCheckbox @bind-Value="Input.RememberMe" class="form-check-input" />
+                <label class="remember-label">Kom ihåg mig</label>
+            </div>
+
+            <button type="submit" class="login-button">
+                Logga in
+            </button>
+
+            @*<div class="login-footer">
+                <a href="Account/ForgotPassword" class="forgot-link">Glömt lösenord?</a>
+                <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))"
+                   class="forgot-link">Registrera ny användare</a>
+                <a href="Account/ResendEmailConfirmation" class="forgot-link">Skicka bekräftelsemail igen</a>
+            </div>*@
+
+        </EditForm>
+
     </div>
 </div>
 
@@ -105,20 +113,20 @@
 
     public async Task LoginUser()
     {
-        if (!string.IsNullOrEmpty(Input.Passkey?.Error))
-        {
-            errorMessage = $"Error: {Input.Passkey.Error}";
-            return;
-        }
+        // if (!string.IsNullOrEmpty(Input.Passkey?.Error))
+        // {
+        //     errorMessage = $"Error: {Input.Passkey.Error}";
+        //     return;
+        // }
 
         SignInResult result;
-        if (!string.IsNullOrEmpty(Input.Passkey?.CredentialJson))
-        {
-            // When performing passkey sign-in, don't perform form validation.
-            result = await SignInManager.PasskeySignInAsync(Input.Passkey.CredentialJson);
-        }
-        else
-        {
+        // if (!string.IsNullOrEmpty(Input.Passkey?.CredentialJson))
+        // {
+        //     // When performing passkey sign-in, don't perform form validation.
+        //     result = await SignInManager.PasskeySignInAsync(Input.Passkey.CredentialJson);
+        // }
+        // else
+        // {
             // If doing a password sign-in, validate the form.
             if (!editContext.Validate())
             {
@@ -128,7 +136,7 @@
             // This doesn't count login failures towards account lockout
             // To enable password failures to trigger account lockout, set lockoutOnFailure: true
             result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
-        }
+        // }
 
         if (result.Succeeded)
         {
@@ -259,6 +267,6 @@
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
 
-        public PasskeyInputModel? Passkey { get; set; }
+        // public PasskeyInputModel? Passkey { get; set; }
     }
 }

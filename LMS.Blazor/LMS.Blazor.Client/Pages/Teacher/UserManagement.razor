@@ -1,0 +1,680 @@
+@page "/teacher/users"
+@inject IApiService ApiService
+@using LMS.Shared.DTOs.User
+@using LMS.Shared.DTOs.Course
+@attribute [Authorize(Roles = "Teacher")]
+
+<PageTitle>Användarhantering — Lexicon LMS</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
+        <div>
+            <h2 class="mb-1">
+                <span class="bi bi-people-fill me-2"></span>Användarhantering
+            </h2>
+            <p class="text-muted mb-0">Hantera lärare och elever i systemet</p>
+        </div>
+        <button class="btn btn-primary d-flex align-items-center gap-2" @onclick="OpenCreateModal">
+            <span class="bi bi-person-plus-fill"></span>
+            Skapa ny användare
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(alertMessage))
+    {
+        <div class="alert alert-@alertType alert-dismissible fade show" role="alert">
+            <span class="bi bi-@(alertType == "success" ? "check-circle" : "exclamation-triangle") me-2"></span>
+            @alertMessage
+            <button type="button" class="btn-close" @onclick="DismissAlert"></button>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Laddar...</span>
+            </div>
+        </div>
+    }
+    else if (users == null || !users.Any())
+    {
+        <div class="alert alert-info">
+            <span class="bi bi-info-circle me-2"></span>
+            Inga användare hittades.
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <div class="row align-items-center g-2">
+                    <div class="col-12 col-md">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><span class="bi bi-search"></span></span>
+                            <input type="text"
+                                   class="form-control"
+                                   placeholder="Sök användare..."
+                                   @bind="searchQuery"
+                                   @bind:event="oninput" />
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select" @bind="roleFilter">
+                            <option value="">Alla roller</option>
+                            <option value="Teacher">Lärare</option>
+                            <option value="Student">Elev</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+
+                @* ===== DESKTOP TABLE (hidden on mobile) ===== *@
+                <div class="d-none d-md-block table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Namn</th>
+                                <th>E-post</th>
+                                <th>Roll</th>
+                                <th>Kurs</th>
+                                <th class="text-end pe-4">Åtgärder</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in FilteredUsers)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center"
+                                                 style="width: 36px; height: 36px; font-size: 0.85rem; font-weight: 600;">
+                                                @user.FirstName[0]@user.LastName[0]
+                                            </div>
+                                            <div class="fw-semibold">@user.FullName</div>
+                                        </div>
+                                    </td>
+                                    <td>@user.Email</td>
+                                    <td>
+                                        <span class="badge rounded-pill @(user.Role == "Teacher" ? "bg-warning text-dark" : "bg-info text-dark")">
+                                            @(user.Role == "Teacher" ? "Lärare" : "Elev")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(user.CourseName))
+                                        {
+                                            <span class="text-muted">@user.CourseName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">—</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-outline-primary me-2" title="Redigera" @onclick="() => OpenEditModal(user)">
+                                            <span class="bi bi-pencil-fill me-1"></span> Redigera
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" title="Ta bort" @onclick="() => OpenDeleteModal(user)">
+                                            <span class="bi bi-trash-fill me-1"></span> Ta bort
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @* ===== MOBILE CARD VIEW (hidden on desktop) ===== *@
+                <div class="d-md-none">
+                    @foreach (var user in FilteredUsers)
+                    {
+                        <div class="border-bottom p-3">
+                            <div class="d-flex align-items-start gap-3 mb-3">
+                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width: 42px; height: 42px; font-size: 0.9rem; font-weight: 600;">
+                                    @user.FirstName[0]@user.LastName[0]
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-semibold text-truncate">@user.FullName</div>
+                                    <div class="text-muted small text-truncate">@user.Email</div>
+                                    <div class="d-flex align-items-center flex-wrap gap-2 mt-1">
+                                        <span class="badge rounded-pill @(user.Role == "Teacher" ? "bg-warning text-dark" : "bg-info text-dark")" style="font-size: 0.7rem;">
+                                            @(user.Role == "Teacher" ? "Lärare" : "Elev")
+                                        </span>
+                                        @if (!string.IsNullOrEmpty(user.CourseName))
+                                        {
+                                            <span class="text-muted small">@user.CourseName</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end gap-2">
+                                <button class="btn btn-sm btn-outline-primary px-3" title="Redigera" @onclick="() => OpenEditModal(user)">
+                                    <span class="bi bi-pencil-fill me-1"></span> Redigera
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger px-3" title="Ta bort" @onclick="() => OpenDeleteModal(user)">
+                                    <span class="bi bi-trash-fill me-1"></span> Ta bort
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="card-footer bg-white text-muted py-2 px-4">
+                Visar @FilteredUsers.Count() av @users.Count() användare
+            </div>
+        </div>
+    }
+</div>
+
+@* ==================== CREATE / EDIT MODAL ==================== *@
+@if (showFormModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="bi bi-@(isEditMode ? "pencil-square" : "person-plus") me-2"></span>
+                        @(isEditMode ? "Redigera användare" : "Skapa ny användare")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseFormModal"></button>
+                </div>
+                <EditForm Model="formModel" OnValidSubmit="HandleFormSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body">
+                        @if (!string.IsNullOrEmpty(formError))
+                        {
+                            <div class="alert alert-danger py-2">
+                                <span class="bi bi-exclamation-triangle me-1"></span> @formError
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Förnamn <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="formModel.FirstName" placeholder="Ange förnamn" />
+                            <ValidationMessage For="() => formModel.FirstName" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Efternamn <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="formModel.LastName" placeholder="Ange efternamn" />
+                            <ValidationMessage For="() => formModel.LastName" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">E-post <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="formModel.Email" placeholder="namn@exempel.se" />
+                            <ValidationMessage For="() => formModel.Email" class="text-danger small" />
+                        </div>
+
+                        @if (!isEditMode)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Lösenord <span class="text-danger">*</span></label>
+                                <InputText type="password" class="form-control" @bind-Value="createPassword" placeholder="Minst 6 tecken" />
+                                @if (!string.IsNullOrEmpty(passwordError))
+                                {
+                                    <div class="text-danger small mt-1">@passwordError</div>
+                                }
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Roll <span class="text-danger">*</span></label>
+                                <select class="form-select" @bind="selectedRole">
+                                    <option value="">— Välj roll —</option>
+                                    <option value="Teacher">Lärare</option>
+                                    <option value="Student">Elev</option>
+                                </select>
+                                @if (!string.IsNullOrEmpty(roleError))
+                                {
+                                    <div class="text-danger small mt-1">@roleError</div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Roll</label>
+                                <input type="text" class="form-control" value="@(editUserRole == "Teacher" ? "Lärare" : "Elev")" disabled />
+                                <div class="form-text">Roll kan inte ändras efter skapande.</div>
+                            </div>
+                        }
+
+                        @* ---- Course dropdown (visible only for Students) ---- *@
+                        @if (ShowCourseDropdown)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Kurs <span class="text-danger">*</span></label>
+                                @if (courses == null || !courses.Any())
+                                {
+                                    <div class="alert alert-warning py-2 mb-0">
+                                        <span class="bi bi-exclamation-triangle me-1"></span>
+                                        Inga kurser tillgängliga. Skapa en kurs först.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <select class="form-select" @bind="selectedCourseId">
+                                        <option value="0">— Välj kurs —</option>
+                                        @foreach (var course in courses)
+                                        {
+                                            <option value="@course.Id">@course.Name (@course.StartDate.ToString("yyyy-MM-dd") – @course.EndDate.ToString("yyyy-MM-dd"))</option>
+                                        }
+                                    </select>
+                                    @if (!string.IsNullOrEmpty(courseError))
+                                    {
+                                        <div class="text-danger small mt-1">@courseError</div>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseFormModal" disabled="@isSaving">Avbryt</button>
+                        <button type="submit" class="btn btn-primary d-flex align-items-center gap-2" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                            }
+                            <span>@(isEditMode ? "Spara ändringar" : "Skapa användare")</span>
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@* ==================== DELETE CONFIRMATION MODAL ==================== *@
+@if (showDeleteModal && userToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="bi bi-exclamation-triangle text-danger me-2"></span>
+                        Bekräfta borttagning
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseDeleteModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(deleteError))
+                    {
+                        <div class="alert alert-danger py-2">
+                            <span class="bi bi-shield-exclamation me-1"></span> @deleteError
+                        </div>
+                    }
+                    <p>Är du säker på att du vill ta bort följande användare?</p>
+                    <div class="card bg-light">
+                        <div class="card-body py-2">
+                            <strong>@userToDelete.FullName</strong><br />
+                            <span class="text-muted">@userToDelete.Email</span> ·
+                            <span class="badge rounded-pill @(userToDelete.Role == "Teacher" ? "bg-warning text-dark" : "bg-info text-dark")">
+                                @(userToDelete.Role == "Teacher" ? "Lärare" : "Elev")
+                            </span>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning mt-3 mb-0 py-2">
+                        <span class="bi bi-exclamation-triangle me-1"></span>
+                        Denna åtgärd kan inte ångras.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDeleteModal" disabled="@isDeleting">Avbryt</button>
+                    <button type="button" class="btn btn-danger d-flex align-items-center gap-2" @onclick="ConfirmDelete" disabled="@isDeleting">
+                        @if (isDeleting)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                        }
+                        <span>Ta bort</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<UserDto>? users;
+    private List<CourseListDto>? courses;
+    private bool isLoading = true;
+
+    // Alert state
+    private string? alertMessage;
+    private string alertType = "success";
+
+    // Search & filter
+    private string searchQuery = string.Empty;
+    private string roleFilter = string.Empty;
+
+    // Form modal state
+    private bool showFormModal;
+    private bool isEditMode;
+    private bool isSaving;
+    private string? formError;
+    private FormModel formModel = new();
+    private string createPassword = string.Empty;
+    private string selectedRole = string.Empty;
+    private string? passwordError;
+    private string? roleError;
+    private string? courseError;
+    private int selectedCourseId;
+    private string editUserId = string.Empty;
+    private string editUserRole = string.Empty;
+
+    // Delete modal state
+    private bool showDeleteModal;
+    private bool isDeleting;
+    private string? deleteError;
+    private UserDto? userToDelete;
+
+    // Show course dropdown when creating a Student or editing a Student
+    private bool ShowCourseDropdown =>
+        (!isEditMode && selectedRole == "Student") ||
+        (isEditMode && editUserRole == "Student");
+
+    private IEnumerable<UserDto> FilteredUsers
+    {
+        get
+        {
+            if (users == null) return Enumerable.Empty<UserDto>();
+
+            var filtered = users.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var query = searchQuery.Trim().ToLower();
+                filtered = filtered.Where(u =>
+                    u.FullName.ToLower().Contains(query) ||
+                    u.Email.ToLower().Contains(query));
+            }
+
+            if (!string.IsNullOrWhiteSpace(roleFilter))
+            {
+                filtered = filtered.Where(u => u.Role == roleFilter);
+            }
+
+            return filtered.OrderBy(u => u.Role).ThenBy(u => u.LastName);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var usersTask = ApiService.GetAsync<List<UserDto>>("api/users");
+            var coursesTask = ApiService.GetAsync<List<CourseListDto>>("api/Course/list");
+
+            await Task.WhenAll(usersTask, coursesTask);
+
+            users = await usersTask ?? new List<UserDto>();
+            courses = await coursesTask ?? new List<CourseListDto>();
+        }
+        catch (Exception)
+        {
+            ShowAlert("Kunde inte hämta data. Försök igen.", "danger");
+            users = new List<UserDto>();
+            courses = new List<CourseListDto>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // ---- CREATE ----
+    private void OpenCreateModal()
+    {
+        isEditMode = false;
+        formModel = new FormModel();
+        createPassword = string.Empty;
+        selectedRole = string.Empty;
+        selectedCourseId = 0;
+        formError = null;
+        passwordError = null;
+        roleError = null;
+        courseError = null;
+        showFormModal = true;
+    }
+
+    // ---- EDIT ----
+    private void OpenEditModal(UserDto user)
+    {
+        isEditMode = true;
+        editUserId = user.Id;
+        editUserRole = user.Role;
+        selectedCourseId = user.CourseId ?? 0;
+        formModel = new FormModel
+        {
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email
+        };
+        formError = null;
+        courseError = null;
+        showFormModal = true;
+    }
+
+    private void CloseFormModal()
+    {
+        showFormModal = false;
+        formError = null;
+    }
+
+    private async Task HandleFormSubmit()
+    {
+        formError = null;
+        passwordError = null;
+        roleError = null;
+        courseError = null;
+
+        if (isEditMode)
+        {
+            await HandleUpdate();
+        }
+        else
+        {
+            await HandleCreate();
+        }
+    }
+
+    private async Task HandleCreate()
+    {
+        // Validate password
+        if (string.IsNullOrWhiteSpace(createPassword) || createPassword.Length < 6)
+        {
+            passwordError = "Lösenord måste vara minst 6 tecken.";
+            return;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(createPassword, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$"))
+        {
+            passwordError = "Lösenord måste innehålla minst en stor bokstav, en liten bokstav och en siffra.";
+            return;
+        }
+
+        // Validate role selection
+        if (string.IsNullOrWhiteSpace(selectedRole))
+        {
+            roleError = "Du måste välja en roll.";
+            return;
+        }
+
+        // Validate course for students
+        if (selectedRole == "Student" && selectedCourseId <= 0)
+        {
+            courseError = "Du måste välja en kurs för eleven.";
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            var createDto = new UserCreateDto
+            {
+                FirstName = formModel.FirstName,
+                LastName = formModel.LastName,
+                Email = formModel.Email,
+                Password = createPassword,
+                Role = selectedRole,
+                CourseId = selectedRole == "Student" ? selectedCourseId : null
+            };
+
+            var result = await ApiService.PostAsync<UserCreateDto, UserDto>("api/users", createDto);
+
+            if (result != null)
+            {
+                ShowAlert($"Användare \"{result.FullName}\" skapades.", "success");
+                CloseFormModal();
+                await LoadDataAsync();
+            }
+            else
+            {
+                formError = "Kunde inte skapa användaren. Kontrollera uppgifterna och försök igen.";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            formError = $"Fel vid skapande: {ex.Message}";
+        }
+        catch (Exception)
+        {
+            formError = "Ett oväntat fel uppstod. Försök igen.";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task HandleUpdate()
+    {
+        // Validate course for students
+        if (editUserRole == "Student" && selectedCourseId <= 0)
+        {
+            courseError = "Du måste välja en kurs för eleven.";
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            var updateDto = new UserUpdateDto
+            {
+                Id = editUserId,
+                FirstName = formModel.FirstName,
+                LastName = formModel.LastName,
+                Email = formModel.Email,
+                CourseId = editUserRole == "Student" ? selectedCourseId : null
+            };
+
+            var result = await ApiService.PutAsync<UserUpdateDto, UserDto>($"api/users/{editUserId}", updateDto);
+
+            if (result != null)
+            {
+                ShowAlert($"Användare \"{result.FullName}\" uppdaterades.", "success");
+                CloseFormModal();
+                await LoadDataAsync();
+            }
+            else
+            {
+                formError = "Kunde inte uppdatera användaren. Försök igen.";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            formError = $"Fel vid uppdatering: {ex.Message}";
+        }
+        catch (Exception)
+        {
+            formError = "Ett oväntat fel uppstod. Försök igen.";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    // ---- DELETE ----
+    private void OpenDeleteModal(UserDto user)
+    {
+        userToDelete = user;
+        deleteError = null;
+        showDeleteModal = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+        userToDelete = null;
+        deleteError = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (userToDelete == null) return;
+
+        isDeleting = true;
+        deleteError = null;
+        try
+        {
+            var success = await ApiService.DeleteAsync($"api/users/{userToDelete.Id}");
+
+            if (success)
+            {
+                ShowAlert($"Användare \"{userToDelete.FullName}\" togs bort.", "success");
+                CloseDeleteModal();
+                await LoadDataAsync();
+            }
+            else
+            {
+                deleteError = "Kunde inte ta bort användaren. Det kan vara den sista läraren i systemet.";
+            }
+        }
+        catch (Exception)
+        {
+            deleteError = "Ett fel uppstod vid borttagning. Försök igen.";
+        }
+        finally
+        {
+            isDeleting = false;
+        }
+    }
+
+    // ---- HELPERS ----
+    private void ShowAlert(string message, string type)
+    {
+        alertMessage = message;
+        alertType = type;
+    }
+
+    private void DismissAlert()
+    {
+        alertMessage = null;
+    }
+
+    // ---- FORM MODEL ----
+    public class FormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Förnamn krävs.")]
+        [System.ComponentModel.DataAnnotations.StringLength(50, MinimumLength = 2, ErrorMessage = "Förnamn måste vara mellan 2 och 50 tecken.")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Efternamn krävs.")]
+        [System.ComponentModel.DataAnnotations.StringLength(50, MinimumLength = 2, ErrorMessage = "Efternamn måste vara mellan 2 och 50 tecken.")]
+        public string LastName { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "E-post krävs.")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Ogiltig e-postadress.")]
+        public string Email { get; set; } = string.Empty;
+    }
+}
