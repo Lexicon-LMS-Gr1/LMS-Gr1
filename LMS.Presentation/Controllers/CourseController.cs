@@ -48,4 +48,12 @@ public class CourseController : ControllerBase
         var createdCourse = await _serviceManager.CourseService.CreateCourseAsync(courseCreateDto);
         return Ok(createdCourse);
     }
+
+
+	[HttpGet("{courseId}/modules")]
+	public async Task<IActionResult> GetModulesByCourseId(int courseId)
+	{
+		var modules = await _serviceManager.CourseService.GetModulesByCourseIdAsync(courseId);
+		return Ok(modules);
+	}
 }

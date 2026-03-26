@@ -11,4 +11,7 @@ public interface ICourseRepository: IRepositoryBase<Course>
     Task<Course?> GetCourseForUserAsync(string userId);
     Task<IEnumerable<ApplicationUser>> GetParticipantsForUserCourseAsync(string userId);
 	  Task<IEnumerable<Course>> GetCoursesForListAsync(bool trackChanges = false);
+
+
+	Task<Course?> GetCourseAsync(int courseId);
 }
