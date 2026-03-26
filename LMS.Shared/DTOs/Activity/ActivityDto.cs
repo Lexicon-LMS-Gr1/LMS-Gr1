@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace LMS.Shared.DTOs.Course
+namespace LMS.Shared.DTOs.Activity
 {
     public class ActivityDto
     {

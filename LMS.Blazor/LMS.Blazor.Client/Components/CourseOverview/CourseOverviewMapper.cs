@@ -1,4 +1,6 @@
-﻿using LMS.Shared.DTOs.Course;
+﻿using LMS.Shared.DTOs.Activity;
+using LMS.Shared.DTOs.Course;
+using LMS.Shared.DTOs.Module;
 
 namespace LMS.Blazor.Client.Components.CourseOverview;
 

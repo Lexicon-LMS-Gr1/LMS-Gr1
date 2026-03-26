@@ -1,10 +1,12 @@
 ﻿using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using LMS.Infrastructure.Data;
+using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Module;
 using Microsoft.EntityFrameworkCore;
 using Service.Contracts;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace LMS.Services
 {
@@ -139,6 +141,10 @@ namespace LMS.Services
 
             // TODO: Om man senare tillåter att lägga till moduler i en befintlig kurs:
             // måste man även kontrollera överlapp mot moduler i databasen (inte inom en request).
+
+            // TODO: Bryt ut mappningslogik till en separat mappningsklass som har ansvar för att ta en Course till en CourseDto.
+            // Tex courseMapper.GetCourseDto(course); lite likt automapper men här mappar ni själva och har full kontroll på vad som sker!
+            // Återanvändningsbar och om logiken förändras har ni en single source of truth.
 
             // Skapa ny Course-entitet 
             var course = new Course

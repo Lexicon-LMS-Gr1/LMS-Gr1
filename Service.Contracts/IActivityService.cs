@@ -1,5 +1,4 @@
 using LMS.Shared.DTOs.Activity;
-using LMS.Shared.DTOs.Course;
 
 namespace Service.Contracts;
 

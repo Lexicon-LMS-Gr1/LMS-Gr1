@@ -1,8 +1,9 @@
-﻿using System;
+﻿using LMS.Shared.DTOs.Activity;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LMS.Shared.DTOs.Course
+namespace LMS.Shared.DTOs.Module
 {
     public class ModuleDto
     {
