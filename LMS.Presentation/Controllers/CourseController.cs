@@ -40,7 +40,14 @@ public class CourseController : ControllerBase
 		return Ok(courses);
 	}
 
-
+	[HttpGet("{courseId}")]
+	public async Task<ActionResult<CourseDto>> GetCourseById(int courseId)
+	{
+		var course = await _serviceManager.CourseService.GetCourseByIdAsync(courseId);
+		if (course == null) 
+			return NotFound();
+		return Ok(course);
+	}
 
 	[HttpPost]    
 	public async Task<ActionResult<CourseDto>> CreateCourse([FromBody] CourseCreateDto courseCreateDto)
