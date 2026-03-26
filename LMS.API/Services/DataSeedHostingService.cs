@@ -276,20 +276,80 @@ public class DataSeedHostingService : IHostedService
 		}
 	}
 
+	private string[] GetModuleNamesForCourse(string courseName)
+	{
+		if (courseName.Contains(".NET")) {
+			return new[]
+			{
+			"C# grunder",
+			"Objektorientering",
+			"Entity Framework",
+			"Web API",
+			"Autentisering i .NET"
+		};
+		}
+
+		if (courseName.Contains("JavaScript")) {
+			return new[]
+			{
+			"JavaScript grunder",
+			"DOM och events",
+			"Async och fetch",
+			"Frontend-komponenter",
+			"API-integration"
+		};
+		}
+
+		if (courseName.Contains("Databasdesign")) {
+			return new[]
+			{
+			"Databasgrunder",
+			"ER-modellering",
+			"Normalisering",
+			"SQL queries",
+			"Databasprojekt"
+		};
+		}
+
+		if (courseName.Contains("Cloud")) {
+			return new[]
+			{
+			"Cloud-introduktion",
+			"Azure grunder",
+			"Storage och databaser",
+			"Deploy och hosting",
+			"Säkerhet i molnet"
+		};
+		}
+
+		if (courseName.Contains("AI")) {
+			return new[]
+			{
+			"AI-introduktion",
+			"Maskininlärning",
+			"Dataträning",
+			"Modellutvärdering",
+			"AI-projekt"
+		};
+		}
+
+		return new[]
+		{
+		"Introduktion",
+		"Grundmoment 1",
+		"Grundmoment 2",
+		"Grundmoment 3",
+		"Avslutning"
+	};
+	}
+
 	private async Task<List<Module>> CreateModulesAsync(ApplicationDbContext context, Course course, int count)
 	{
-		var moduleNames = new[]
-		{
-			"Introduktion",
-			"Databasdesign",
-			"Webbutveckling",
-			"API-utveckling",
-			"Autentisering"
-		};
-
 		var modules = new List<Module>();
 		var totalDays = (course.EndDate - course.StartDate).Days;
 		var daysPerModule = totalDays / count;
+
+		var moduleNames = GetModuleNamesForCourse(course.Name);
 
 		for (int i = 0; i < count; i++) {
 			var startDate = course.StartDate.AddDays(i * daysPerModule);
@@ -299,7 +359,7 @@ public class DataSeedHostingService : IHostedService
 
 			modules.Add(new Module {
 				Name = moduleNames[i],
-				Description = "Grundläggande moment",
+				Description = $"Moment i kursen {course.Name}",
 				StartDate = startDate,
 				EndDate = endDate,
 				CourseId = course.Id,
