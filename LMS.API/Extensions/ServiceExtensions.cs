@@ -1,6 +1,7 @@
 using Domain.Contracts.Repositories;
 using LMS.Infractructure.Repositories;
 using LMS.Infrastructure.Data;
+using LMS.Infrastructure.Queries.Dashboard;
 using LMS.Presentation;
 using LMS.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -104,8 +105,8 @@ public static class ServiceExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped(provider => new Lazy<IAuthService>(() => provider.GetRequiredService<IAuthService>()));
 
-
-		services.AddScoped<ICourseService, CourseService>();
+        services.AddScoped<IDashboardQuery, DashboardQuery>();
+        services.AddScoped<ICourseService, CourseService>();
 		services.AddScoped(provider => new Lazy<ICourseService>(() => provider.GetRequiredService<ICourseService>()));
 
         services.AddScoped<IModuleService, ModuleService>();
