@@ -1,5 +1,4 @@
 ﻿using LMS.Shared.DTOs.StudentDashboard;
-using Domain.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using LMS.Infrastructure.Data;
 
@@ -18,6 +17,7 @@ public class DashboardQuery : IDashboardQuery
         string userId, DateTime startOfWeek, DateTime endOfWeek)
     {
         var courseId = await _context.Users
+            .AsNoTracking()
             .Where(u => u.Id == userId)
             .Select(u => u.CourseId)
             .FirstOrDefaultAsync();
@@ -25,13 +25,13 @@ public class DashboardQuery : IDashboardQuery
         if (courseId is null)
             return new List<WeeklyActivityDto>();
 
-        var activities = await _context.Activities
+        return await _context.Activities
+            .AsNoTracking()
             .Where(a =>
                 a.Module.CourseId == courseId &&
                 a.StartTime >= startOfWeek &&
                 a.StartTime <= endOfWeek)
-            .Include(a => a.Module)
-            .Include(a => a.ActivityType)
+            .OrderBy(a => a.StartTime)
             .Select(a => new WeeklyActivityDto
             {
                 ModuleName = a.Module.Name,
@@ -41,7 +41,5 @@ public class DashboardQuery : IDashboardQuery
                 End = a.EndTime
             })
             .ToListAsync();
-
-        return activities;
     }
 }
