@@ -1,4 +1,5 @@
 ﻿using Domain.Contracts.Repositories;
+using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Module;
 using Service.Contracts;

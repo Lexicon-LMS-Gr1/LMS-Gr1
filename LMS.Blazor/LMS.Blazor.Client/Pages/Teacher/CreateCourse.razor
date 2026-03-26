@@ -25,7 +25,7 @@
                     @* Formuläret är bundet till CourseCreateDto - som även innehåller en lista med Modules. *@
                     <EditForm Model="model" OnValidSubmit="HandleValidSubmit">
                         <DataAnnotationsValidator />
-                        
+                        <ValidationSummary />
                         <h2 class="h5 mb-3">Kurs</h2>
 
                         <div class="mb-3">
@@ -53,8 +53,6 @@
                                 <ValidationMessage For="() => model.EndDate" />
                             </div>
                         </div>
-
-                         @* TODO: Lägg custom attribute för StartDate <= EndDate på CourseCreateDto:n  *@
 
                         <hr class="my-4" />
 
@@ -88,7 +86,7 @@
 
                                     <div class="mb-3">
                                         <label class="form-label">Modulnamn</label>
-                                        <InputText class="form-control" @bind-Value="module.Name" />
+                                        <InputText class="form-control" @bind-Value="module.Name" />                                        
                                     </div>
                                      @* TODO: ValidationMessage för module.Name. Testa att det visas snyggt. *@
 
@@ -204,11 +202,10 @@
     {
         NavigationManager.NavigateTo("/teacher/courses");
         // TODO:Om formuläret blir större kan man fråga användaren 'är du säker?' om osparade ändringar finns.
-        NavigationManager.NavigateTo("/teacher/courses");
     }
 
-    // TODO: Om sidan växer, bryt ut modulredigeringen till egen komponent, tex CreateCourseModuleEditor.razor
-    //  underhålla.
+    // TODO: Bryt ut modulredigeringen till egen komponent, tex CreateCourseModuleEditor.razor
+    // För att kunna visa klientvalideringmeddelanden 
 
     // TODO: Klientvalidering för 
     // kursens startdatum <= slutdatum

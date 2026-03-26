@@ -1,5 +1,6 @@
 using LMS.Blazor.Client.Services;
 using LMS.Shared.DTOs.Course;
+using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.StudentDashboard;
 
 namespace LMS.Blazor.Services;

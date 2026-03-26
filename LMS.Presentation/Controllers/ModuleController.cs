@@ -1,4 +1,5 @@
-﻿using LMS.Shared.DTOs.Course;
+﻿using LMS.Shared.DTOs.Activity;
+using LMS.Shared.DTOs.Course;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using System;
