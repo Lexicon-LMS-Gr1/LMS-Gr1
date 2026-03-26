@@ -149,4 +149,25 @@ namespace LMS.Services
 
     }
 	
+		public async Task<IEnumerable<ModuleDto>> GetModulesByCourseIdAsync(int courseId)
+        {
+            var course = await _unitOfWork.CourseRepository.GetCourseAsync(courseId);
+
+			if (course == null)
+				return Enumerable.Empty<ModuleDto>();
+
+			var moduleDtos = course.Modules.Select(m => new ModuleDto {
+				Id = m.Id,
+				Name = m.Name,
+				Description = m.Description,
+				StartDate = m.StartDate,
+				EndDate = m.EndDate,
+                // not included in the use case
+				Activities = new List<ActivityDto>()
+			}).ToList();
+
+			return moduleDtos;
+
+		}
+	}
 }
