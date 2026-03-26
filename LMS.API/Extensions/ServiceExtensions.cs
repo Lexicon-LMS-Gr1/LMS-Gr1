@@ -86,10 +86,16 @@ public static class ServiceExtensions
 		services.AddScoped<ICourseRepository, CourseRepository>();
 		services.AddScoped(provider =>
 	   new Lazy<ICourseRepository>(() => provider.GetRequiredService<ICourseRepository>()));
+        
+		services.AddScoped<IModuleRepository, ModuleRepository>();
+		services.AddScoped(provider =>
+	   new Lazy<IModuleRepository>(() => provider.GetRequiredService<IModuleRepository>()));
 
 		services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-    }
+
+
+	}
 
     public static void AddServiceLayer(this IServiceCollection services)
     {
@@ -101,6 +107,9 @@ public static class ServiceExtensions
 
 		services.AddScoped<ICourseService, CourseService>();
 		services.AddScoped(provider => new Lazy<ICourseService>(() => provider.GetRequiredService<ICourseService>()));
+
+        services.AddScoped<IModuleService, ModuleService>();
+        services.AddScoped(provider => new Lazy<IModuleService>(() => provider.GetRequiredService<IModuleService>()));
 
 		services.AddScoped<IUserManagementService, UserManagementService>();
 		services.AddScoped(provider => new Lazy<IUserManagementService>(() => provider.GetRequiredService<IUserManagementService>()));
