@@ -1,4 +1,5 @@
 ﻿@namespace LMS.Blazor.Client.Components.CourseOverview
+@using LMS.Shared.DTOs.Course
 
 <div class="list-group-item list-group-item">
     <div class="d-flex justify-content-between align-items-start @GetHeaderSpacingClass()"
@@ -16,20 +17,9 @@
                 @Module.DateRange
             </p>
         </div>
-
-        <div class="text-end" style="min-width: 180px;">
-            <p class="fw-semibold mb-2">@Module.Progress% avklarat</p>
-
-            <div class="progress" role="progressbar"
-                 aria-valuenow="@Module.Progress"
-                 aria-valuemin="0"
-                 aria-valuemax="100">
-                <div class="progress-bar" style="width: @(Module.Progress)%;"></div>
-            </div>
-        </div>
     </div>
 
-    @if (Module.IsExpanded)
+    @if (isExpanded)
     {
         <p class="text-muted mb-3">@Module.Description</p>
 
@@ -52,13 +42,14 @@
 </div>
 
 @code {
-    [Parameter, EditorRequired]
-    public ModuleViewModel Module { get; set; } = new();
+    [Parameter] public ModuleDto Module { get; set; }
 
-    private string GetHeaderSpacingClass() => Module.IsExpanded ? "mb-3" : "mb-0";
+    private bool isExpanded;
+
+    private string GetHeaderSpacingClass() => isExpanded ? "mb-3" : "mb-0";
 
     private void ToggleExpandModule()
     {
-        Module.IsExpanded = !Module.IsExpanded;
+        isExpanded = !isExpanded;
     }
 }
