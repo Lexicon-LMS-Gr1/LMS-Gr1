@@ -18,7 +18,6 @@ namespace Service.Contracts
 		Task<CourseDto?> GetCourseByIdAsync(int courseId);
 
 
-        Task<IEnumerable<ModuleDto>> GetModulesByCourseIdAsync(int courseId);
 	}
 
 }
