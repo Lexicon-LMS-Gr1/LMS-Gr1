@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using LMS.Shared.DTOs.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -101,6 +102,11 @@ public class UserManagementController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(string id)
     {
+        // Prevent a teacher from deleting their own account
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (currentUserId != null && currentUserId == id)
+            return BadRequest("Du kan inte ta bort ditt eget konto.");
+
         try
         {
             var result = await _serviceManager.UserManagementService.DeleteUserAsync(id);
