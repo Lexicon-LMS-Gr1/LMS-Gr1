@@ -1,53 +1,41 @@
 ﻿using LMS.Shared.DTOs.StudentDashboard;
+using LMS.Infrastructure.Queries.Dashboard;
 using Service.Contracts;
 
 namespace LMS.Services
 {
     public class DashboardService : IDashboardService
     {
-        private readonly ICourseService _courseService;
+        private readonly IDashboardQuery _dashboardQuery;
 
-        public DashboardService(ICourseService courseService)
+        public DashboardService(IDashboardQuery dashboardQuery)
         {
-            _courseService = courseService;
+            _dashboardQuery = dashboardQuery;
         }
 
         public async Task<StudentDashboardDto> GetDashboardAsync(string userId)
         {
-            var course = await _courseService.GetCourseForUserAsync(userId);
+            var (startOfWeek, endOfWeek) = GetCurrentWeek();
 
-            if (course == null)
-                return new StudentDashboardDto();
-
-            var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + 1);
-            var endOfWeek = startOfWeek.AddDays(7);
-
-            var weekly = new List<WeeklyActivityDto>();
-
-            foreach (var module in course.Modules)
-            {
-                foreach (var activity in module.Activities)
-                {
-                    if (activity.StartTime >= startOfWeek && activity.StartTime <= endOfWeek)
-                    {
-                        weekly.Add(new WeeklyActivityDto
-                        {
-                            ModuleName = module.Name,
-                            ActivityType = activity.ActivityTypeName,
-                            Title = activity.Name,
-                            Start = activity.StartTime,
-                            End = activity.EndTime
-                        });
-                    }
-                }
-            }
-
-            weekly = weekly.OrderBy(a => a.Start).ToList();
+            var weekly = await _dashboardQuery.GetWeeklyActivitiesAsync(
+                userId, startOfWeek, endOfWeek);
 
             return new StudentDashboardDto
             {
                 WeeklyActivities = weekly
             };
+        }
+
+        private static (DateTime start, DateTime end) GetCurrentWeek()
+        {
+            var today = DateTime.Today;
+            var diff = (int)today.DayOfWeek - (int)DayOfWeek.Monday;
+            if (diff < 0) diff += 7;
+
+            var start = today.AddDays(-diff);
+            var end = start.AddDays(7);
+
+            return (start, end);
         }
     }
 }
