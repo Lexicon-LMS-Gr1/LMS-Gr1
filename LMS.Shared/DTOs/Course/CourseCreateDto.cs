@@ -1,3 +1,4 @@
+using LMS.Shared.DTOs.Module;
 using System.ComponentModel.DataAnnotations;
 
 namespace LMS.Shared.DTOs.Course;
@@ -19,7 +20,5 @@ public class CourseCreateDto
     [Required(ErrorMessage = "Slutdatum måste anges.")]
     [DataType(DataType.Date)]
     public DateTime EndDate { get; set; }
-
-    // Custom validation will be done in service layer:
-    // - EndDate must be after StartDate
+    public List<ModuleCreateDto> Modules { get; set; } = new();
 }
