@@ -515,7 +515,7 @@
             return;
         }
 
-        if (!System.Text.RegularExpressions.Regex.IsMatch(createPassword, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$"))
+        if (!System.Text.RegularExpressions.Regex.IsMatch(createPassword, @"^(?=.*[a-zåäö])(?=.*[A-ZÅÄÖ])(?=.*\d).{6,}$"))
         {
             passwordError = "Lösenord måste innehålla minst en stor bokstav, en liten bokstav och en siffra.";
             return;
