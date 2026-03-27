@@ -1,5 +1,7 @@
 ﻿@page "/teacher/courses/{courseId:int}"
 @using LMS.Shared.DTOs.Course
+@using LMS.Shared.DTOs.Activity
+@using LMS.Shared.DTOs.Module
 @inject IApiService ApiService
 
 @if (course == null) {

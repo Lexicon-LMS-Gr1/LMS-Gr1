@@ -56,12 +56,22 @@ public class ModuleService : IModuleService
 		throw new NotImplementedException();
 	}
 
-	public Task<IEnumerable<ModuleDto>> GetModulesByCourseIdAsync(int courseId)
-	{
-		throw new NotImplementedException();
-	}
+    public async Task<IEnumerable<ModuleDto>> GetModulesByCourseIdAsync(int courseId)
+    {
+        var modules = await _unitOfWork.ModuleRepository.GetByCourseIdAsync(courseId);
 
-	public Task<ModuleDto> UpdateModuleAsync(ModuleUpdateDto moduleDto)
+        return modules.Select(m => new ModuleDto
+        {
+            Id = m.Id,
+            Name = m.Name,
+            Description = m.Description,
+            StartDate = m.StartDate,
+            EndDate = m.EndDate,
+            Activities = new List<ActivityDto>()
+        });
+    }
+
+    public Task<ModuleDto> UpdateModuleAsync(ModuleUpdateDto moduleDto)
 	{
 		throw new NotImplementedException();
 	}

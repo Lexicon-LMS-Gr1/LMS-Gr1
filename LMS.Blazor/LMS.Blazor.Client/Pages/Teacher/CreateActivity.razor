@@ -1,5 +1,297 @@
-﻿<h3>CreateActivity</h3>
+﻿@page "/teacher/activities/create"
+@attribute [Authorize(Roles = "Teacher")]
+
+@using LMS.Blazor.Client.Services
+@using LMS.Shared.DTOs.Activity
+@using LMS.Shared.DTOs.Course
+@using LMS.Shared.DTOs.Module
+@inject IApiService ApiService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Skapa aktivitet</PageTitle>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h1 class="h3 fw-bold mb-3">Skapa ny aktivitet</h1>
+                    <p class="text-muted mb-4">Välj först kurs, sedan modul, och fyll därefter i aktivitetens uppgifter.</p>
+
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+
+                    <EditForm Model="model" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label">Kurs</label>
+                            <select class="form-select" @onchange="OnCourseChanged">
+                                <option value="0" selected="@(selectedCourseId == 0)">Välj kurs</option>
+                                @foreach (var course in courses)
+                                {
+                                    <option value="@course.Id" selected="@(course.Id == selectedCourseId)">
+                                        @course.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        @if (selectedCourseId > 0)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Modul</label>
+                                <select class="form-select" @onchange="OnModuleChanged">
+                                    <option value="0" selected="@(selectedModuleId == 0)">Välj modul</option>
+                                    @foreach (var module in modules)
+                                    {
+                                        <option value="@module.Id" selected="@(module.Id == selectedModuleId)">
+                                            (@module.StartDate.ToString("yyyy-MM-dd") – @module.EndDate.ToString("yyyy-MM-dd")) - @module.Name
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+
+                            @if (modules.Count == 0)
+                            {
+                                <div class="alert alert-info">
+                                    Den valda kursen har inga moduler ännu.
+                                </div>
+                            }
+                        }
+
+                        
+                        @if (selectedModuleId > 0)
+                        {
+                            <hr class="my-4" />
+                            @if (existingActivities.Count > 0)
+                            {
+                                <div class="mt-3">
+                                    <div class="alert alert-secondary">
+                                        <strong>
+                                            @selectedModule?.Name
+                                            (@selectedModule?.StartDate.ToString("yyyy-MM-dd") – @selectedModule?.EndDate.ToString("yyyy-MM-dd"))
+                                        </strong>
+                                        innehåller följande aktiviteter:
+                                        <ul class="mb-0 mt-2">
+                                            @foreach (var activity in existingActivities.OrderBy(a => a.StartTime))
+                                            {
+                                                <li>
+                                                    @activity.StartTime.ToString("yyyy-MM-dd HH:mm")
+                                                    –
+                                                    @activity.EndTime.ToString("yyyy-MM-dd HH:mm")
+                                                    (@activity.ActivityTypeName: @activity.Name)
+                                                </li>
+                                            }
+                                        </ul>
+										<br />Skapa ny aktivitet nedan, observera att datum mellan aktiviteter ej kan överlappa.
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info mt-3">
+                                    Den valda modulen har inga aktiviteter ännu.
+                                </div>
+                            }                            
+
+                            <div class="mb-3">
+                                <label class="form-label">Aktivitetsnamn</label>
+                                <InputText class="form-control" @bind-Value="model.Name" />
+                                <ValidationMessage For="() => model.Name" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Beskrivning</label>
+                                <InputTextArea class="form-control" @bind-Value="model.Description" />
+                                <ValidationMessage For="() => model.Description" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Aktivitetstyp</label>
+                                <InputSelect class="form-select" @bind-Value="model.ActivityTypeId">
+                                    <option value="0">Välj aktivitetstyp</option>
+                                    @foreach (var activityType in activityTypes)
+                                    {
+                                        <option value="@activityType.Id">@activityType.Name</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="() => model.ActivityTypeId" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Startdatum</label>
+                                    <InputDate class="form-control" @bind-Value="model.StartTime" />
+                                    <ValidationMessage For="() => model.StartTime" />
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Slutdatum</label>
+                                    <InputDate class="form-control" @bind-Value="model.EndTime" />
+                                    <ValidationMessage For="() => model.EndTime" />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Förfallodatum</label>
+                                <InputDate class="form-control" @bind-Value="model.DueDate" />
+                            </div>
+
+                            <div class="alert alert-info">
+                                Aktiviteten sparas alltid med tiderna 08:00–17:00.
+                            </div>
+
+                            <div class="d-flex gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                                    @(isSubmitting ? "Sparar..." : "Skapa aktivitet")
+                                </button>
+
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">
+                                    Avbryt
+                                </button>
+                            </div>
+                        }
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
+    private ActivityCreateDto model = new()
+    {
+        StartTime = DateTime.Today,
+        EndTime = DateTime.Today,
+        DueDate = DateTime.Today
+    };
 
+    private List<CourseDto> courses = new();
+    private List<ModuleDto> modules = new();
+    private List<ActivityTypeDto> activityTypes = new();
+    private List<ActivityDto> existingActivities = new();
+
+    private int selectedCourseId;
+    private int selectedModuleId;
+    private ModuleDto? selectedModule;
+
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            courses = await ApiService.GetAsync<List<CourseDto>>("api/course") ?? new();
+            activityTypes = await ApiService.GetAsync<List<ActivityTypeDto>>("api/activitytypes") ?? new();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fel vid laddning av data: {ex.Message}";
+        }
+    }
+
+    private async Task OnCourseChanged(ChangeEventArgs e)
+    {
+        errorMessage = null;
+
+        modules.Clear();
+        existingActivities.Clear();
+        selectedModule = null;
+        selectedModuleId = 0;
+
+        if (int.TryParse(e.Value?.ToString(), out var courseId) && courseId > 0)
+        {
+            selectedCourseId = courseId;
+
+            try
+            {
+                modules = await ApiService.GetAsync<List<ModuleDto>>($"api/courses/{courseId}/modules") ?? new();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Fel vid laddning av moduler: {ex.Message}";
+            }
+        }
+        else
+        {
+            selectedCourseId = 0;
+        }
+    }
+
+    private async Task OnModuleChanged(ChangeEventArgs e)
+    {
+        errorMessage = null;
+        existingActivities.Clear();
+        selectedModule = null;
+
+        if (int.TryParse(e.Value?.ToString(), out var moduleId) && moduleId > 0)
+        {
+            selectedModuleId = moduleId;
+            selectedModule = modules.FirstOrDefault(m => m.Id == moduleId);
+
+            try
+            {
+                existingActivities = await ApiService.GetAsync<List<ActivityDto>>($"api/modules/{moduleId}/activities") ?? new();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Fel vid laddning av aktiviteter: {ex.Message}";
+            }
+        }
+        else
+        {
+            selectedModuleId = 0;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        errorMessage = null;
+
+        if (selectedCourseId <= 0)
+        {
+            errorMessage = "Du måste välja en kurs.";
+            return;
+        }
+
+        if (selectedModuleId <= 0)
+        {
+            errorMessage = "Du måste välja en modul.";
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            var result = await ApiService.PostAsync<ActivityCreateDto, ActivityDto>(
+                $"api/modules/{selectedModuleId}/activities",
+                model);
+
+            if (result is null)
+            {
+                errorMessage = "Aktiviteten kunde inte skapas.";
+                return;
+            }
+
+            NavigationManager.NavigateTo("/teacher/dashboard");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fel vid skapande av aktivitet: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/teacher/dashboard");
+    }
 }
