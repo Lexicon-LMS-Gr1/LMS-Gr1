@@ -4,6 +4,7 @@ using LMS.Infractructure.Repositories;
 using LMS.Infrastructure.Data;
 using LMS.Infrastructure.Queries.Dashboard;
 using LMS.Infrastructure.Queries.TeacherDashboard;
+using LMS.Infrastructure.Repositories;
 using LMS.Presentation;
 using LMS.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -88,13 +89,17 @@ public static class ServiceExtensions
     {
 		services.AddScoped<ICourseRepository, CourseRepository>();
 		services.AddScoped(provider =>
-	   new Lazy<ICourseRepository>(() => provider.GetRequiredService<ICourseRepository>()));
+	     new Lazy<ICourseRepository>(() => provider.GetRequiredService<ICourseRepository>()));
         
 		services.AddScoped<IModuleRepository, ModuleRepository>();
 		services.AddScoped(provider =>
-	   new Lazy<IModuleRepository>(() => provider.GetRequiredService<IModuleRepository>()));
+	     new Lazy<IModuleRepository>(() => provider.GetRequiredService<IModuleRepository>()));
 
-		services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IActivityRepository, ActivityRepository>();
+        services.AddScoped(provider =>
+          new Lazy<IActivityRepository>(() => provider.GetRequiredService<IActivityRepository>()));
+
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 
 
@@ -123,6 +128,8 @@ public static class ServiceExtensions
 
         services.AddScoped<ITeacherDashboardService, TeacherDashboardService>();
         services.AddScoped(provider => new Lazy<ITeacherDashboardService>(() => provider.GetRequiredService<ITeacherDashboardService>()));
+        services.AddScoped<IActivityService, ActivityService>();
+        services.AddScoped(provider => new Lazy<IActivityService>(() => provider.GetRequiredService<IActivityService>()));
     }
 }
 
