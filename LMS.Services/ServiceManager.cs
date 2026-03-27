@@ -29,7 +29,6 @@ public class ServiceManager : IServiceManager
         Lazy<IUserManagementService> userManagementService,
         Lazy<IDashboardService> dashboardService,
         Lazy<ITeacherDashboardService> teacherDashboardService,
-        Lazy<IModuleService> moduleService
         Lazy<IModuleService> moduleService,
         Lazy<IActivityService> activityService
 		)

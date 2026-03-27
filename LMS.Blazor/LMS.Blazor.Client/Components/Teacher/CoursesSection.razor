@@ -1,0 +1,62 @@
+﻿@using LMS.Shared.DTOs.Course
+
+@code {
+    [Parameter] public IEnumerable<CourseListDto> Courses { get; set; } = new List<CourseListDto>();
+    [Parameter] public EventCallback<int> OnView { get; set; }
+    [Parameter] public EventCallback<CourseListDto> OnEdit { get; set; }
+}
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0">
+            <i class="bi bi-journal-bookmark-fill text-primary me-2"></i>
+            Alla kurser
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Namn</th>
+                    <th>Beskrivning</th>
+                    <th>Period</th>
+                    <th>Elever</th>
+                    <th>Moduler</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Åtgärder</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var c in Courses)
+                {
+                    <tr>
+                        <td class="ps-4 fw-semibold">@c.Name</td>
+                        <td class="text-muted">@c.Description</td>
+                        <td>@c.StartDate.ToString("yyyy-MM-dd") – @c.EndDate.ToString("yyyy-MM-dd")</td>
+                        <td><span class="badge bg-info text-dark">@c.StudentCount</span></td>
+                        <td><span class="badge bg-secondary">@c.ModuleCount</span></td>
+                        <td>
+                            <span class="badge @(c.Status == "Active" ? "bg-success" : "bg-warning text-dark")">
+                                @c.Status
+                            </span>
+                        </td>
+
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-outline-secondary me-2"
+                                    @onclick="() => OnView.InvokeAsync(c.Id)">
+                                <span class="bi bi-eye me-1"></span> Detaljer
+                            </button>
+
+                            <button class="btn btn-sm btn-outline-primary"
+                                    @onclick="() => OnEdit.InvokeAsync(c)">
+                                <span class="bi bi-pencil-fill me-1"></span> Redigera
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

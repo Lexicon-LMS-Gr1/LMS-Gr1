@@ -1,5 +1,7 @@
 ﻿@page "/teacher/dashboard"
+@using LMS.Blazor.Client.Components.Teacher
 @using LMS.Shared.DTOs.TeacherDashboard
+@using LMS.Shared.DTOs.Course
 @inject IApiService ApiService
 @inject NavigationManager Nav
 
@@ -12,13 +14,36 @@
             <h5 class="mb-0">Snabbåtgärder</h5>
 
             <button class="btn btn-primary d-flex align-items-center"
-                    @onclick='() => Nav.NavigateTo("/teacher/courses/create")'>
+                    @onclick='() => activeTab = "create"'>
                 <i class="bi bi-plus-circle me-2"></i>
                 Skapa ny kurs
             </button>
         </div>
     </div>
 
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == "overview" ? "active text-primary fw-semibold" : "text-dark")"
+                    @onclick='() => activeTab = "overview"'>
+                Översikt
+            </button>
+        </li>
+
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == "courses" ? "active text-primary fw-semibold" : "text-dark")"
+                    @onclick='() => activeTab = "courses"'>
+                Kurser
+            </button>
+        </li>
+
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == "create" ? "active text-primary fw-semibold" : "text-dark")"
+                    @onclick='() => activeTab = "create"'>
+                Skapa ny kurs
+            </button>
+        </li>
+    </ul>
 
     @if (dashboard == null)
     {
@@ -26,107 +51,114 @@
     }
     else
     {
+        @* ---------------- ÖVERSIKT ---------------- *@
+        @if (activeTab == "overview")
+        {
+            <OverviewSection Dashboard="dashboard" />
+        }
 
-        <div class="row g-4">
+        @* ---------------- KURSER ---------------- *@
+        else if (activeTab == "courses")
+        {
+            <CoursesSection Courses="allCourses"
+                            OnView="GoToCourse"
+                            OnEdit="OpenEditModal" />
+        }
 
-            <!-- Aktiva kurser -->
-            <div class="col-lg-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Aktiva kurser</h5>
-                        <a class="small text-decoration-none" href="/teacher/courses">Visa alla</a>
-                    </div>
-
-                    <div class="list-group list-group-flush">
-                        @foreach (var c in dashboard.ActiveCourses)
-                        {
-                            <div class="list-group-item">
-                                <div class="fw-semibold">@c.Name</div>
-                                <div class="text-muted small">
-                                    <i class="bi bi-people"></i> @c.StudentCount elever •
-                                    <i class="bi bi-layers"></i> @c.ModuleCount moduler
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Senaste aktivitet -->
-            <div class="col-lg-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white">
-                        <h5 class="card-title mb-0">Senaste aktivitet</h5>
-                    </div>
-
-                    <div class="list-group list-group-flush">
-                        @foreach (var a in dashboard.RecentActivities)
-                        {
-                            <div class="list-group-item">
-                                <span class="badge @GetBadgeColor(a.Type) me-2">@a.Type</span>
-
-                                <div>@a.Description</div>
-
-                                <div class="text-muted small mt-1">
-                                    <i class="bi bi-clock"></i> @a.Timestamp
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kommande aktiviteter -->
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="card-title mb-0">Kommande aktiviteter</h5>
-                    </div>
-
-                    <div class="list-group list-group-flush">
-                        @foreach (var u in dashboard.UpcomingActivities)
-                        {
-                            <div class="list-group-item d-flex justify-content-between">
-                                <div>
-                                    <span class="badge @GetBadgeColor(u.Type) me-2">@u.Type</span>
-
-                                    <strong>@u.Name</strong><br />
-                                    <span class="text-muted small">@u.CourseName</span>
-                                </div>
-
-                                <div class="text-muted small">
-                                    <i class="bi bi-calendar-event"></i> @u.StartTime
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-        </div>
+        @* ---------------- SKAPA NY KURS ---------------- *@
+        else if (activeTab == "create")
+        {
+            <button class="btn btn-primary"
+                    @onclick='() => Nav.NavigateTo("/teacher/courses/create")'>
+                Öppna formulär
+            </button>
+        }
     }
 </div>
 
+<!-- EDIT MODAL COMPONENT -->
+<EditCourseModal Show="showEditModal"
+                 FormModel="formModel"
+                 OnSave="SaveChanges"
+                 OnClose="CloseEditModal"
+                 IsSaving="isSaving"
+                 ErrorMessage="@errorMessage" />
+
 @code {
     private TeacherDashboardDto? dashboard;
+    private List<CourseListDto> allCourses = new();
+    private string activeTab = "overview";
+
+    private bool showEditModal;
+    private bool isSaving;
+    private string? errorMessage;
+
+    private CourseUpdateDto formModel = new();
 
     protected override async Task OnInitializedAsync()
     {
         dashboard = await ApiService.GetAsync<TeacherDashboardDto>(
             "api/user/me/teacher-dashboard"
         );
+
+        allCourses = await ApiService.GetAsync<List<CourseListDto>>(
+            "api/course/list"
+        );
     }
 
-    private string GetBadgeColor(string type)
+    private void GoToCourse(int id)
     {
-        return type switch
+        Nav.NavigateTo($"/teacher/courses/{id}");
+    }
+
+    private void OpenEditModal(CourseListDto course)
+    {
+        formModel = new CourseUpdateDto
         {
-            "Lecture" => "bg-primary",
-            "Workshop" => "bg-warning text-dark",
-            "Assignment" => "bg-info text-dark",
-            "Exam" => "bg-danger",
-            "Seminar" => "bg-success",
-            _ => "bg-secondary"
+            Id = course.Id,
+            Name = course.Name,
+            Description = course.Description,
+            StartDate = course.StartDate,
+            EndDate = course.EndDate
         };
+
+        errorMessage = null;
+        showEditModal = true;
+    }
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        errorMessage = null;
+    }
+
+    private async Task SaveChanges()
+    {
+        isSaving = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await ApiService.PutAsync<CourseUpdateDto, CourseDto>(
+                $"api/course/{formModel.Id}", formModel);
+
+            if (result != null)
+            {
+                showEditModal = false;
+                allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+            }
+            else
+            {
+                errorMessage = "Kunde inte uppdatera kursen.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
     }
 }
