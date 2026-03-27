@@ -1,4 +1,5 @@
 ﻿using LMS.Shared.DTOs.StudentDashboard;
+using LMS.Shared.DTOs.TeacherDashboard;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
@@ -18,6 +19,7 @@ namespace LMS.Presentation.Controllers
         }
 
         [HttpGet("me/dashboard")]
+        [Authorize(Roles = "Student")]
         public async Task<ActionResult<StudentDashboardDto>> GetDashboard()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -26,6 +28,15 @@ namespace LMS.Presentation.Controllers
             var dashboard = await _serviceManager.DashboardService.GetDashboardAsync(userId);
             return Ok(dashboard);
         }
+
+        [HttpGet("me/teacher-dashboard")]
+        [Authorize(Roles = "Teacher")]
+        public async Task<ActionResult<TeacherDashboardDto>> GetTeacherDashboard()
+        {
+            var dashboard = await _serviceManager.TeacherDashboardService.GetDashboardAsync();
+            return Ok(dashboard);
+        }
+
 
         [HttpGet("me/course")]
         [Authorize(Roles = "Student")]

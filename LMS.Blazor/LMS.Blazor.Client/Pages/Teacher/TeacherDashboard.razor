@@ -1,0 +1,62 @@
+﻿@page "/teacher/dashboard"
+@using LMS.Shared.DTOs.TeacherDashboard
+@inject IApiService ApiService
+
+<h2 class="mb-4">Lärarens Dashboard</h2>
+
+@if (dashboard == null)
+{
+    <p>Laddar...</p>
+}
+else
+{
+    <section class="mb-5">
+        <h4>Aktiva kurser</h4>
+        <ul>
+            @foreach (var c in dashboard.ActiveCourses)
+            {
+                <li>
+                    <strong>@c.Name</strong>
+                    — @c.StudentCount elever, @c.ModuleCount moduler
+                </li>
+            }
+        </ul>
+    </section>
+
+    <section class="mb-5">
+        <h4>Senaste aktivitet</h4>
+        <ul>
+            @foreach (var a in dashboard.RecentActivities)
+            {
+                <li>
+                    <strong>@a.Type</strong> — @a.Description
+                    <span class="text-muted">(@a.Timestamp)</span>
+                </li>
+            }
+        </ul>
+    </section>
+
+    <section class="mb-5">
+        <h4>Kommande aktiviteter</h4>
+        <ul>
+            @foreach (var u in dashboard.UpcomingActivities)
+            {
+                <li>
+                    <strong>@u.Name</strong> — @u.CourseName
+                    <span class="text-muted">(@u.StartTime)</span>
+                </li>
+            }
+        </ul>
+    </section>
+}
+
+@code {
+    private TeacherDashboardDto? dashboard;
+
+    protected override async Task OnInitializedAsync()
+    {
+        dashboard = await ApiService.GetAsync<TeacherDashboardDto>(
+            "api/user/me/teacher-dashboard"
+        );
+    }
+}
