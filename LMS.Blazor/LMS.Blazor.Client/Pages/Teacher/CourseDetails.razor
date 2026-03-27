@@ -1,13 +1,18 @@
 ﻿@page "/teacher/courses/{courseId:int}"
 @using LMS.Shared.DTOs.Course
+@using LMS.Shared.DTOs.Module
 @inject IApiService ApiService
 
-@if (course == null) {
+@if (course == null)
+{
     <p>Laddar...</p>
-} else {
+}
+else
+{
     <div class="container py-4">
 
-        @if (!string.IsNullOrEmpty(moduleMessage)) {
+        @if (!string.IsNullOrEmpty(moduleMessage))
+        {
             <div class="alert alert-info">
                 @moduleMessage
             </div>
@@ -18,7 +23,8 @@
 
         <h4 class="mt-4">Moduler</h4>
 
-        @foreach (var module in course.Modules) {
+        @foreach (var module in course.Modules)
+        {
             <div class="card mb-3">
                 <div class="card-body">
 
@@ -38,11 +44,15 @@
                         </button>
                     </div>
 
-                    @if (module.Activities == null || !module.Activities.Any()) {
+                    @if (module.Activities == null || !module.Activities.Any())
+                    {
                         <p class="text-muted mb-0">Inga aktiviteter.</p>
-                    } else {
+                    }
+                    else
+                    {
                         <ul class="list-group mt-3">
-                            @foreach (var activity in module.Activities) {
+                            @foreach (var activity in module.Activities)
+                            {
                                 <li class="list-group-item">
 
                                     <div class="d-flex justify-content-between align-items-center gap-2">
@@ -73,7 +83,8 @@
                                         </button>
                                     </div>
 
-                                    @if (openActivities.Contains(activity.Id)) {
+                                    @if (openActivities.Contains(activity.Id))
+                                    {
                                         <div class="mt-3 border-top pt-3">
                                             <p class="mb-1">
                                                 <strong>Beskrivning:</strong> @activity.Description
@@ -85,7 +96,8 @@
                                                 <strong>Slut:</strong> @activity.EndTime.ToString("yyyy-MM-dd HH:mm")
                                             </p>
 
-                                            @if (activity.DueDate.HasValue) {
+                                            @if (activity.DueDate.HasValue)
+                                            {
                                                 <p class="mb-0">
                                                     <strong>Deadline:</strong> @activity.DueDate.Value.ToString("yyyy-MM-dd HH:mm")
                                                 </p>
@@ -103,7 +115,8 @@
     </div>
 }
 
-@if (showActivityModal && selectedActivity != null) {
+@if (showActivityModal && selectedActivity != null)
+{
     <div class="modal fade show d-block" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -149,6 +162,65 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+@if (showModuleModal)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit module</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModuleModal"></button>
+                </div>
+
+                <EditForm EditContext="moduleEditContext" OnValidSubmit="SaveModule">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="modal-body">
+
+                        @if (!string.IsNullOrEmpty(moduleError))
+                        {
+                            <div class="alert alert-danger">@moduleError</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Namn</label>
+                            <InputText class="form-control" @bind-Value="moduleForm.Name" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Beskrivning</label>
+                            <InputTextArea class="form-control" @bind-Value="moduleForm.Description" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Startdatum</label>
+                            <InputDate class="form-control" @bind-Value="moduleForm.StartDate" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Slutdatum</label>
+                            <InputDate class="form-control" @bind-Value="moduleForm.EndDate" />
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="CloseModuleModal">Stäng</button>
+                        <button type="submit" class="btn btn-primary">Spara</button>
+                    </div>
+
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+
 @code {
     [Parameter]
     public int courseId { get; set; }
@@ -161,6 +233,13 @@
     private HashSet<int> openActivities = new();
 
     private string? moduleMessage;
+
+    // MODULE EDIT
+    private bool showModuleModal;
+    private ModuleUpdateDto moduleForm = new();
+    private string? moduleError;
+    private EditContext? moduleEditContext;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -175,7 +254,17 @@
 
     private void OpenModuleModal(ModuleDto module)
     {
-        moduleMessage = "Not implemented";
+        moduleForm.Id = module.Id;
+        moduleForm.Name = module.Name;
+        moduleForm.Description = module.Description;
+        moduleForm.StartDate = module.StartDate;
+        moduleForm.EndDate = module.EndDate;
+        moduleForm.CourseId = courseId;
+
+        moduleEditContext = new EditContext(moduleForm);
+
+        moduleError = null;
+        showModuleModal = true;
     }
 
     private void OpenActivityModal(ActivityDto activity)
@@ -189,4 +278,36 @@
         showActivityModal = false;
         selectedActivity = null;
     }
+
+    private void CloseModuleModal()
+    {
+        showModuleModal = false;
+        moduleError = null;
+    }
+
+    private async Task SaveModule()
+    {
+        moduleError = null;
+
+        try
+        {
+            var result = await ApiService.PutAsync<ModuleUpdateDto, ModuleDto>(
+                $"api/module/{moduleForm.Id}", moduleForm);
+
+            if (result != null)
+            {
+                showModuleModal = false;
+                course = await ApiService.GetAsync<CourseDto>($"api/course/{courseId}");
+            }
+            else
+            {
+                moduleError = "Kunde inte uppdatera modulen.";
+            }
+        }
+        catch (Exception ex)
+        {
+            moduleError = ex.Message;
+        }
+    }
+
 }
