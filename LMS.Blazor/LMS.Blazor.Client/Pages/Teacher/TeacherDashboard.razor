@@ -1,0 +1,132 @@
+﻿@page "/teacher/dashboard"
+@using LMS.Shared.DTOs.TeacherDashboard
+@inject IApiService ApiService
+@inject NavigationManager Nav
+
+<div class="container py-4">
+    <h1 class="h3 mb-4">Lärarens Dashboard</h1>
+
+    <!-- Snabbåtgärder -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Snabbåtgärder</h5>
+
+            <button class="btn btn-primary d-flex align-items-center"
+                    @onclick='() => Nav.NavigateTo("/teacher/courses/create")'>
+                <i class="bi bi-plus-circle me-2"></i>
+                Skapa ny kurs
+            </button>
+        </div>
+    </div>
+
+
+    @if (dashboard == null)
+    {
+        <p>Laddar...</p>
+    }
+    else
+    {
+
+        <div class="row g-4">
+
+            <!-- Aktiva kurser -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Aktiva kurser</h5>
+                        <a class="small text-decoration-none" href="/teacher/courses">Visa alla</a>
+                    </div>
+
+                    <div class="list-group list-group-flush">
+                        @foreach (var c in dashboard.ActiveCourses)
+                        {
+                            <div class="list-group-item">
+                                <div class="fw-semibold">@c.Name</div>
+                                <div class="text-muted small">
+                                    <i class="bi bi-people"></i> @c.StudentCount elever •
+                                    <i class="bi bi-layers"></i> @c.ModuleCount moduler
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Senaste aktivitet -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Senaste aktivitet</h5>
+                    </div>
+
+                    <div class="list-group list-group-flush">
+                        @foreach (var a in dashboard.RecentActivities)
+                        {
+                            <div class="list-group-item">
+                                <span class="badge @GetBadgeColor(a.Type) me-2">@a.Type</span>
+
+                                <div>@a.Description</div>
+
+                                <div class="text-muted small mt-1">
+                                    <i class="bi bi-clock"></i> @a.Timestamp
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kommande aktiviteter -->
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Kommande aktiviteter</h5>
+                    </div>
+
+                    <div class="list-group list-group-flush">
+                        @foreach (var u in dashboard.UpcomingActivities)
+                        {
+                            <div class="list-group-item d-flex justify-content-between">
+                                <div>
+                                    <span class="badge @GetBadgeColor(u.Type) me-2">@u.Type</span>
+
+                                    <strong>@u.Name</strong><br />
+                                    <span class="text-muted small">@u.CourseName</span>
+                                </div>
+
+                                <div class="text-muted small">
+                                    <i class="bi bi-calendar-event"></i> @u.StartTime
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    }
+</div>
+
+@code {
+    private TeacherDashboardDto? dashboard;
+
+    protected override async Task OnInitializedAsync()
+    {
+        dashboard = await ApiService.GetAsync<TeacherDashboardDto>(
+            "api/user/me/teacher-dashboard"
+        );
+    }
+
+    private string GetBadgeColor(string type)
+    {
+        return type switch
+        {
+            "Lecture" => "bg-primary",
+            "Workshop" => "bg-warning text-dark",
+            "Assignment" => "bg-info text-dark",
+            "Exam" => "bg-danger",
+            "Seminar" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+}
