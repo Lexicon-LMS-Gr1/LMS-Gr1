@@ -13,12 +13,12 @@ public class UserUpdateDto
 
     [Required(ErrorMessage = "First name is required")]
     [StringLength(50, MinimumLength = 2, ErrorMessage = "First name must be between 2 and 50 characters")]
-    [RegularExpression(@"^[a-zA-ZåäöÅÄÖ\s\-']+$", ErrorMessage = "First name can only contain letters, spaces, hyphens and apostrophes")]
+    [RegularExpression(@"^[a-zA-ZåäöÅÄÖ \-']+$", ErrorMessage = "First name can only contain letters, spaces, hyphens and apostrophes")]
     public string FirstName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Last name is required")]
     [StringLength(50, MinimumLength = 2, ErrorMessage = "Last name must be between 2 and 50 characters")]
-    [RegularExpression(@"^[a-zA-ZåäöÅÄÖ\s\-']+$", ErrorMessage = "Last name can only contain letters, spaces, hyphens and apostrophes")]
+    [RegularExpression(@"^[a-zA-ZåäöÅÄÖ \-']+$", ErrorMessage = "Last name can only contain letters, spaces, hyphens and apostrophes")]
     public string LastName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Email is required")]

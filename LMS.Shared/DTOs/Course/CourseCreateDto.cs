@@ -1,4 +1,5 @@
 using LMS.Shared.DTOs.Module;
+using LMS.Shared.Validation;
 using System.ComponentModel.DataAnnotations;
 
 namespace LMS.Shared.DTOs.Course;
@@ -14,11 +15,14 @@ public class CourseCreateDto
     public string Description { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Startdatum måste anges.")]
+    [DateLessThanOrEqualToOtherDate(nameof(EndDate), ErrorMessage = "Startdatum får inte vara senare än slutdatum.")]
     [DataType(DataType.Date)]
     public DateTime StartDate { get; set; }
 
     [Required(ErrorMessage = "Slutdatum måste anges.")]
+    [DateGreatherThanOrEqualToOtherDate(nameof(StartDate), ErrorMessage = "Slutdatum får inte vara tidigare än startdatum.")]
     [DataType(DataType.Date)]
     public DateTime EndDate { get; set; }
+
     public List<ModuleCreateDto> Modules { get; set; } = new();
 }

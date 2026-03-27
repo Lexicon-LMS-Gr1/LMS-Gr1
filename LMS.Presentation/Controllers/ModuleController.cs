@@ -1,5 +1,6 @@
 ﻿using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Course;
+using LMS.Shared.DTOs.Module;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using System;
@@ -25,4 +26,19 @@ public class ModuleController : ControllerBase
 		var activities = await _serviceManager.ModuleService.GetActivitiesAsync(moduleId);
 		return Ok(activities);
 	}
+
+    [HttpPut("{moduleId}")]
+    public async Task<IActionResult> UpdateModule(int moduleId, [FromBody] ModuleUpdateDto dto)
+    {
+        if (moduleId != dto.Id)
+            return BadRequest("Id mismatch");
+
+        var updated = await _serviceManager.ModuleService.UpdateModuleAsync(dto);
+
+        if (updated == null)
+            return NotFound();
+
+        return Ok(updated);
+    }
+
 }
