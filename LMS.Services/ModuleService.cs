@@ -1,4 +1,5 @@
 ﻿using Domain.Contracts.Repositories;
+using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Module;
 using Service.Contracts;
@@ -55,34 +56,23 @@ public class ModuleService : IModuleService
 		throw new NotImplementedException();
 	}
 
-	public Task<IEnumerable<ModuleDto>> GetModulesByCourseIdAsync(int courseId)
+    public async Task<IEnumerable<ModuleDto>> GetModulesByCourseIdAsync(int courseId)
+    {
+        var modules = await _unitOfWork.ModuleRepository.GetByCourseIdAsync(courseId);
+
+        return modules.Select(m => new ModuleDto
+        {
+            Id = m.Id,
+            Name = m.Name,
+            Description = m.Description,
+            StartDate = m.StartDate,
+            EndDate = m.EndDate,
+            Activities = new List<ActivityDto>()
+        });
+    }
+
+    public Task<ModuleDto> UpdateModuleAsync(ModuleUpdateDto moduleDto)
 	{
 		throw new NotImplementedException();
 	}
-
-    public async Task<ModuleDto?> UpdateModuleAsync(ModuleUpdateDto dto)
-    {
-        var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(dto.Id, trackChanges: true);
-
-        if (module == null)
-            return null;
-
-        module.Name = dto.Name;
-        module.Description = dto.Description;
-        module.StartDate = dto.StartDate;
-        module.EndDate = dto.EndDate;
-        module.CourseId = dto.CourseId;
-
-        await _unitOfWork.CompleteAsync();
-
-        return new ModuleDto
-        {
-            Id = module.Id,
-            Name = module.Name,
-            Description = module.Description,
-            StartDate = module.StartDate,
-            EndDate = module.EndDate
-        };
-    }
-
 }
