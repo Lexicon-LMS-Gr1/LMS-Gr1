@@ -140,11 +140,11 @@ namespace LMS.Services
             }
 
             // TODO: Om man senare tillåter att lägga till moduler i en befintlig kurs:
-            // måste man även kontrollera överlapp mot moduler i databasen (inte inom en request).
+            // måste man även kontrollera överlapp mot moduler i databasen (inte bara inom en request).
 
             // TODO: Bryt ut mappningslogik till en separat mappningsklass som har ansvar för att ta en Course till en CourseDto.
-            // Tex courseMapper.GetCourseDto(course); lite likt automapper men här mappar ni själva och har full kontroll på vad som sker!
-            // Återanvändningsbar och om logiken förändras har ni en single source of truth.
+            // Tex courseMapper.GetCourseDto(course); som automapper, men man mappar själv och har kontroll på vad som sker.
+            // Återanvändningsbar och om logiken förändras har man en single source of truth.
 
             // Skapa ny Course-entitet 
             var course = new Course
@@ -166,17 +166,18 @@ namespace LMS.Services
                     EndDate = module.EndDate,                    
                     Course = course // Navigation property så EF förstår relationen
 
-                    // TODO: När Activities införs:
-                    // Validera aktiviteter (StartTime/EndTime/DueDate) och mappa in dem här
+                    // Activities skapas inte här, utan i en separat controller och endpoint för att lägga till aktiviteter i en modul
+                    //  - Create() i ModuleActivitiesController.
+                    // Annars måste hela objektgrafen (Course + Modules + Activities) skapas i en och samma request.
                 });
             }
 
-            // Sparar hela objektgrafen (Course + Modules)
+            // Sparar objektgrafen med Course + Modules (om moduler finns med i samma request)
             _unitOfWork.CourseRepository.Create(course);
 
             await _unitOfWork.CompleteAsync();
 
-            // Returnera DTO med moduler och aktiviteter (om de finns) - mappning från entitet till DTO
+            // Returnera DTO med ev. moduler - mappning från entitet till DTO
             return new CourseDto
             {
                 Id = course.Id,
