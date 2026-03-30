@@ -6,6 +6,13 @@
 @inject IApiService ApiService
 @inject NavigationManager Nav
 
+@if (selectedCourseId != null)
+{
+    <CourseDetailsSection CourseId="selectedCourseId.Value"
+                   OnBack="CloseCourseDetails" />
+    return;
+}
+
 <div class="container py-4">
     <h1 class="h3 mb-4">Lärarens Dashboard</h1>
 
@@ -220,6 +227,7 @@
     private List<CourseListDto> allCourses = new();
     private List<StudentListDto> allStudents = new();
     private string activeTab = "overview";
+    private int? selectedCourseId;
 
     /* ---------------- COURSE EDIT ---------------- */
     private bool showEditCourseModal;
@@ -448,7 +456,12 @@
     }
 
     private void GoToCourse(int id)
-    {
-        Nav.NavigateTo($"/teacher/courses/{id}");
-    }
+        {
+            selectedCourseId = id;
+        }
+
+        private void CloseCourseDetails()
+        {
+            selectedCourseId = null;
+        }
 }
