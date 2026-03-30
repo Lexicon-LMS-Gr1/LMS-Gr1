@@ -116,16 +116,19 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Förnamn</label>
                             <InputText class="form-control" @bind-Value="userForm.FirstName" />
+                            <ValidationMessage For="@(() => userForm.FirstName)" class="text-danger small" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Efternamn</label>
                             <InputText class="form-control" @bind-Value="userForm.LastName" />
+                            <ValidationMessage For="@(() => userForm.LastName)" class="text-danger small" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">E‑post</label>
                             <InputText class="form-control" @bind-Value="userForm.Email" />
+                            <ValidationMessage For="@(() => userForm.Email)" class="text-danger small" />
                         </div>
 
                         @if (userToEdit.Role == "Student")
