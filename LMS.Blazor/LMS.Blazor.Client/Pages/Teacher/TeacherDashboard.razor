@@ -22,7 +22,7 @@
             <h5 class="mb-0">Snabbåtgärder</h5>
 
             <button class="btn btn-primary d-flex align-items-center"
-                    @onclick='() => activeTab = "create"'>
+                    @onclick='() => Nav.NavigateTo("/teacher/courses/create")'>
                 <i class="bi bi-plus-circle me-2"></i>
                 Skapa ny kurs
             </button>
@@ -128,7 +128,7 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">E‑post</label>
                             <InputText class="form-control" @bind-Value="userForm.Email" />
-                            <ValidationMessage For="@(() => userForm.Email)" class="text-danger small" />
+                           <ValidationMessage For="@(() => userForm.Email)" class="text-danger small" />
                         </div>
 
                         @if (userToEdit.Role == "Student")
