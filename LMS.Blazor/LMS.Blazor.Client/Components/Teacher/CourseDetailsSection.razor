@@ -1,0 +1,315 @@
+﻿@using LMS.Shared.DTOs.Course
+@using LMS.Shared.DTOs.Module
+@using LMS.Shared.DTOs.Activity
+@inject IApiService ApiService
+
+<div class="container py-4">
+
+    @if (OnBack.HasDelegate)
+    {
+        <button class="btn btn-outline-secondary mb-3"
+                @onclick="() => OnBack.InvokeAsync()">
+            <i class="bi bi-arrow-left"></i> Tillbaka
+        </button>
+    }
+
+    @if (Course == null)
+    {
+        <p>Laddar...</p>
+    }
+    else
+    {
+        <h2>@Course.Name</h2>
+        <p class="text-muted">@Course.Description</p>
+
+        <h4 class="mt-4">Moduler</h4>
+
+        @foreach (var module in Course.Modules)
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5>@module.Name</h5>
+                            <p class="text-muted mb-1">@module.Description</p>
+                            <p class="small text-secondary">
+                                @module.StartDate.ToString("yyyy-MM-dd") -
+                                @module.EndDate.ToString("yyyy-MM-dd")
+                            </p>
+                        </div>
+
+                        <button class="btn btn-sm btn-outline-primary"
+                                @onclick="() => OpenModuleModal(module)">
+                            Edit
+                        </button>
+                    </div>
+
+                    @if (module.Activities?.Any() == true)
+                    {
+                        <ul class="list-group mt-3">
+                            @foreach (var a in module.Activities)
+                            {
+                                <li class="list-group-item">
+
+                                    <div class="d-flex justify-content-between align-items-center gap-2">
+
+                                        <div class="flex-grow-1"
+                                             style="cursor:pointer;"
+                                             @onclick="() => ToggleActivity(a.Id)">
+                                            <strong>@a.Name</strong>
+                                            <span class="badge bg-primary ms-2">@a.ActivityTypeName</span>
+                                        </div>
+
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                @onclick="() => OpenActivityModal(a)">
+                                            Edit
+                                        </button>
+                                    </div>
+
+                                    @if (openActivities.Contains(a.Id))
+                                    {
+                                        <div class="mt-3 border-top pt-3">
+                                            <p><strong>Beskrivning:</strong> @a.Description</p>
+                                            <p><strong>Start:</strong> @a.StartTime.ToString("yyyy-MM-dd HH:mm")</p>
+                                            <p><strong>Slut:</strong> @a.EndTime.ToString("yyyy-MM-dd HH:mm")</p>
+
+                                            @if (a.DueDate.HasValue)
+                                            {
+                                                <p><strong>Deadline:</strong> @a.DueDate.Value.ToString("yyyy-MM-dd HH:mm")</p>
+                                            }
+                                        </div>
+                                    }
+
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted small mt-2">Inga aktiviteter.</p>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- ACTIVITY MODAL -->
+@if (showActivityModal && selectedActivity != null)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit activity</h5>
+                    <button type="button" class="btn-close" @onclick="CloseActivityModal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Namn</label>
+                        <input class="form-control" @bind="selectedActivity.Name" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Beskrivning</label>
+                        <textarea class="form-control" @bind="selectedActivity.Description"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseActivityModal">Stäng</button>
+                    <button class="btn btn-primary" @onclick="SaveActivity">
+                        Spara
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- MODULE MODAL -->
+@if (showModuleModal)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit module</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModuleModal"></button>
+                </div>
+
+                <EditForm EditContext="moduleEditContext" OnValidSubmit="SaveModule">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+
+                        @if (!string.IsNullOrEmpty(moduleError))
+                        {
+                            <div class="alert alert-danger">@moduleError</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Namn</label>
+                            <InputText class="form-control" @bind-Value="moduleForm.Name" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Beskrivning</label>
+                            <InputTextArea class="form-control" @bind-Value="moduleForm.Description" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Startdatum</label>
+                            <InputDate class="form-control" @bind-Value="moduleForm.StartDate" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Slutdatum</label>
+                            <InputDate class="form-control" @bind-Value="moduleForm.EndDate" />
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="CloseModuleModal">Stäng</button>
+                        <button type="submit" class="btn btn-primary">Spara</button>
+                    </div>
+
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public int CourseId { get; set; }
+    [Parameter] public EventCallback OnBack { get; set; }
+
+    private CourseDto? Course;
+
+    private HashSet<int> openActivities = new();
+
+    // ACTIVITY EDIT
+    private bool showActivityModal;
+    private ActivityDto? selectedActivity;
+
+    // MODULE EDIT
+    private bool showModuleModal;
+    private ModuleUpdateDto moduleForm = new();
+    private string? moduleError;
+    private EditContext? moduleEditContext;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
+    }
+
+    private void ToggleActivity(int id)
+    {
+        if (!openActivities.Add(id))
+            openActivities.Remove(id);
+    }
+
+    private void OpenActivityModal(ActivityDto activity)
+    {
+        // IMPORTANT: create a COPY, not reference original
+        selectedActivity = new ActivityDto
+        {
+            Id = activity.Id,
+            Name = activity.Name,
+            Description = activity.Description,
+            ActivityTypeName = activity.ActivityTypeName,
+            StartTime = activity.StartTime,
+            EndTime = activity.EndTime,
+            DueDate = activity.DueDate
+        };
+
+        showActivityModal = true;
+    }
+
+    private void CloseActivityModal()
+    {
+        showActivityModal = false;
+        selectedActivity = null;
+    }
+
+    private void OpenModuleModal(ModuleDto module)
+    {
+        moduleForm = new ModuleUpdateDto
+        {
+            Id = module.Id,
+            Name = module.Name,
+            Description = module.Description,
+            StartDate = module.StartDate,
+            EndDate = module.EndDate,
+            CourseId = CourseId
+        };
+
+        moduleEditContext = new EditContext(moduleForm);
+
+        moduleError = null;
+        showModuleModal = true;
+    }
+
+    private void CloseModuleModal()
+    {
+        showModuleModal = false;
+        moduleError = null;
+    }
+
+    private async Task SaveModule()
+    {
+        moduleError = null;
+
+        try
+        {
+            var result = await ApiService.PutAsync<ModuleUpdateDto, ModuleDto>(
+                $"api/module/{moduleForm.Id}", moduleForm);
+
+            if (result != null)
+            {
+                showModuleModal = false;
+                Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
+            }
+            else
+            {
+                moduleError = "Kunde inte uppdatera modulen.";
+            }
+        }
+        catch (Exception ex)
+        {
+            moduleError = ex.Message;
+        }
+    }
+
+    private async Task SaveActivity()
+    {
+        try
+        {
+            var result = await ApiService.PutAsync<ActivityDto, ActivityDto>(
+                $"api/activity/{selectedActivity.Id}", selectedActivity);
+
+            if (result != null)
+            {
+                showActivityModal = false;
+                selectedActivity = null;
+
+                Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error saving activity: " + ex.Message);
+        }
+    }
+}
