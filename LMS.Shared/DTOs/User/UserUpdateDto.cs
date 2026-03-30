@@ -8,22 +8,22 @@ namespace LMS.Shared.DTOs.User;
 /// </summary>
 public class UserUpdateDto
 {
-    [Required(ErrorMessage = "User ID is required")]
+    [Required(ErrorMessage = "Användar-id måste anges.")]
     public string Id { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "First name is required")]
-    [StringLength(50, MinimumLength = 2, ErrorMessage = "First name must be between 2 and 50 characters")]
-    [RegularExpression(@"^[a-zA-ZåäöÅÄÖ \-']+$", ErrorMessage = "First name can only contain letters, spaces, hyphens and apostrophes")]
+    [Required(ErrorMessage = "Förnamn måste anges.")]
+    [StringLength(50, MinimumLength = 2, ErrorMessage = "Förnamn måste vara mellan 2 och 50 tecken.")]
+    [RegularExpression(@"^[a-zA-ZåäöÅÄÖ \-']+$", ErrorMessage = "Förnamn får endast innehålla bokstäver, mellanslag, bindestreck och apostrofer.")]
     public string FirstName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Last name is required")]
-    [StringLength(50, MinimumLength = 2, ErrorMessage = "Last name must be between 2 and 50 characters")]
-    [RegularExpression(@"^[a-zA-ZåäöÅÄÖ \-']+$", ErrorMessage = "Last name can only contain letters, spaces, hyphens and apostrophes")]
+    [Required(ErrorMessage = "Efternamn måste anges.")]
+    [StringLength(50, MinimumLength = 2, ErrorMessage = "Efternamn måste vara mellan 2 och 50 tecken.")]
+    [RegularExpression(@"^[a-zA-ZåäöÅÄÖ \-']+$", ErrorMessage = "Efternamn får endast innehålla bokstäver, mellanslag, bindestreck och apostrofer.")]
     public string LastName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Email is required")]
-    [EmailAddress(ErrorMessage = "Invalid email format")]
-    [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters")]
+    [Required(ErrorMessage = "E-postadress måste anges.")]
+    [EmailAddress(ErrorMessage = "E-postadress har felaktigt format.")]
+    [StringLength(100, ErrorMessage = "E-postadress kan inte överstiga 100 tecken.")]
     public string Email { get; set; } = string.Empty;
 
     // For students only - can be used to move student to another course
