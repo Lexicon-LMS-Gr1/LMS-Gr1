@@ -98,7 +98,7 @@
     private List<NavMenuItemModel> TeacherMenuItems => new()
     {
         new("bi bi-house", "Dashboard", "", NavLinkMatch.All),
-        new("bi bi-book", "Kurser", "teacher/courses"),
+        new("bi bi-book", "Kurser", "teacher/courses", NavLinkMatch.All),
         new("bi bi-plus-circle", "Skapa ny kurs", "teacher/courses/create"),
         new("bi bi-plus-circle", "Skapa ny aktivitet", "/teacher/activities/create"),
         new("bi bi-people", "Användare", "teacher/users"),
