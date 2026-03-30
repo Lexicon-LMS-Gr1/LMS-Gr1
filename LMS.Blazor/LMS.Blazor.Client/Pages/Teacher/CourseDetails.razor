@@ -77,11 +77,7 @@ else
 
                                         </div>
 
-                                        <!-- Edit knapp -->
-                                        <button class="btn btn-sm btn-outline-secondary"
-                                                @onclick="() => OpenActivityModal(activity)">
-                                            Edit
-                                        </button>
+
                                     </div>
 
                                     @if (openActivities.Contains(activity.Id))
@@ -103,6 +99,11 @@ else
                                                     <strong>Deadline:</strong> @activity.DueDate.Value.ToString("yyyy-MM-dd HH:mm")
                                                 </p>
                                             }
+                                            <!-- Edit knapp -->
+                                            <button class="btn btn-sm btn-outline-secondary"
+                                                    @onclick="() => OpenActivityModal(activity)">
+                                                Edit
+                                            </button>
                                         </div>
                                     }
 
@@ -116,7 +117,7 @@ else
     </div>
 }
 
-@if (showActivityModal && selectedActivity != null)
+@if (showActivityModal)
 {
     <div class="modal fade show d-block" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -127,34 +128,49 @@ else
                     <button type="button" class="btn-close" @onclick="CloseActivityModal"></button>
                 </div>
 
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Namn</label>
-                        <input class="form-control" @bind="selectedActivity.Name" />
+                <EditForm EditContext="activityEditContext" OnValidSubmit="SaveActivity">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="modal-body">
+
+                        @if (!string.IsNullOrEmpty(activityError))
+                        {
+                            <div class="alert alert-danger">@activityError</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Namn</label>
+                            <InputText class="form-control" @bind-Value="activityForm.Name" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Beskrivning</label>
+                            <InputTextArea class="form-control" @bind-Value="activityForm.Description" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Start</label>
+                            <input type="datetime-local" class="form-control" @bind="activityForm.StartTime" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Slut</label>
+                            <input type="datetime-local" class="form-control" @bind="activityForm.EndTime" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Deadline</label>
+                            <input type="datetime-local" class="form-control" @bind="activityForm.DueDate" />
+                        </div>
+
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Beskrivning</label>
-                        <textarea class="form-control" @bind="selectedActivity.Description"></textarea>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseActivityModal">Stäng</button>
+                        <button type="submit" class="btn btn-primary">Spara</button>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Start</label>
-                        <input class="form-control"
-                               value="@selectedActivity.StartTime.ToString("yyyy-MM-dd HH:mm")" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Slut</label>
-                        <input class="form-control"
-                               value="@selectedActivity.EndTime.ToString("yyyy-MM-dd HH:mm")" />
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="CloseActivityModal">Stäng</button>
-                    <button class="btn btn-primary">Spara</button>
-                </div>
+                </EditForm>
 
             </div>
         </div>
@@ -225,15 +241,24 @@ else
 @code {
     [Parameter]
     public int courseId { get; set; }
-
     private CourseDto? course;
 
     private ActivityDto? selectedActivity;
-    private bool showActivityModal;
-
     private HashSet<int> openActivities = new();
-
     private string? moduleMessage;
+
+
+    // Activity Edit
+
+    private bool showActivityModal;
+    private UpdateActivityDto activityForm = new();
+    private string? activityError;
+    private EditContext? activityEditContext;
+
+
+
+
+
 
     // MODULE EDIT
     private bool showModuleModal;
@@ -270,14 +295,24 @@ else
 
     private void OpenActivityModal(ActivityDto activity)
     {
-        selectedActivity = activity;
+        activityForm = new UpdateActivityDto {
+            Id = activity.Id,
+            Name = activity.Name,
+            Description = activity.Description,
+            StartTime = activity.StartTime,
+            EndTime = activity.EndTime,
+            DueDate = activity.DueDate
+        };
+
+        activityEditContext = new EditContext(activityForm);
+        activityError = null;
         showActivityModal = true;
     }
 
     private void CloseActivityModal()
     {
         showActivityModal = false;
-        selectedActivity = null;
+        activityError = null;
     }
 
     private void CloseModuleModal()
@@ -308,6 +343,25 @@ else
         catch (Exception ex)
         {
             moduleError = ex.Message;
+        }
+    }
+
+    private async Task SaveActivity()
+    {
+        activityError = null;
+
+        try {
+            var result = await ApiService.PutAsync<UpdateActivityDto, ActivityDto>(
+                $"api/activity/{activityForm.Id}", activityForm);
+
+            if (result != null) {
+                showActivityModal = false;
+                course = await ApiService.GetAsync<CourseDto>($"api/course/{courseId}");
+            } else {
+                activityError = "Kunde inte uppdatera aktiviteten.";
+            }
+        } catch (Exception ex) {
+            activityError = ex.Message;
         }
     }
 

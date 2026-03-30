@@ -103,7 +103,7 @@ public class ActivityService : IActivityService
 
         return MapToDto(savedActivity);
     }
-
+	
     public async Task<ActivityDto> UpdateActivityAsync(ActivityUpdateDto activityDto)
     {
         if (activityDto is null)
@@ -165,7 +165,58 @@ public class ActivityService : IActivityService
         return MapToDto(updated);
     }
 
-    public async Task<bool> DeleteActivityAsync(int id)
+	public async Task<ActivityDto> UpdateActivityAsync2(UpdateActivityDto dto)
+	{
+		if (dto is null)
+			throw new ArgumentNullException(nameof(dto));
+
+		if (string.IsNullOrWhiteSpace(dto.Name))
+			throw new ArgumentException("Namn saknas.");
+
+		if (string.IsNullOrWhiteSpace(dto.Description))
+			throw new ArgumentException("Beskrivning saknas.");
+
+		if (dto.StartTime >= dto.EndTime)
+			throw new ArgumentException("Starttid måste vara tidigare än sluttid.");
+
+		var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(dto.Id, trackChanges: true);
+
+		if (activity is null)
+			throw new KeyNotFoundException("Aktivetet saknas.");
+
+		var module = await _unitOfWork.ModuleRepository.GetModuleWithActivitiesAsync(activity.ModuleId, trackChanges: false);
+
+		if (module is null)
+			throw new KeyNotFoundException("Modul saknas.");
+
+		if (dto.StartTime.Date < module.StartDate.Date || dto.EndTime.Date > module.EndDate.Date)
+			throw new ArgumentException("Aktivitetens datum måste ligga inom modulens datumintervall.");
+
+		if (dto.DueDate.HasValue && dto.DueDate.Value < dto.StartTime)
+			throw new ArgumentException("Deadline kan inte vara före aktivitetens starttid.");
+
+
+		bool overlaps = module.Activities
+	   .Where(a => a.Id != activity.Id)
+	   .Any(a => dto.StartTime < a.EndTime && dto.EndTime > a.StartTime);
+
+		if (overlaps)
+			throw new ArgumentException("Aktiviteten krockar med en annan aktivitet i modulen.");
+
+
+
+		activity.Name = dto.Name.Trim();
+		activity.Description = dto.Description.Trim();
+		activity.StartTime = dto.StartTime;
+		activity.EndTime = dto.EndTime;
+		activity.DueDate = dto.DueDate;
+
+		await _unitOfWork.CompleteAsync();
+
+		return MapToDto(activity);
+	}
+
+	public async Task<bool> DeleteActivityAsync(int id)
     {
         var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(id, trackChanges: true);
 

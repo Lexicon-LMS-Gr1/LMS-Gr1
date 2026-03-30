@@ -34,7 +34,7 @@ public class ClientApiService : IApiService
         return await JsonSerializer.DeserializeAsync<T>(
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
     }
-
+    /*
 
     public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
     {
@@ -47,8 +47,33 @@ public class ClientApiService : IApiService
         return await JsonSerializer.DeserializeAsync<TResponse>(
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
     }
+    */
 
-    public async Task<(bool Success, string? Error)> DeleteAsync(string endpoint, CancellationToken ct = default)
+	public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
+	{
+		var response = await _httpClient.PutAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
+
+		if (HandleUnauthorized(response)) return default;
+
+		if (response.IsSuccessStatusCode) {
+			return await JsonSerializer.DeserializeAsync<TResponse>(
+				await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+		}
+		var errorMessage = await response.Content.ReadAsStringAsync(ct);
+
+		if (string.IsNullOrWhiteSpace(errorMessage))
+			errorMessage = "Ett fel uppstod.";
+
+		errorMessage = errorMessage.Trim('"');
+
+		throw new Exception(errorMessage);
+	}
+
+
+
+
+
+	public async Task<(bool Success, string? Error)> DeleteAsync(string endpoint, CancellationToken ct = default)
     {
         var response = await _httpClient.DeleteAsync($"api/proxy/{endpoint}", ct);
 
