@@ -52,65 +52,388 @@
     }
     else
     {
-        @* ---------------- ÖVERSIKT ---------------- *@
         @if (activeTab == "overview")
         {
             <OverviewSection Dashboard="dashboard" />
         }
-
-        @* ---------------- KURSER ---------------- *@
         else if (activeTab == "courses")
         {
             <CoursesSection Courses="allCourses"
                             OnView="GoToCourse"
-                            OnEdit="OpenEditModal" />
+                            OnEdit="OpenEditCourse" />
         }
-
-        @* ----------------  PARTICIPANTS ---------------- *@
         else if (activeTab == "participants")
         {
             <ParticipantsSection Students="allStudents"
-                                 OnEdit="OpenEditStudent"
-                                 OnDelete="OpenDeleteStudent" />
+                                 OnEdit="OpenEditUser"
+                                 OnDelete="OpenDeleteUser" />
         }
-
     }
 </div>
 
-<!-- EDIT MODAL COMPONENT -->
-<EditCourseModal Show="showEditModal"
-                 FormModel="formModel"
-                 OnSave="SaveChanges"
-                 OnClose="CloseEditModal"
-                 IsSaving="isSaving"
-                 ErrorMessage="@errorMessage" />
+<!-- ===================== EDIT COURSE MODAL ===================== -->
+<EditCourseModal Show="showEditCourseModal"
+                 FormModel="courseForm"
+                 OnSave="SaveCourseChanges"
+                 OnClose="CloseEditCourse"
+                 IsSaving="isSavingCourse"
+                 ErrorMessage="@courseError" />
+
+<!-- ===================== EDIT USER MODAL ===================== -->
+@if (showEditUserModal && userToEdit != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="bi bi-pencil-square me-2"></span>
+                        Redigera användare
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditUser"></button>
+                </div>
+
+                <EditForm Model="userForm" OnValidSubmit="SaveUserChanges">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+
+                        @if (!string.IsNullOrEmpty(userEditError))
+                        {
+                            <div class="alert alert-danger py-2">
+                                <span class="bi bi-exclamation-triangle me-1"></span> @userEditError
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Förnamn</label>
+                            <InputText class="form-control" @bind-Value="userForm.FirstName" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Efternamn</label>
+                            <InputText class="form-control" @bind-Value="userForm.LastName" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">E‑post</label>
+                            <InputText class="form-control" @bind-Value="userForm.Email" />
+                        </div>
+
+                        @if (userToEdit.Role == "Student")
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Kurs</label>
+                                <select class="form-select" @bind="userForm.CourseId">
+                                    <option value="">— Ingen kurs —</option>
+                                    @foreach (var c in allCourses)
+                                    {
+                                        <option value="@c.Id">@c.Name</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseEditUser" disabled="@isSavingUser">Avbryt</button>
+
+                        <button type="submit" class="btn btn-primary d-flex align-items-center gap-2" disabled="@isSavingUser">
+                            @if (isSavingUser)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                            }
+                            <span>Spara ändringar</span>
+                        </button>
+                    </div>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ===================== DELETE USER MODAL ===================== -->
+@if (showDeleteUserModal && userToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="bi bi-exclamation-triangle text-danger me-2"></span>
+                        Bekräfta borttagning
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseDeleteUser"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    @if (!string.IsNullOrEmpty(userDeleteError))
+                    {
+                        <div class="alert alert-danger py-2">
+                            <span class="bi bi-shield-exclamation me-1"></span> @userDeleteError
+                        </div>
+                    }
+
+                    <p>Är du säker på att du vill ta bort följande användare?</p>
+
+                    <div class="card bg-light">
+                        <div class="card-body py-2">
+                            <strong>@userToDelete.FullName</strong><br />
+                            <span class="text-muted">@userToDelete.Email</span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-3 mb-0 py-2">
+                        <span class="bi bi-exclamation-triangle me-1"></span>
+                        Denna åtgärd kan inte ångras.
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDeleteUser" disabled="@isDeletingUser">Avbryt</button>
+
+                    <button type="button" class="btn btn-danger d-flex align-items-center gap-2"
+                            @onclick="ConfirmUserDelete"
+                            disabled="@isDeletingUser">
+
+                        @if (isDeletingUser)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                        }
+                        <span>Ta bort</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private TeacherDashboardDto? dashboard;
     private List<CourseListDto> allCourses = new();
+    private List<StudentListDto> allStudents = new();
     private string activeTab = "overview";
-    private List<StudentListDto> allStudents;
-    private bool showEditModal;
-    private bool isSaving;
-    private string? errorMessage;
 
-    private CourseUpdateDto formModel = new();
+    /* ---------------- COURSE EDIT ---------------- */
+    private bool showEditCourseModal;
+    private bool isSavingCourse;
+    private string? courseError;
+    private CourseUpdateDto courseForm = new();
+
+    /* ---------------- USER EDIT ---------------- */
+    private bool showEditUserModal;
+    private bool isSavingUser;
+    private string? userEditError;
+    private UserDto? userToEdit;
+    private UserUpdateDto userForm = new();
+
+    /* ---------------- USER DELETE ---------------- */
+    private bool showDeleteUserModal;
+    private bool isDeletingUser;
+    private string? userDeleteError;
+    private UserDto? userToDelete;
 
     protected override async Task OnInitializedAsync()
     {
-        dashboard = await ApiService.GetAsync<TeacherDashboardDto>(
-            "api/user/me/teacher-dashboard"
-        );
+        dashboard = await ApiService.GetAsync<TeacherDashboardDto>("api/user/me/teacher-dashboard");
+        allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
 
-        allCourses = await ApiService.GetAsync<List<CourseListDto>>(
-            "api/course/list"
-        );
+        var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
 
-        // Hämta ALLA användare
-        var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users")
-              ?? new List<UserDto>();
+        allStudents = allUsers
+            .Where(u => u.Role == "Student")
+            .Select(u => new StudentListDto
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                Email = u.Email,
+                CourseId = u.CourseId,
+                CourseName = u.CourseName ?? ""
+            })
+            .ToList();
+    }
 
-        // Filtrera bara studenter och mappa till StudentListDto
+    /* ---------------- COURSE EDIT ---------------- */
+    private void OpenEditCourse(CourseListDto course)
+    {
+        courseForm = new CourseUpdateDto
+        {
+            Id = course.Id,
+            Name = course.Name,
+            Description = course.Description,
+            StartDate = course.StartDate,
+            EndDate = course.EndDate
+        };
+
+        courseError = null;
+        showEditCourseModal = true;
+    }
+
+    private void CloseEditCourse()
+    {
+        showEditCourseModal = false;
+        courseError = null;
+    }
+
+    private async Task SaveCourseChanges()
+    {
+        isSavingCourse = true;
+        courseError = null;
+
+        try
+        {
+            var result = await ApiService.PutAsync<CourseUpdateDto, CourseDto>(
+                $"api/course/{courseForm.Id}", courseForm);
+
+            if (result != null)
+            {
+                showEditCourseModal = false;
+                allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+            }
+            else
+            {
+                courseError = "Kunde inte uppdatera kursen.";
+            }
+        }
+        catch (Exception ex)
+        {
+            courseError = ex.Message;
+        }
+        finally
+        {
+            isSavingCourse = false;
+        }
+    }
+
+    /* ---------------- USER EDIT ---------------- */
+    private void OpenEditUser(StudentListDto s)
+    {
+        userToEdit = new UserDto
+        {
+            Id = s.Id,
+            FirstName = s.FullName.Split(" ")[0],
+            LastName = s.FullName.Split(" ").Last(),
+            Email = s.Email,
+            CourseId = s.CourseId,
+            CourseName = s.CourseName,
+            Role = "Student"
+        };
+
+        userForm = new UserUpdateDto
+        {
+            Id = userToEdit.Id,
+            FirstName = userToEdit.FirstName,
+            LastName = userToEdit.LastName,
+            Email = userToEdit.Email,
+            CourseId = userToEdit.CourseId
+        };
+
+        userEditError = null;
+        showEditUserModal = true;
+    }
+
+    private void CloseEditUser()
+    {
+        showEditUserModal = false;
+        userEditError = null;
+    }
+
+    private async Task SaveUserChanges()
+    {
+        isSavingUser = true;
+        userEditError = null;
+
+        try
+        {
+            var result = await ApiService.PutAsync<UserUpdateDto, UserDto>(
+                $"api/users/{userForm.Id}", userForm);
+
+            if (result != null)
+            {
+                showEditUserModal = false;
+                await ReloadStudents();
+            }
+            else
+            {
+                userEditError = "Kunde inte uppdatera användaren.";
+            }
+        }
+        catch (Exception ex)
+        {
+            userEditError = ex.Message;
+        }
+        finally
+        {
+            isSavingUser = false;
+        }
+    }
+
+    /* ---------------- USER DELETE ---------------- */
+    private void OpenDeleteUser(StudentListDto s)
+    {
+        userToDelete = new UserDto
+        {
+            Id = s.Id,
+            FirstName = s.FullName.Split(" ")[0],
+            LastName = s.FullName.Split(" ").Last(),
+            Email = s.Email,
+            CourseId = s.CourseId,
+            CourseName = s.CourseName,
+            Role = "Student"
+        };
+
+        userDeleteError = null;
+        showDeleteUserModal = true;
+    }
+
+    private void CloseDeleteUser()
+    {
+        showDeleteUserModal = false;
+        userDeleteError = null;
+    }
+
+    private async Task ConfirmUserDelete()
+    {
+        if (userToDelete == null) return;
+
+        isDeletingUser = true;
+        userDeleteError = null;
+
+        try
+        {
+            var (success, error) = await ApiService.DeleteAsync($"api/users/{userToDelete.Id}");
+
+            if (success)
+            {
+                showDeleteUserModal = false;
+                await ReloadStudents();
+            }
+            else
+            {
+                userDeleteError = error ?? "Kunde inte ta bort användaren.";
+            }
+        }
+        catch (Exception ex)
+        {
+            userDeleteError = ex.Message;
+        }
+        finally
+        {
+            isDeletingUser = false;
+        }
+    }
+
+    private async Task ReloadStudents()
+    {
+        var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
+
         allStudents = allUsers
             .Where(u => u.Role == "Student")
             .Select(u => new StudentListDto
@@ -128,67 +451,4 @@
     {
         Nav.NavigateTo($"/teacher/courses/{id}");
     }
-
-    private void OpenEditModal(CourseListDto course)
-    {
-        formModel = new CourseUpdateDto
-        {
-            Id = course.Id,
-            Name = course.Name,
-            Description = course.Description,
-            StartDate = course.StartDate,
-            EndDate = course.EndDate
-        };
-
-        errorMessage = null;
-        showEditModal = true;
-    }
-
-    private void CloseEditModal()
-    {
-        showEditModal = false;
-        errorMessage = null;
-    }
-
-    private async Task SaveChanges()
-    {
-        isSaving = true;
-        errorMessage = null;
-
-        try
-        {
-            var result = await ApiService.PutAsync<CourseUpdateDto, CourseDto>(
-                $"api/course/{formModel.Id}", formModel);
-
-            if (result != null)
-            {
-                showEditModal = false;
-                allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
-            }
-            else
-            {
-                errorMessage = "Kunde inte uppdatera kursen.";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = ex.Message;
-        }
-        finally
-        {
-            isSaving = false;
-        }
-    }
-
-    private void OpenEditStudent(StudentListDto student)
-    {
-        Console.WriteLine($"Edit student: {student.FullName}");
-    }
-
-    private void OpenDeleteStudent(StudentListDto student)
-    {
-        Console.WriteLine($"Delete student: {student.FullName}");
-    }
-
-
 }
