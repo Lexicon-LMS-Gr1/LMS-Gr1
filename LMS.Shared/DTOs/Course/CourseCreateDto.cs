@@ -7,11 +7,11 @@ namespace LMS.Shared.DTOs.Course;
 public class CourseCreateDto
 {
     [Required(ErrorMessage = "Kursnamn måste anges.")]
-    [StringLength(100, MinimumLength = 3, ErrorMessage = "Kursnamn måste vara mellan 3 och 100 tecken")]
+    [StringLength(100, MinimumLength = 3, ErrorMessage = "Kursnamn måste vara mellan 3 och 100 tecken.")]
     public string Name { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Beskrivning måste anges.")]
-    [StringLength(500, MinimumLength = 10, ErrorMessage = "Kursbeskrivning måste vara mellan 10 och 500 tecken")]
+    [StringLength(500, MinimumLength = 10, ErrorMessage = "Kursbeskrivning måste vara mellan 10 och 500 tecken.")]
     public string Description { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Startdatum måste anges.")]

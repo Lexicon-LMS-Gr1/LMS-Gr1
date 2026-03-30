@@ -4,11 +4,11 @@ namespace LMS.Shared.DTOs.Activity;
 
 public class ActivityUpdateDto : ActivityBaseDto
 {
-    [Required(ErrorMessage = "Aktivitets-Id saknas")]
+    [Required(ErrorMessage = "Aktivitets-id måste anges.")]
     public int Id { get; set; }
-        
-    //[Required(ErrorMessage = "Module ID is required")]
-    //[Range(1, int.MaxValue, ErrorMessage = "Module ID must be a positive number")]
+
+    //[Required(ErrorMessage = "Modul-id måste anges.")]
+    //[Range(1, int.MaxValue, ErrorMessage = "Modul-id ska vara ett positivt tal.")]
     //public int ModuleId { get; set; }
 
     // Business rules validated in service layer:
