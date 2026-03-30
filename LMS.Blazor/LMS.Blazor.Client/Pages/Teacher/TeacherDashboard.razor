@@ -2,6 +2,7 @@
 @using LMS.Blazor.Client.Components.Teacher
 @using LMS.Shared.DTOs.TeacherDashboard
 @using LMS.Shared.DTOs.Course
+@using LMS.Shared.DTOs.User
 @inject IApiService ApiService
 @inject NavigationManager Nav
 
@@ -38,9 +39,9 @@
         </li>
 
         <li class="nav-item">
-            <button class="nav-link @(activeTab == "create" ? "active text-primary fw-semibold" : "text-dark")"
-                    @onclick='() => activeTab = "create"'>
-                Skapa ny kurs
+            <button class="nav-link @(activeTab == "participants" ? "active text-primary fw-semibold" : "text-dark")"
+                    @onclick='() => activeTab = "participants"'>
+                Studenter
             </button>
         </li>
     </ul>
@@ -65,14 +66,14 @@
                             OnEdit="OpenEditModal" />
         }
 
-        @* ---------------- SKAPA NY KURS ---------------- *@
-        else if (activeTab == "create")
+        @* ----------------  PARTICIPANTS ---------------- *@
+        else if (activeTab == "participants")
         {
-            <button class="btn btn-primary"
-                    @onclick='() => Nav.NavigateTo("/teacher/courses/create")'>
-                Öppna formulär
-            </button>
+            <ParticipantsSection Students="allStudents"
+                                 OnEdit="OpenEditStudent"
+                                 OnDelete="OpenDeleteStudent" />
         }
+
     }
 </div>
 
@@ -88,7 +89,7 @@
     private TeacherDashboardDto? dashboard;
     private List<CourseListDto> allCourses = new();
     private string activeTab = "overview";
-
+    private List<StudentListDto> allStudents;
     private bool showEditModal;
     private bool isSaving;
     private string? errorMessage;
@@ -104,6 +105,23 @@
         allCourses = await ApiService.GetAsync<List<CourseListDto>>(
             "api/course/list"
         );
+
+        // Hämta ALLA användare
+        var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users")
+              ?? new List<UserDto>();
+
+        // Filtrera bara studenter och mappa till StudentListDto
+        allStudents = allUsers
+            .Where(u => u.Role == "Student")
+            .Select(u => new StudentListDto
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                Email = u.Email,
+                CourseId = u.CourseId,
+                CourseName = u.CourseName ?? ""
+            })
+            .ToList();
     }
 
     private void GoToCourse(int id)
@@ -161,4 +179,16 @@
             isSaving = false;
         }
     }
+
+    private void OpenEditStudent(StudentListDto student)
+    {
+        Console.WriteLine($"Edit student: {student.FullName}");
+    }
+
+    private void OpenDeleteStudent(StudentListDto student)
+    {
+        Console.WriteLine($"Delete student: {student.FullName}");
+    }
+
+
 }
