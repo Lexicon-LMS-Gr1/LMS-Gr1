@@ -69,7 +69,7 @@ public class ActivityService : IActivityService
             throw new ArgumentException("Förfallodatum kan inte ligga efter aktivitetens sluttid.");
 
         // Regeln är "en aktivitet per dag och modul" och en aktivitet kan sträcka sig över flera dagar,
-        // räcker vanlig intervallöverlapp för att stoppa alla krockar.
+        // Då räcker det med en vanlig intervallöverlapp för att stoppa alla krockar.
         bool overlaps = module.Activities.Any(a =>
             normalizedStart < a.EndTime && normalizedEnd > a.StartTime);
 

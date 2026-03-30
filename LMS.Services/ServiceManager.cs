@@ -9,6 +9,7 @@ public class ServiceManager : IServiceManager
     public readonly Lazy<IModuleService> moduleService;
 	private readonly Lazy<IUserManagementService> userManagementService;
     private readonly Lazy<IDashboardService> dashboardService;
+    private readonly Lazy<ITeacherDashboardService> teacherDashboardService;
     private readonly Lazy<IActivityService> _activityService;
 
     public IAuthService AuthService => authService.Value;
@@ -16,6 +17,7 @@ public class ServiceManager : IServiceManager
     public IModuleService ModuleService => moduleService.Value;
     public IUserManagementService UserManagementService => userManagementService.Value;
     public IDashboardService DashboardService => dashboardService.Value;
+    public ITeacherDashboardService TeacherDashboardService => teacherDashboardService.Value;
     public IActivityService ActivityService => _activityService.Value;
 
 
@@ -26,6 +28,7 @@ public class ServiceManager : IServiceManager
         Lazy<ICourseService> courseService,
         Lazy<IUserManagementService> userManagementService,
         Lazy<IDashboardService> dashboardService,
+        Lazy<ITeacherDashboardService> teacherDashboardService,
         Lazy<IModuleService> moduleService,
         Lazy<IActivityService> activityService
 		)
@@ -34,6 +37,7 @@ public class ServiceManager : IServiceManager
         this.courseService = courseService;
         this.userManagementService = userManagementService;
         this.dashboardService = dashboardService;
+        this.teacherDashboardService = teacherDashboardService;
         this.moduleService = moduleService;
         this._activityService = activityService;
 }
