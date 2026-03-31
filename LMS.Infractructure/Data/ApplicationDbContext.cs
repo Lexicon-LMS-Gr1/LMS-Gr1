@@ -17,5 +17,7 @@ namespace LMS.Infrastructure.Data
         public DbSet<Module> Modules { get; set; }
         public DbSet<Activity> Activities { get; set; }
         public DbSet<ActivityType> ActivityTypes { get; set; }
+        public DbSet<Submission> Submissions { get; set; }
+
     }
 }

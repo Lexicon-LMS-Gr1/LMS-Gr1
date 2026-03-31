@@ -101,9 +101,11 @@ public static class ServiceExtensions
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        services.AddScoped<ISubmissionRepository, SubmissionRepository>();
+        services.AddScoped(provider =>
+            new Lazy<ISubmissionRepository>(() => provider.GetRequiredService<ISubmissionRepository>()));
 
-
-	}
+    }
 
     public static void AddServiceLayer(this IServiceCollection services)
     {
@@ -130,6 +132,11 @@ public static class ServiceExtensions
         services.AddScoped(provider => new Lazy<ITeacherDashboardService>(() => provider.GetRequiredService<ITeacherDashboardService>()));
         services.AddScoped<IActivityService, ActivityService>();
         services.AddScoped(provider => new Lazy<IActivityService>(() => provider.GetRequiredService<IActivityService>()));
+
+        services.AddScoped<IStudentAssignmentService, StudentAssignmentService>();
+        services.AddScoped(provider =>
+            new Lazy<IStudentAssignmentService>(() => provider.GetRequiredService<IStudentAssignmentService>()));
+
     }
 }
 

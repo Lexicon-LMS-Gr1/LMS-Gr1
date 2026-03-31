@@ -84,4 +84,17 @@ public class ActivityRepository : IActivityRepository
             .OrderBy(at => at.Name)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<Activity>> GetSubmissionActivitiesForCourseAsync(int courseId)
+    {
+        return await _context.Activities
+            .Include(a => a.ActivityType)
+            .Include(a => a.Module)
+            .Where(a =>
+                a.ActivityType.Name == "Assignment" &&
+                a.Module.CourseId == courseId)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
 }
