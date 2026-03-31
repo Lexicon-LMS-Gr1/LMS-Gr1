@@ -16,22 +16,23 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
         this.context = context;
     }
 
+    // TODO: Det finns redan en GetCourseById() - Slås ihop till en enda metod istället?
     public async Task<Course?> GetByIdAsync(int id, bool trackChanges = false)
     {
         return await FindByCondition(c => c.Id == id, trackChanges)
             .FirstOrDefaultAsync();
     }
 
+    // TODO: Används ej - Gör samma sak som GetCourseById() - Tas bort?
+    //public async Task<Course?> GetCourseAsync(int courseId)
+    //{
+    //	return await FindByCondition(c => c.Id == courseId)
+    //		.Include(c => c.Modules)               
+    //			.ThenInclude(m => m.Activities)     
+    //		.FirstOrDefaultAsync();
+    //}
 
-	public async Task<Course?> GetCourseAsync(int courseId)
-	{
-		return await FindByCondition(c => c.Id == courseId)
-			.Include(c => c.Modules)               
-				.ThenInclude(m => m.Activities)     
-			.FirstOrDefaultAsync();
-	}
-
-	public async Task<IEnumerable<Course>> GetAllAsync(bool trackChanges = false)
+    public async Task<IEnumerable<Course>> GetAllAsync(bool trackChanges = false)
 	{
 		return await FindAll(trackChanges).ToListAsync();
 	}
@@ -77,4 +78,6 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
             .Where(u => u.CourseId == user.CourseId)
             .ToListAsync();
     }
+
+
 }
