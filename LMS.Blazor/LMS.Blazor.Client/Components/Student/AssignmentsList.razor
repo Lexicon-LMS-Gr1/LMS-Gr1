@@ -1,0 +1,57 @@
+﻿@inject HttpClient Http
+
+@if (assignments == null)
+{
+    <p>Laddar...</p>
+}
+else if (!assignments.Any())
+{
+    <p>Inga inlämningar hittades.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Namn</th>
+                <th>Deadline</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in assignments)
+            {
+                <tr>
+                    <td>@a.Name</td>
+                    <td>
+                        @a.DueDate?.ToString("yyyy-MM-dd HH:mm")
+                    </td>
+                    <td>
+                        @if (a.IsSubmitted)
+                        {
+                            <span class="text-success">Inlämnad</span>
+                        }
+                        else if (a.IsLate)
+                        {
+                            <span class="text-danger">Försenad</span>
+                        }
+                        else
+                        {
+                            <span class="text-warning">Ej inlämnad</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<StudentAssignmentDto>? assignments;
+
+    protected override async Task OnInitializedAsync()
+    {
+        assignments = await Http.GetFromJsonAsync<List<StudentAssignmentDto>>(
+            "api/student/assignments");
+    }
+}
