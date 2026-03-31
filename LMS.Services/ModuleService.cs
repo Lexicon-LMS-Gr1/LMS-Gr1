@@ -36,12 +36,65 @@ public class ModuleService : IModuleService
 	}
 
 
-	public Task<ModuleDto> CreateModuleAsync(ModuleCreateDto moduleDto)
+    //TODO: Skapar modul utan att koppla den till en kurs, används inte. Tas Bort?
+    public Task<ModuleDto> CreateModuleAsync(ModuleCreateDto moduleDto)
 	{
 		throw new NotImplementedException();
 	}
 
-	public Task<bool> DeleteModuleAsync(int id)
+    public async Task<ModuleDto> CreateModuleAsync(int courseId, ModuleCreateDto moduleDto)
+    {
+        if (moduleDto is null)
+            throw new ArgumentNullException(nameof(moduleDto));
+
+        if (string.IsNullOrWhiteSpace(moduleDto.Name))
+            throw new ArgumentException("Modulnamn saknas.");
+
+        if (string.IsNullOrWhiteSpace(moduleDto.Description))
+            throw new ArgumentException("Modulbeskrivning saknas.");
+
+        if (moduleDto.StartDate > moduleDto.EndDate)
+            throw new ArgumentException("Modulens startdatum kan inte ligga efter slutdatum.");
+
+        var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
+
+        if (course is null)
+            throw new KeyNotFoundException($"Kurs med id {courseId} hittades inte.");
+
+        if (moduleDto.StartDate < course.StartDate || moduleDto.EndDate > course.EndDate)
+            throw new ArgumentException("Modulen ligger utanför kursens datumintervall.");
+
+        bool overlaps = course.Modules.Any(m =>
+            moduleDto.StartDate <= m.EndDate && moduleDto.EndDate >= m.StartDate);
+
+        if (overlaps)
+            throw new ArgumentException("Modulen överlappar en annan modul i kursen.");
+
+        var module = new Domain.Models.Entities.Module
+        {
+            Name = moduleDto.Name.Trim(),
+            Description = moduleDto.Description.Trim(),
+            StartDate = moduleDto.StartDate,
+            EndDate = moduleDto.EndDate,
+            CourseId = courseId,
+            Course = null!
+        };
+
+        _unitOfWork.ModuleRepository.Create(module);
+        await _unitOfWork.CompleteAsync();
+
+        return new ModuleDto
+        {
+            Id = module.Id,
+            Name = module.Name,
+            Description = module.Description,
+            StartDate = module.StartDate,
+            EndDate = module.EndDate,
+            Activities = new List<ActivityDto>()
+        };
+    }
+
+    public Task<bool> DeleteModuleAsync(int id)
 	{
 		throw new NotImplementedException();
 	}
