@@ -9,4 +9,5 @@ public interface IServiceManager
     IDashboardService DashboardService { get; }
     ITeacherDashboardService TeacherDashboardService { get; }
     IActivityService ActivityService { get; }
+    IStudentAssignmentService StudentAssignmentService { get; }
 }
