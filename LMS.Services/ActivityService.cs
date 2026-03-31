@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
+using LMS.Services.Validation;
 using LMS.Shared.DTOs.Activity;
 using Service.Contracts;
 
@@ -176,40 +177,23 @@ public class ActivityService : IActivityService
 		if (string.IsNullOrWhiteSpace(dto.Description))
 			throw new ArgumentException("Beskrivning saknas.");
 
-		if (dto.StartTime >= dto.EndTime)
-			throw new ArgumentException("Starttid måste vara tidigare än sluttid.");
-
 		var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(dto.Id, trackChanges: true);
 
 		if (activity is null)
-			throw new KeyNotFoundException("Aktivetet saknas.");
+			throw new KeyNotFoundException("Aktiviteten saknas.");
 
 		var module = await _unitOfWork.ModuleRepository.GetModuleWithActivitiesAsync(activity.ModuleId, trackChanges: false);
 
 		if (module is null)
 			throw new KeyNotFoundException("Modul saknas.");
 
-		if (dto.StartTime.Date < module.StartDate.Date || dto.EndTime.Date > module.EndDate.Date)
-			throw new ArgumentException("Aktivitetens datum måste ligga inom modulens datumintervall.");
-
-		if (dto.DueDate.HasValue && dto.DueDate.Value < dto.StartTime)
-			throw new ArgumentException("Deadline kan inte vara före aktivitetens starttid.");
-
-
-		bool overlaps = module.Activities
-	   .Where(a => a.Id != activity.Id)
-	   .Any(a => dto.StartTime < a.EndTime && dto.EndTime > a.StartTime);
-
-		if (overlaps)
-			throw new ArgumentException("Aktiviteten krockar med en annan aktivitet i modulen.");
-
-
+		ActivityDateValidator.Validate(dto, module, activity.Id);
 
 		activity.Name = dto.Name.Trim();
 		activity.Description = dto.Description.Trim();
-		activity.StartTime = dto.StartTime;
-		activity.EndTime = dto.EndTime;
-		activity.DueDate = dto.DueDate;
+		activity.StartTime = dto.StartTime.Date;
+		activity.EndTime = dto.EndTime.Date;
+		activity.DueDate = dto.DueDate?.Date;
 
 		await _unitOfWork.CompleteAsync();
 
