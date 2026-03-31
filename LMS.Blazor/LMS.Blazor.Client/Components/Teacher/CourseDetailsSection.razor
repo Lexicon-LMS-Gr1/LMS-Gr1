@@ -5,99 +5,103 @@
 
 <div class="container py-4">
 
-    @if (OnBack.HasDelegate)
-    {
+    @if (OnBack.HasDelegate) {
         <button class="btn btn-outline-secondary mb-3"
                 @onclick="() => OnBack.InvokeAsync()">
             <i class="bi bi-arrow-left"></i> Tillbaka
         </button>
     }
 
-    @if (Course == null)
-    {
+    @if (Course == null) {
         <p>Laddar...</p>
-    }
-    else
-    {
+    } else {
         <h2>@Course.Name</h2>
         <p class="text-muted">@Course.Description</p>
 
         <h4 class="mt-4">Moduler</h4>
 
-        @foreach (var module in Course.Modules)
-        {
-            <div class="card mb-3">
-                <div class="card-body">
-
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h5>@module.Name</h5>
-                            <p class="text-muted mb-1">@module.Description</p>
-                            <p class="small text-secondary">
-                                @module.StartDate.ToString("yyyy-MM-dd") -
-                                @module.EndDate.ToString("yyyy-MM-dd")
-                            </p>
-                        </div>
-
-                        <button class="btn btn-sm btn-outline-primary"
-                                @onclick="() => OpenModuleModal(module)">
-                            Edit
-                        </button>
+        @foreach (var module in Course.Modules) {
+            <div class="card mb-3"
+                 style="cursor:pointer;"
+                 @onclick="() => ToggleModule(module.Id)">
+                <div class="card-body d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="mb-1">@module.Name</h5>
+                        <p class="text-muted mb-1">@module.Description</p>
+                        <p class="small text-secondary mb-0">
+                            @module.StartDate.ToString("yyyy-MM-dd") -
+                            @module.EndDate.ToString("yyyy-MM-dd")
+                        </p>
                     </div>
+                    <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                            @onclick:stopPropagation="true"
+                            @onclick="() => OpenModuleModal(module)">
+                        <i class="bi bi-pencil"></i>
+                        Edit
+                    </button>
+                </div>
+            </div>
 
-                    @if (module.Activities?.Any() == true)
-                    {
-                        <ul class="list-group mt-3">
-                            @foreach (var a in module.Activities)
-                            {
-                                <li class="list-group-item">
+            @if (openModuleId == module.Id) {
+                <div class="ms-4 mb-3">
+                    @if (module.Activities?.Any() == true) {
+                        <h6 class="mb-3">Aktiviteter</h6>
 
-                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        @foreach (var a in module.Activities.OrderBy(a => a.StartTime)) {
+                            <div class="card mb-2">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-primary">@a.ActivityTypeName</span>
+                                                <strong>@a.Name</strong>
+                                            </div>
 
-                                        <div class="flex-grow-1"
-                                             style="cursor:pointer;"
-                                             @onclick="() => ToggleActivity(a.Id)">
-                                            <strong>@a.Name</strong>
-                                            <span class="badge bg-primary ms-2">@a.ActivityTypeName</span>
+                                            <div class="text-muted small mt-2">
+                                                @a.StartTime.ToString("yyyy-MM-dd")
+                                            </div>
                                         </div>
 
-                                        <button class="btn btn-sm btn-outline-secondary"
-                                                @onclick="() => OpenActivityModal(a)">
-                                            Edit
-                                        </button>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="() => OpenActivityModal(a)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    @onclick:stopPropagation="true">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    @if (openActivities.Contains(a.Id))
-                                    {
-                                        <div class="mt-3 border-top pt-3">
-                                            <p><strong>Beskrivning:</strong> @a.Description</p>
-                                            <p><strong>Start:</strong> @a.StartTime.ToString("yyyy-MM-dd HH:mm")</p>
-                                            <p><strong>Slut:</strong> @a.EndTime.ToString("yyyy-MM-dd HH:mm")</p>
-
-                                            @if (a.DueDate.HasValue)
-                                            {
-                                                <p><strong>Deadline:</strong> @a.DueDate.Value.ToString("yyyy-MM-dd HH:mm")</p>
-                                            }
+                                    @if (!string.IsNullOrWhiteSpace(a.Description)) {
+                                        <div class="mt-2 small text-muted">
+                                            @a.Description
                                         </div>
                                     }
 
-                                </li>
-                            }
-                        </ul>
-                    }
-                    else
-                    {
-                        <p class="text-muted small mt-2">Inga aktiviteter.</p>
+                                    @if (a.DueDate.HasValue) {
+                                        <div class="mt-1 small">
+                                            <strong>Deadline:</strong>
+                                            @a.DueDate.Value.ToString("yyyy-MM-dd")
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    } else {
+                        <p class="text-muted small">Inga aktiviteter.</p>
                     }
                 </div>
-            </div>
+            }
         }
     }
 </div>
 
 <!-- ACTIVITY MODAL -->
-@if (showActivityModal && selectedActivity != null)
-{
+@if (showActivityModal) {
     <div class="modal fade show d-block" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -107,25 +111,58 @@
                     <button type="button" class="btn-close" @onclick="CloseActivityModal"></button>
                 </div>
 
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Namn</label>
-                        <input class="form-control" @bind="selectedActivity.Name" />
+                <EditForm EditContext="activityEditContext" OnValidSubmit="SaveActivity">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="modal-body">
+
+                        @if (!string.IsNullOrEmpty(activityError)) {
+                            <div class="alert alert-danger">@activityError</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Namn</label>
+                            <InputText class="form-control" @bind-Value="activityForm.Name" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Beskrivning</label>
+                            <InputTextArea class="form-control" @bind-Value="activityForm.Description" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Start</label>
+                            <InputDate class="form-control" @bind-Value="activityForm.StartTime" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Slut</label>
+                            <InputDate class="form-control" @bind-Value="activityForm.EndTime" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Deadline</label>
+
+                            <div class="d-flex gap-2">
+                                <InputDate class="form-control"
+                                           @bind-Value="activityForm.DueDate" />
+
+                                <button type="button"
+                                        class="btn btn-outline-danger"
+                                        title="Ta bort deadline"
+                                        @onclick="ClearDeadline">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Beskrivning</label>
-                        <textarea class="form-control" @bind="selectedActivity.Description"></textarea>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseActivityModal">Stäng</button>
+                        <button type="submit" class="btn btn-primary">Spara</button>
                     </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="CloseActivityModal">Stäng</button>
-                    <button class="btn btn-primary" @onclick="SaveActivity">
-                        Spara
-                    </button>
-                </div>
-
+                </EditForm>
             </div>
         </div>
     </div>
@@ -134,8 +171,7 @@
 }
 
 <!-- MODULE MODAL -->
-@if (showModuleModal)
-{
+@if (showModuleModal) {
     <div class="modal fade show d-block" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -150,8 +186,7 @@
 
                     <div class="modal-body">
 
-                        @if (!string.IsNullOrEmpty(moduleError))
-                        {
+                        @if (!string.IsNullOrEmpty(moduleError)) {
                             <div class="alert alert-danger">@moduleError</div>
                         }
 
@@ -174,16 +209,13 @@
                             <label class="form-label">Slutdatum</label>
                             <InputDate class="form-control" @bind-Value="moduleForm.EndDate" />
                         </div>
-
                     </div>
 
                     <div class="modal-footer">
                         <button class="btn btn-secondary" @onclick="CloseModuleModal">Stäng</button>
                         <button type="submit" class="btn btn-primary">Spara</button>
                     </div>
-
                 </EditForm>
-
             </div>
         </div>
     </div>
@@ -196,12 +228,13 @@
     [Parameter] public EventCallback OnBack { get; set; }
 
     private CourseDto? Course;
-
-    private HashSet<int> openActivities = new();
+    private int? openModuleId;
 
     // ACTIVITY EDIT
     private bool showActivityModal;
-    private ActivityDto? selectedActivity;
+    private UpdateActivityDto activityForm = new();
+    private string? activityError;
+    private EditContext? activityEditContext;
 
     // MODULE EDIT
     private bool showModuleModal;
@@ -214,39 +247,31 @@
         Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
     }
 
-    private void ToggleActivity(int id)
-    {
-        if (!openActivities.Add(id))
-            openActivities.Remove(id);
-    }
-
     private void OpenActivityModal(ActivityDto activity)
     {
-        // IMPORTANT: create a COPY, not reference original
-        selectedActivity = new ActivityDto
-        {
+        activityForm = new UpdateActivityDto {
             Id = activity.Id,
             Name = activity.Name,
             Description = activity.Description,
-            ActivityTypeName = activity.ActivityTypeName,
             StartTime = activity.StartTime,
             EndTime = activity.EndTime,
             DueDate = activity.DueDate
         };
 
+        activityEditContext = new EditContext(activityForm);
+        activityError = null;
         showActivityModal = true;
     }
 
     private void CloseActivityModal()
     {
         showActivityModal = false;
-        selectedActivity = null;
+        activityError = null;
     }
 
     private void OpenModuleModal(ModuleDto module)
     {
-        moduleForm = new ModuleUpdateDto
-        {
+        moduleForm = new ModuleUpdateDto {
             Id = module.Id,
             Name = module.Name,
             Description = module.Description,
@@ -271,45 +296,50 @@
     {
         moduleError = null;
 
-        try
-        {
+        try {
             var result = await ApiService.PutAsync<ModuleUpdateDto, ModuleDto>(
                 $"api/module/{moduleForm.Id}", moduleForm);
 
-            if (result != null)
-            {
+            if (result != null) {
                 showModuleModal = false;
                 Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
-            }
-            else
-            {
+            } else {
                 moduleError = "Kunde inte uppdatera modulen.";
             }
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             moduleError = ex.Message;
         }
     }
 
     private async Task SaveActivity()
     {
-        try
-        {
-            var result = await ApiService.PutAsync<ActivityDto, ActivityDto>(
-                $"api/activity/{selectedActivity.Id}", selectedActivity);
+        activityError = null;
 
-            if (result != null)
-            {
+        try {
+            var result = await ApiService.PutAsync<UpdateActivityDto, ActivityDto>(
+                $"api/activity/{activityForm.Id}", activityForm);
+
+            if (result != null) {
                 showActivityModal = false;
-                selectedActivity = null;
-
                 Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
+            } else {
+                activityError = "Kunde inte uppdatera aktiviteten.";
             }
+        } catch (Exception ex) {
+            activityError = ex.Message;
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error saving activity: " + ex.Message);
-        }
+
     }
+
+    private void ToggleModule(int moduleId)
+    {
+        openModuleId = openModuleId == moduleId ? null : moduleId;
+    }
+
+    private void ClearDeadline()
+    {
+        activityForm.DueDate = null;
+
+    }
+
 }
