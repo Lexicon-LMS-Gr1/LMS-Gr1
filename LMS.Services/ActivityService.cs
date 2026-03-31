@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
+using LMS.Services.Validation;
 using LMS.Shared.DTOs.Activity;
 using Service.Contracts;
 
@@ -103,7 +104,7 @@ public class ActivityService : IActivityService
 
         return MapToDto(savedActivity);
     }
-
+	
     public async Task<ActivityDto> UpdateActivityAsync(ActivityUpdateDto activityDto)
     {
         if (activityDto is null)
@@ -165,7 +166,41 @@ public class ActivityService : IActivityService
         return MapToDto(updated);
     }
 
-    public async Task<bool> DeleteActivityAsync(int id)
+	public async Task<ActivityDto> UpdateActivityAsync2(UpdateActivityDto dto)
+	{
+		if (dto is null)
+			throw new ArgumentNullException(nameof(dto));
+
+		if (string.IsNullOrWhiteSpace(dto.Name))
+			throw new ArgumentException("Namn saknas.");
+
+		if (string.IsNullOrWhiteSpace(dto.Description))
+			throw new ArgumentException("Beskrivning saknas.");
+
+		var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(dto.Id, trackChanges: true);
+
+		if (activity is null)
+			throw new KeyNotFoundException("Aktiviteten saknas.");
+
+		var module = await _unitOfWork.ModuleRepository.GetModuleWithActivitiesAsync(activity.ModuleId, trackChanges: false);
+
+		if (module is null)
+			throw new KeyNotFoundException("Modul saknas.");
+
+		ActivityDateValidator.Validate(dto, module, activity.Id);
+
+		activity.Name = dto.Name.Trim();
+		activity.Description = dto.Description.Trim();
+		activity.StartTime = dto.StartTime.Date;
+		activity.EndTime = dto.EndTime.Date;
+		activity.DueDate = dto.DueDate?.Date;
+
+		await _unitOfWork.CompleteAsync();
+
+		return MapToDto(activity);
+	}
+
+	public async Task<bool> DeleteActivityAsync(int id)
     {
         var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(id, trackChanges: true);
 
