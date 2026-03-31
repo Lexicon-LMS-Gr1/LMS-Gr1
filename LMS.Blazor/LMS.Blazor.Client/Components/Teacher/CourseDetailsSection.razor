@@ -58,7 +58,11 @@
                                             </div>
 
                                             <div class="text-muted small mt-2">
-                                                @a.StartTime.ToString("yyyy-MM-dd")
+                                                @if (a.StartTime.Date == a.EndTime.Date) {
+                                                    @a.StartTime.ToString("yyyy-MM-dd")
+                                                } else {
+                                                    @($"{a.StartTime:yyyy-MM-dd} - {a.EndTime:yyyy-MM-dd}")
+                                                }
                                             </div>
                                         </div>
 
