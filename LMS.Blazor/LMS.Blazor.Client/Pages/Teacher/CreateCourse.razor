@@ -1,11 +1,8 @@
 ﻿@page "/teacher/courses/create"
 @attribute [Authorize(Roles = "Teacher")]
 
-@using System.ComponentModel.DataAnnotations
-@using LMS.Blazor.Client.Services
+@using LMS.Blazor.Client.Components.Teacher
 @using LMS.Shared.DTOs.Course
-@using LMS.Shared.DTOs.Module
-@inject IApiService ApiService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Skapa kurs</PageTitle>
@@ -13,199 +10,23 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-4">
-                    <h1 class="h3 fw-bold mb-3">Skapa ny kurs</h1>
-                    <p class="text-muted mb-4">Fyll i uppgifterna för kursen och lägg till moduler (valfritt).</p>
 
-                    @if (!string.IsNullOrWhiteSpace(errorMessage))
-                    {
-                        <div class="alert alert-danger">@errorMessage</div>
-                    }
-                    @* Formuläret är bundet till CourseCreateDto - som även innehåller en lista med Modules. *@
-                    <EditForm Model="model" OnValidSubmit="HandleValidSubmit">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary />
-                        <h2 class="h5 mb-3">Kurs</h2>
+            <CreateCourseSection 
+                OnCreated="HandleCreated"
+                OnCancel="HandleCancel" />
 
-                        <div class="mb-3">
-                            <label class="form-label">Kursnamn</label>
-                            <InputText class="form-control" @bind-Value="model.Name" />
-                            <ValidationMessage For="() => model.Name" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Beskrivning</label>
-                            <InputTextArea class="form-control" @bind-Value="model.Description" />
-                            <ValidationMessage For="() => model.Description" />
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Startdatum</label>
-                                <InputDate class="form-control" @bind-Value="model.StartDate" ParsingErrorMessage="Startdatum måste vara ett giltigt datum." />
-                                <ValidationMessage For="() => model.StartDate" />
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Slutdatum</label>
-                                <InputDate class="form-control" @bind-Value="model.EndDate" ParsingErrorMessage="Slutdatum måste vara ett giltigt datum." />
-                                <ValidationMessage For="() => model.EndDate" />
-                            </div>
-                        </div>
-
-                        <hr class="my-4" />
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h2 class="h5 mb-0">Moduler</h2>
-                            <button type="button" class="btn btn-outline-primary btn-sm" @onclick="AddModule">
-                                Lägg till modul
-                            </button>
-                        </div>
-
-                        @if (model.Modules.Count == 0)
-                        {
-                            <p class="text-muted">Inga moduler tillagda ännu.</p>
-                        }
-
-                        @for (int i = 0; i < model.Modules.Count; i++)
-                        {
-                            var moduleIndex = i;
-                            var module = model.Modules[moduleIndex];
-
-                            <div class="card mb-3 border">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h3 class="h6 mb-0">Modul @(moduleIndex + 1)</h3>
-                                        <button type="button"
-                                                class="btn btn-outline-danger btn-sm"
-                                                @onclick="() => RemoveModule(moduleIndex)">
-                                            Ta bort
-                                        </button>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Modulnamn</label>
-                                        <InputText class="form-control" @bind-Value="module.Name" />                                        
-                                    </div>
-                                     @* TODO: ValidationMessage för module.Name. Testa att det visas snyggt. *@
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Beskrivning</label>
-                                        <InputTextArea class="form-control" @bind-Value="module.Description" />
-                                    </div>
-                                     @* TODO:ValidationMessage module.Description. *@
-
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">Startdatum</label>
-                                            <InputDate class="form-control" @bind-Value="module.StartDate" />
-                                        </div>
-                                         @* TODO:ValidationMessage module.StartDate. *@
-
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">Slutdatum</label>
-                                            <InputDate class="form-control" @bind-Value="module.EndDate" />
-                                        </div>
-                                        @* TODO:ValidationMessage module.EndDate. *@
-                                    </div>
-                                    @* TODO: Visa modulspecifika fel här, tex: modul utanför kursens datum, modul överlappar annan modul
-                                       Just nu fångar backend detta med generellt felmeddelande. *@
-                                </div>
-                            </div>
-                        }
-
-                        <div class="d-flex gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
-                                @(isSubmitting ? "Sparar..." : "Skapa kurs")
-                            </button>
-
-                            <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">
-                                Avbryt
-                            </button>
-                        </div>
-                    </EditForm>
-                </div>
-            </div>
         </div>
     </div>
 </div>
 
 @code {
-    private CourseCreateDto model = new()
-    {
-        StartDate = DateTime.Today,
-        EndDate = DateTime.Today.AddMonths(6),
-        Modules = new List<ModuleCreateDto>()
-
-        // TODO:CourseCreateDto har redan List<ModuleCreateDto> Modules { get; set; } = new();
-        // då behövs sannolikt inte explicit initiering här.
-    };
-
-    private string? errorMessage;
-    private bool isSubmitting;
-
-    private void AddModule()
-    {
-        model.Modules.Add(new ModuleCreateDto
-        {
-            StartDate = model.StartDate,
-            EndDate = model.EndDate
-        });
-
-        // TODO: Om kursdatum ändras efter att moduler lagts till, uppdateras inte befintliga moduler automatiskt.
-        // Ok nu men framöver: synka modulers defaultdatum alt. visa tydlig info om att moduldatum måste justeras manuellt.
-    }
-
-    private void RemoveModule(int index)
-    {
-        if (index >= 0 && index < model.Modules.Count)
-        {
-            model.Modules.RemoveAt(index);
-        }
-
-        // TODO: Om man inför EditContext/manuell validering kan man 
-        // behöva trigga validering igen efter remove så gamla felmeddelanden försvinner korrekt.
-
-    }
-
-    private async Task HandleValidSubmit()
-    {
-        errorMessage = null;
-        isSubmitting = true;
-
-        try
-        {
-            var result = await ApiService.PostAsync<CourseCreateDto, CourseDto>("api/course", model);
-
-            if (result is null)
-            {
-                errorMessage = "Kursen kunde inte skapas.";
-                return;
-            }
-
-            NavigationManager.NavigateTo("/teacher/courses");
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Fel vid skapande av kurs: {ex.Message}";
-            
-            // TODO:Bättre att låta ApiService hantera HTTP 400/500 tydligare och returnera kontrollerade felmeddelanden.
-        }
-        finally
-        {
-            isSubmitting = false;
-        }
-    }
-
-    private void Cancel()
+    private void HandleCreated(CourseDto course)
     {
         NavigationManager.NavigateTo("/teacher/courses");
-        // TODO:Om formuläret blir större kan man fråga användaren 'är du säker?' om osparade ändringar finns.
     }
 
-    // TODO: Bryt ut modulredigeringen till egen komponent, tex CreateCourseModuleEditor.razor
-    // För att kunna visa klientvalideringmeddelanden 
-
-    // TODO: Klientvalidering för modulens startdatum <= slutdatum, samt modul ligger inom kursens datum
+    private void HandleCancel()
+    {
+        NavigationManager.NavigateTo("/teacher/courses");
+    }
 }
