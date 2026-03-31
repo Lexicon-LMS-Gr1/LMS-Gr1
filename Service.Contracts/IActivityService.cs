@@ -11,4 +11,5 @@ public interface IActivityService
     Task<ActivityDto> UpdateActivityAsync(ActivityUpdateDto activityDto);
     Task<bool> DeleteActivityAsync(int id);
     Task<IEnumerable<ActivityTypeDto>> GetAllActivityTypesAsync();
+	Task<ActivityDto> UpdateActivityAsync2(UpdateActivityDto dto);
 }
