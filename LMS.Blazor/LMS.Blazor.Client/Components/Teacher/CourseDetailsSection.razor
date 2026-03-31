@@ -14,11 +14,24 @@
 
     @if (Course == null) {
         <p>Laddar...</p>
-    } else {
-        <h2>@Course.Name</h2>
-        <p class="text-muted">@Course.Description</p>
+    } 
+    else 
+    {
 
-        <h4 class="mt-4">Moduler</h4>
+            <h2>@Course.Name</h2>
+            <p class="text-muted">@Course.Description</p>
+
+            <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+                <h4 class="mb-0">Moduler</h4>
+
+                <!-- Öppna skapa modul i modalt fönster, med CourseId som argument -->
+                <button class="btn btn-primary d-flex align-items-center"
+                        @onclick="OpenCreateModuleModal">
+
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Skapa ny modul
+                </button>
+            </div>
 
         @foreach (var module in Course.Modules) {
             <div class="card mb-3"
@@ -103,8 +116,19 @@
         }
     }
 </div>
+<!-- SKAPA NY MODUL I MODALT FÖNSTER-->
+@if (showCreateModuleModal && Course != null)
+{
+    <CreateModuleModal CourseId="@CourseId"
+                       CourseStartDate="@Course?.StartDate"
+                       CourseEndDate="@Course?.EndDate"
+                       ExistingModules="@Course?.Modules"
+                       OnCreated="HandleModuleCreated"
+                       OnClose="CloseCreateModuleModal" />
+}
 
-<!-- ACTIVITY MODAL -->
+
+<!-- EDIT ACTIVITY MODAL -->
 @if (showActivityModal) {
     <div class="modal fade show d-block" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -174,7 +198,7 @@
     <div class="modal-backdrop fade show"></div>
 }
 
-<!-- MODULE MODAL -->
+<!-- EDIT MODULE MODAL -->
 @if (showModuleModal) {
     <div class="modal fade show d-block" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -246,9 +270,12 @@
     private string? moduleError;
     private EditContext? moduleEditContext;
 
+    // SKAPA NY MODUL
+    private bool showCreateModuleModal;
+
     protected override async Task OnParametersSetAsync()
     {
-        Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
+        await LoadCourseAsync();
     }
 
     private void OpenActivityModal(ActivityDto activity)
@@ -296,6 +323,7 @@
         moduleError = null;
     }
 
+    // UPPDATERA REDIGERAD MODUL
     private async Task SaveModule()
     {
         moduleError = null;
@@ -306,7 +334,7 @@
 
             if (result != null) {
                 showModuleModal = false;
-                Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
+                await LoadCourseAsync();
             } else {
                 moduleError = "Kunde inte uppdatera modulen.";
             }
@@ -315,6 +343,7 @@
         }
     }
 
+    <!-- UPPDATERA REDIGERAD AKTIVITET -->
     private async Task SaveActivity()
     {
         activityError = null;
@@ -325,7 +354,7 @@
 
             if (result != null) {
                 showActivityModal = false;
-                Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
+                await LoadCourseAsync();
             } else {
                 activityError = "Kunde inte uppdatera aktiviteten.";
             }
@@ -334,6 +363,31 @@
         }
 
     }
+
+
+    private async Task LoadCourseAsync()
+    {
+        Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
+    }
+
+    <!-- HANTERA MODALT FÖNSTER FÖR SKAPA NY MODUL -->
+    private void OpenCreateModuleModal()
+    {
+        showCreateModuleModal = true;
+    }
+
+    private Task CloseCreateModuleModal()
+    {
+        showCreateModuleModal = false;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleModuleCreated()
+    {
+        showCreateModuleModal = false;
+        await LoadCourseAsync();
+    }
+
 
     private void ToggleModule(int moduleId)
     {
