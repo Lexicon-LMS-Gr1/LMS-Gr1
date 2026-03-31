@@ -1,4 +1,4 @@
-﻿@inject HttpClient Http
+﻿@inject IApiService ApiService
 
 @if (assignments == null)
 {
@@ -51,7 +51,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        assignments = await Http.GetFromJsonAsync<List<StudentAssignmentDto>>(
+        assignments = await ApiService.GetAsync<List<StudentAssignmentDto>>(
             "api/student/assignments");
     }
 }
