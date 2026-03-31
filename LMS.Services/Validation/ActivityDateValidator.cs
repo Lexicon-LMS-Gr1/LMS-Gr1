@@ -1,36 +1,32 @@
 ﻿using Domain.Models.Entities;
-using LMS.Shared.DTOs.Activity;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LMS.Services.Validation;
 
 public static class ActivityDateValidator
 {
 	public static void Validate(
-		UpdateActivityDto dto,
+		DateTime startTime,
+		DateTime endTime,
+		DateTime? dueDate,
 		Module module,
 		int currentActivityId)
 	{
-		var startDate = dto.StartTime.Date;
-		var endDate = dto.EndTime.Date;
 		var moduleStart = module.StartDate.Date;
-		var moduleEnd = module.EndDate.Date;
+		// Gör om tiden och gör den till hela dagen så hela dagen fram till  23:59:59.9999999
+		var moduleEnd = module.EndDate.Date.AddDays(1).AddTicks(-1);
 
-		// tillåter samma dag
-		if (startDate > endDate)
-			throw new ArgumentException("Startdatum måste vara samma som eller före slutdatum.");
+		if (startTime > endTime)
+			throw new ArgumentException("Starttid måste vara samma som eller före sluttid.");
 
-		if (startDate < moduleStart || endDate > moduleEnd)
-			throw new ArgumentException("Aktivitetens datum måste ligga inom modulens datumintervall.");
+		if (startTime < moduleStart || endTime > moduleEnd)
+			throw new ArgumentException("Aktivitetens tid måste ligga inom modulens datumintervall.");
 
-		if (dto.DueDate.HasValue && dto.DueDate.Value.Date < startDate)
-			throw new ArgumentException("Deadline kan inte vara före aktivitetens startdatum.");
+		if (dueDate.HasValue && dueDate.Value < startTime)
+			throw new ArgumentException("Deadline kan inte vara före aktivitetens starttid.");
 
 		bool overlaps = module.Activities
 			.Where(a => a.Id != currentActivityId)
-			.Any(a => startDate <= a.EndTime.Date && endDate >= a.StartTime.Date);
+			.Any(a => startTime < a.EndTime && endTime > a.StartTime);
 
 		if (overlaps)
 			throw new ArgumentException("Aktiviteten överlappar en annan aktivitet i modulen.");

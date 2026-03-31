@@ -187,13 +187,17 @@ public class ActivityService : IActivityService
 		if (module is null)
 			throw new KeyNotFoundException("Modul saknas.");
 
-		ActivityDateValidator.Validate(dto, module, activity.Id);
+		var normalizedStart = dto.StartTime.Date.AddHours(8);
+		var normalizedEnd = dto.EndTime.Date.AddHours(17);
+		var normalizedDueDate = dto.DueDate?.Date.AddHours(17);
+
+		ActivityDateValidator.Validate(normalizedStart, normalizedEnd, normalizedDueDate, module, activity.Id);
 
 		activity.Name = dto.Name.Trim();
 		activity.Description = dto.Description.Trim();
-		activity.StartTime = dto.StartTime.Date;
-		activity.EndTime = dto.EndTime.Date;
-		activity.DueDate = dto.DueDate?.Date;
+		activity.StartTime = normalizedStart;
+		activity.EndTime = normalizedEnd;
+		activity.DueDate = normalizedDueDate;
 
 		await _unitOfWork.CompleteAsync();
 
