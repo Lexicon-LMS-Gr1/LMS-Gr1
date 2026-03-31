@@ -1,4 +1,4 @@
-﻿namespace Domain.Models.Entities;
+namespace Domain.Models.Entities;
 
 public class Activity
 {
@@ -22,4 +22,7 @@ public class Activity
 
 	// Navigation Property that represents the relationship between Activity and Module
 	public required Module Module { get; set; }
+
+	// Navigation Property that represents the relationship between Activity and Document
+	public ICollection<Document> Documents { get; set; } = new List<Document>();
 }
