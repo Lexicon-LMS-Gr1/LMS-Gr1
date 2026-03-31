@@ -1,6 +1,7 @@
 @page "/teacher/users"
 @inject IApiService ApiService
 @inject AuthenticationStateProvider AuthStateProvider
+@using LMS.Blazor.Client.Components.Teacher
 @using LMS.Shared.DTOs.User
 @using LMS.Shared.DTOs.Course
 @attribute [Authorize(Roles = "Teacher")]
@@ -47,142 +48,10 @@
     }
     else
     {
-        <div class="card shadow-sm">
-            <div class="card-header bg-white py-3">
-                <div class="row align-items-center g-2">
-                    <div class="col-12 col-md">
-                        <div class="input-group">
-                            <span class="input-group-text bg-white"><span class="bi bi-search"></span></span>
-                            <input type="text"
-                                   class="form-control"
-                                   placeholder="Sök användare..."
-                                   @bind="searchQuery"
-                                   @bind:event="oninput" />
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <select class="form-select" @bind="roleFilter">
-                            <option value="">Alla roller</option>
-                            <option value="Teacher">Lärare</option>
-                            <option value="Student">Elev</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body p-0">
+        <UsersSection Users="users"
+              OnEdit="OpenEditModal"
+              OnDelete="OpenDeleteModal" />
 
-                @* ===== DESKTOP TABLE (hidden on mobile) ===== *@
-                <div class="d-none d-md-block table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="ps-4">Namn</th>
-                                <th>E-post</th>
-                                <th>Roll</th>
-                                <th>Kurs</th>
-                                <th class="text-end pe-4">Åtgärder</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var user in FilteredUsers)
-                            {
-                                <tr>
-                                    <td class="ps-4">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center"
-                                                 style="width: 36px; height: 36px; font-size: 0.85rem; font-weight: 600;">
-                                                @user.FirstName[0]@user.LastName[0]
-                                            </div>
-                                            <div class="fw-semibold">@user.FullName</div>
-                                        </div>
-                                    </td>
-                                    <td>@user.Email</td>
-                                    <td>
-                                        <span class="badge rounded-pill @(user.Role == "Teacher" ? "bg-warning text-dark" : "bg-info text-dark")">
-                                            @(user.Role == "Teacher" ? "Lärare" : "Elev")
-                                        </span>
-                                    </td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(user.CourseName))
-                                        {
-                                            <span class="text-muted">@user.CourseName</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted fst-italic">—</span>
-                                        }
-                                    </td>
-                                    <td class="text-end pe-4">
-                                        <button class="btn btn-sm btn-outline-primary me-2" title="Redigera" @onclick="() => OpenEditModal(user)">
-                                            <span class="bi bi-pencil-fill me-1"></span> Redigera
-                                        </button>
-                                        @if (user.Id == currentUserId)
-                                        {
-                                            <span class="badge bg-secondary px-3 py-2" title="Du kan inte ta bort dig själv">Du</span>
-                                        }
-                                        else
-                                        {
-                                            <button class="btn btn-sm btn-outline-danger" title="Ta bort" @onclick="() => OpenDeleteModal(user)">
-                                                <span class="bi bi-trash-fill me-1"></span> Ta bort
-                                            </button>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                @* ===== MOBILE CARD VIEW (hidden on desktop) ===== *@
-                <div class="d-md-none">
-                    @foreach (var user in FilteredUsers)
-                    {
-                        <div class="border-bottom p-3">
-                            <div class="d-flex align-items-start gap-3 mb-3">
-                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0"
-                                     style="width: 42px; height: 42px; font-size: 0.9rem; font-weight: 600;">
-                                    @user.FirstName[0]@user.LastName[0]
-                                </div>
-                                <div class="flex-grow-1 min-w-0">
-                                    <div class="fw-semibold text-truncate">@user.FullName</div>
-                                    <div class="text-muted small text-truncate">@user.Email</div>
-                                    <div class="d-flex align-items-center flex-wrap gap-2 mt-1">
-                                        <span class="badge rounded-pill @(user.Role == "Teacher" ? "bg-warning text-dark" : "bg-info text-dark")" style="font-size: 0.7rem;">
-                                            @(user.Role == "Teacher" ? "Lärare" : "Elev")
-                                        </span>
-                                        @if (!string.IsNullOrEmpty(user.CourseName))
-                                        {
-                                            <span class="text-muted small">@user.CourseName</span>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2">
-                                @if (user.Id == currentUserId)
-                                {
-                                    <button class="btn btn-sm btn-outline-primary px-3" title="Redigera" @onclick="() => OpenEditModal(user)">
-                                        <span class="bi bi-pencil-fill me-1"></span> Redigera
-                                    </button>
-                                    <span class="badge bg-secondary px-3 py-2" title="Du kan inte ta bort dig själv">Du</span>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-sm btn-outline-primary px-3" title="Redigera" @onclick="() => OpenEditModal(user)">
-                                        <span class="bi bi-pencil-fill me-1"></span> Redigera
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger px-3" title="Ta bort" @onclick="() => OpenDeleteModal(user)">
-                                        <span class="bi bi-trash-fill me-1"></span> Ta bort
-                                    </button>
-                                }
-                            </div>
-                        </div>
-                    }
-                </div>
-            </div>
-            <div class="card-footer bg-white text-muted py-2 px-4">
-                Visar @FilteredUsers.Count() av @users.Count() användare
-            </div>
-        </div>
     }
 </div>
 

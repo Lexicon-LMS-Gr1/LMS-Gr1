@@ -1,0 +1,92 @@
+﻿@using LMS.Shared.DTOs.Course
+@using Microsoft.AspNetCore.Components.Forms
+
+@if (Show)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="bi bi-pencil-square me-2"></span>
+                        Redigera kurs
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="Close"></button>
+                </div>
+
+                <EditForm Model="FormModel" OnValidSubmit="Save">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+
+                        @if (!string.IsNullOrEmpty(ErrorMessage))
+                        {
+                            <div class="alert alert-danger py-2">
+                                <span class="bi bi-exclamation-triangle me-1"></span> @ErrorMessage
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Namn</label>
+                            <InputText class="form-control" @bind-Value="FormModel.Name" />
+                            <ValidationMessage For="() => FormModel.Name" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Beskrivning</label>
+                            <InputTextArea class="form-control" @bind-Value="FormModel.Description" rows="3" />
+                            <ValidationMessage For="() => FormModel.Description" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Startdatum</label>
+                            <InputDate class="form-control" @bind-Value="FormModel.StartDate" />
+                            <ValidationMessage For="() => FormModel.StartDate" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Slutdatum</label>
+                            <InputDate class="form-control" @bind-Value="FormModel.EndDate" />
+                            <ValidationMessage For="() => FormModel.EndDate" class="text-danger small" />
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="Close" disabled="@IsSaving">Avbryt</button>
+                        <button type="submit" class="btn btn-primary d-flex align-items-center gap-2" disabled="@IsSaving">
+                            @if (IsSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                            }
+                            <span>Spara ändringar</span>
+                        </button>
+                    </div>
+
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public CourseUpdateDto FormModel { get; set; } = new();
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<CourseUpdateDto> OnSave { get; set; }
+
+    [Parameter] public bool IsSaving { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    private async Task Save()
+    {
+        await OnSave.InvokeAsync(FormModel);
+    }
+
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

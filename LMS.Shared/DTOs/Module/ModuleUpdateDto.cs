@@ -1,30 +1,33 @@
+using LMS.Shared.Validation;
 using System.ComponentModel.DataAnnotations;
 
 namespace LMS.Shared.DTOs.Module;
 
 public class ModuleUpdateDto
 {
-    [Required(ErrorMessage = "Module ID is required")]
+    [Required(ErrorMessage = "Modul-id måste anges.")]
     public int Id { get; set; }
 
-    [Required(ErrorMessage = "Module name is required")]
-    [StringLength(100, MinimumLength = 3, ErrorMessage = "Module name must be between 3 and 100 characters")]
+    [Required(ErrorMessage = "Modulnamn måste anges.")]
+    [StringLength(100, MinimumLength = 3, ErrorMessage = "Modulnamn måste vara mellan 3 och 100 tecken.")]
     public string Name { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Description is required")]
-    [StringLength(500, MinimumLength = 10, ErrorMessage = "Description must be between 10 and 500 characters")]
+    [Required(ErrorMessage = "Beskrivning måste anges.")]
+    [StringLength(500, MinimumLength = 10, ErrorMessage = "Modulbeskrivning måste vara mellan 10 och 500 tecken.")]
     public string Description { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Start date is required")]
+    [Required(ErrorMessage = "Startdatum måste anges.")]
+    [DateLessThanOrEqualToOtherDate(nameof(EndDate), ErrorMessage = "Startdatum får inte vara senare än slutdatum.")]
     [DataType(DataType.Date)]
     public DateTime StartDate { get; set; }
 
-    [Required(ErrorMessage = "End date is required")]
+    [Required(ErrorMessage = "Slutdatum måste anges.")]
+    [DateGreatherThanOrEqualToOtherDate(nameof(StartDate), ErrorMessage = "Slutdatum får inte vara tidigare än startdatum.")]
     [DataType(DataType.Date)]
     public DateTime EndDate { get; set; }
 
-    [Required(ErrorMessage = "Course ID is required")]
-    [Range(1, int.MaxValue, ErrorMessage = "Course ID must be a positive number")]
+    [Required(ErrorMessage = "Kurs-id måste anges.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Kurs-id ska vara ett positivt tal.")]
     public int CourseId { get; set; }
 
     // Business rules validated in service layer:

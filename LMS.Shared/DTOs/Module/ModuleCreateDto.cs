@@ -1,23 +1,25 @@
+using LMS.Shared.Validation;
 using System.ComponentModel.DataAnnotations;
 
 namespace LMS.Shared.DTOs.Module;
 
 public class ModuleCreateDto
 {
-    [Required(ErrorMessage = "Modulnamn saknas")]
-    [StringLength(100, MinimumLength = 3, ErrorMessage = "Modulnamn måste vara mellan 3 och 100 tecken")]
+    [Required(ErrorMessage = "Modulnamn måste anges.")]
+    [StringLength(100, MinimumLength = 3, ErrorMessage = "Modulnamn måste vara mellan 3 och 100 tecken.")]
     public string Name { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Beskrivning saknas")]
-    [StringLength(500, MinimumLength = 10, ErrorMessage = "Beskrivning måste vara mellan 10 och 500 tecken")]
+    [Required(ErrorMessage = "Beskrivning måste anges.")]
+    [StringLength(500, MinimumLength = 10, ErrorMessage = "Modulbeskrivning måste vara mellan 10 och 500 tecken.")]
     public string Description { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Startdatum saknas")]
+    [Required(ErrorMessage = "Startdatum måste anges.")]
+    [DateLessThanOrEqualToOtherDate(nameof(EndDate), ErrorMessage = "Startdatum får inte vara senare än slutdatum.")]
     [DataType(DataType.Date)]
     public DateTime StartDate { get; set; }
 
-    [Required(ErrorMessage = "Slutdatum saknas")]
+    [Required(ErrorMessage = "Slutdatum måste anges.")]
+    [DateGreatherThanOrEqualToOtherDate(nameof(StartDate), ErrorMessage = "Slutdatum får inte vara tidigare än startdatum.")]
     [DataType(DataType.Date)]
     public DateTime EndDate { get; set; }
 }
-
