@@ -49,11 +49,22 @@ public class CourseController : ControllerBase
 		return Ok(course);
 	}
 
-	[HttpPost]    
-	public async Task<ActionResult<CourseDto>> CreateCourse([FromBody] CourseCreateDto courseCreateDto)
+    [HttpPost]
+    public async Task<ActionResult<CourseDto>> CreateCourse([FromBody] CourseCreateDto courseCreateDto)
     {
-        var createdCourse = await _serviceManager.CourseService.CreateCourseAsync(courseCreateDto);
-        return Ok(createdCourse);
+        try
+        {
+            var createdCourse = await _serviceManager.CourseService.CreateCourseAsync(courseCreateDto);
+            return Ok(createdCourse);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid skapande av kurs." });
+        }
     }
 
 
