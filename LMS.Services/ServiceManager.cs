@@ -7,13 +7,12 @@ public class ServiceManager : IServiceManager
     private readonly Lazy<IAuthService> authService;
     private readonly Lazy<ICourseService> courseService;
     public readonly Lazy<IModuleService> moduleService;
-    private readonly Lazy<IUserManagementService> userManagementService;
+	private readonly Lazy<IUserManagementService> userManagementService;
     private readonly Lazy<IDashboardService> dashboardService;
     private readonly Lazy<ITeacherDashboardService> teacherDashboardService;
     private readonly Lazy<IActivityService> _activityService;
-    private readonly Lazy<IDocumentService> _documentService;
     private readonly Lazy<IStudentAssignmentService> studentAssignmentService;
-    private readonly Lazy<IProgressService> progressService;
+	private readonly Lazy<IProgressService> progressService;
 
 	public IAuthService AuthService => authService.Value;
     public ICourseService CourseService => courseService.Value;
@@ -22,11 +21,11 @@ public class ServiceManager : IServiceManager
     public IDashboardService DashboardService => dashboardService.Value;
     public ITeacherDashboardService TeacherDashboardService => teacherDashboardService.Value;
     public IActivityService ActivityService => _activityService.Value;
-    public IDocumentService DocumentService => _documentService.Value;
     public IStudentAssignmentService StudentAssignmentService => studentAssignmentService.Value;
-    public IProgressService ProgressService => progressService.Value;
+	public IProgressService ProgressService => progressService.Value;
 
-    public ServiceManager(
+
+	public ServiceManager(
         Lazy<IAuthService> authService,
         Lazy<ICourseService> courseService,
         Lazy<IUserManagementService> userManagementService,
@@ -34,9 +33,9 @@ public class ServiceManager : IServiceManager
         Lazy<ITeacherDashboardService> teacherDashboardService,
         Lazy<IModuleService> moduleService,
         Lazy<IActivityService> activityService,
-        Lazy<IDocumentService> documentService,
         Lazy<IStudentAssignmentService> studentAssignmentService,
-        Lazy<IProgressService> progressService)
+        Lazy<IProgressService> progressService
+        )
     {
         this.authService = authService;
         this.courseService = courseService;
@@ -45,7 +44,6 @@ public class ServiceManager : IServiceManager
         this.teacherDashboardService = teacherDashboardService;
         this.moduleService = moduleService;
         this._activityService = activityService;
-        this._documentService = documentService;
         this.studentAssignmentService = studentAssignmentService;
         this.progressService = progressService;
     }

@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace Domain.Models.Entities;
 
@@ -17,7 +17,4 @@ public class Course
 
 	// Navigation Property that represents the relationship between Course and Module
 	public ICollection<Module> Modules { get; set; } = new List<Module>();
-
-	// Navigation Property that represents the relationship between Course and Document
-	public ICollection<Document> Documents { get; set; } = new List<Document>();
 }
