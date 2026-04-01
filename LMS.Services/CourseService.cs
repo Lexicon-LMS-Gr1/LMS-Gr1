@@ -16,10 +16,11 @@ namespace LMS.Services
 	public class CourseService : ICourseService
 	{
 		private readonly IUnitOfWork _unitOfWork;
-
-		public CourseService(IUnitOfWork unitOfWork)
+		private readonly IProgressService _progressService;
+		public CourseService(IUnitOfWork unitOfWork, IProgressService progressService)
 		{
 			_unitOfWork = unitOfWork;
+			_progressService = progressService;
 		}
 
 		public async Task<IEnumerable<CourseListDto>> GetAllCoursesListAsync()
@@ -45,9 +46,9 @@ namespace LMS.Services
 
 			var dto = CourseMapper.ToDetailedCourseDto(course);
 
-			dto.Progress = await GetCourseProgressAsync(userId, course.Id);
+			dto.Progress = await _progressService.GetCourseProgressAsync(userId, course.Id);
 			foreach (var module in dto.Modules) {
-				module.Progress = await GetModuleProgressAsync(userId, module.Id);
+				module.Progress = await _progressService.GetModuleProgressAsync(userId, module.Id);
 			}
 
 			return dto;
@@ -203,100 +204,6 @@ namespace LMS.Services
 		}
 
 
-		// Progressmetoderna ska kanske ska göras om till egen ProgressService
-		public async Task<int> GetCourseProgressAsync(string userId, int courseId)
-		{
-			// All activities for the course
-			var activities = await _unitOfWork.ActivityRepository.GetByCourseIdAsync(courseId);
-
-			var activityCount = activities.Count();
-			if (activityCount == 0) return 0;
-
-			// All submissions for the course
-			var submissionActivities = await _unitOfWork.ActivityRepository.GetSubmissionActivitiesForCourseAsync(courseId);
-
-			// All submissions by the user
-			var submissions = await _unitOfWork.SubmissionRepository.GetByStudentIdAsync(userId);
-
-
-			// All submission id's
-			var submissionActivityIds = submissionActivities
-				.Select(a => a.Id)
-				.ToHashSet();
-
-			// All submission id's by the user
-			var submittedActivityIds = submissions
-				.Select(s => s.ActivityId)
-				.ToHashSet();
-
-			// Current date
-			var now = DateTime.UtcNow;
-
-			var completedCount = activities.Count(activity => {
-				var hasEnded = activity.EndTime <= now;
-				var reqSubmission = submissionActivityIds.Contains(activity.Id);
-				
-				// If the activity require a submission it is completed only if a submission is made
-				if (reqSubmission) {
-					var hasSubmitted = submittedActivityIds.Contains(activity.Id);
-					return hasSubmitted;
-				}
-
-				// No submission required, completed when it has ended
-				return hasEnded;
-
-			});
-
-			// return whole percentage points
-			return (int) Math.Round((double)completedCount / activityCount * 100);
-
 		
-
-		}
-
-		public async Task<int> GetModuleProgressAsync(string userId, int moduleId)
-		{
-			var activities = await _unitOfWork.ActivityRepository.GetByModuleIdAsync(moduleId);
-
-			var activityCount = activities.Count();
-			if (activityCount == 0) return 0;
-
-			// All submissions for the activity
-			var submissionActivities = await _unitOfWork.ActivityRepository.GetSubmissionActivitiesForModuleAsync(moduleId);
-
-			// All submissions by the user
-			var submissions = await _unitOfWork.SubmissionRepository.GetByStudentIdAsync(userId);
-
-			// All submission id's
-			var submissionActivityIds = submissionActivities
-					.Select(a => a.Id)
-					.ToHashSet();
-
-			// All submission id's by the user
-			var submittedActivityIds = submissions
-				.Select(s => s.ActivityId)
-				.ToHashSet();
-
-			// Current date
-			var now = DateTime.UtcNow;
-
-			var completedCount = activities.Count(activity => {
-				var hasEnded = activity.EndTime <= now;
-				var reqSubmission = submissionActivityIds.Contains(activity.Id);
-
-				// If the activity require a submission it is completed only if a submission is made
-				if (reqSubmission) {
-					var hasSubmitted = submittedActivityIds.Contains(activity.Id);
-					return hasSubmitted;
-				}
-
-				// No submission required, completed when it has ended
-				return hasEnded;
-
-			});
-
-			return (int)Math.Round((double)completedCount / activityCount * 100);
-
-		}
 	}
 }
