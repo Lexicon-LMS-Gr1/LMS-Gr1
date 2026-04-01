@@ -32,4 +32,11 @@ public class ServerNoOpApiService(ILogger<ServerNoOpApiService> logger) : IApiSe
         _logger.LogWarning("ServerNoOpApiService.DeleteAsync called for: {Endpoint}", endpoint);
         return Task.FromResult((false, (string?)null));
     }
+
+    public Task<TResponse?> PostMultipartAsync<TResponse>(string endpoint, MultipartFormDataContent content, CancellationToken ct = default)
+    {
+        _logger.LogWarning("ServerNoOpApiService.PostMultipartAsync called for: {Endpoint}", endpoint);
+        return Task.FromResult<TResponse?>(default);
+    }
 }
+

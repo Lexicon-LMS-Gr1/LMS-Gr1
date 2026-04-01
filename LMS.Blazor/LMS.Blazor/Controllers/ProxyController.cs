@@ -1,4 +1,4 @@
-﻿using LMS.Blazor.Services;
+using LMS.Blazor.Services;
 using LMS.Shared.DTOs.AuthDtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -141,7 +141,18 @@ public class ApiProxyController : ControllerBase
         var requestMessage = new HttpRequestMessage(new HttpMethod(Request.Method), targetUri);
         requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        if (Request.ContentLength > 0 || Request.Headers.ContainsKey("Transfer-Encoding"))
+        // Forward the request body for methods that support one.
+        // Blazor WASM sends multipart via the browser fetch API which may NOT set Content-Length
+        // (especially over HTTP/2), so we cannot rely on ContentLength > 0.
+        // We always include a body for POST / PUT / PATCH regardless of Content-Length header.
+        bool methodMayHaveBody = HttpMethods.IsPost(Request.Method)
+                              || HttpMethods.IsPut(Request.Method)
+                              || HttpMethods.IsPatch(Request.Method);
+
+        bool hasExplicitBody = Request.ContentLength > 0
+                            || Request.Headers.ContainsKey("Transfer-Encoding");
+
+        if (hasExplicitBody || methodMayHaveBody)
         {
             requestMessage.Content = new StreamContent(Request.Body);
 
@@ -151,6 +162,7 @@ public class ApiProxyController : ControllerBase
                     MediaTypeHeaderValue.Parse(Request.ContentType);
             }
         }
+
 
         foreach (var header in Request.Headers)
         {

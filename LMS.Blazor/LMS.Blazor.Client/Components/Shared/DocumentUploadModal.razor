@@ -1,0 +1,233 @@
+@namespace LMS.Blazor.Client.Components.Shared
+@using LMS.Shared.DTOs.Document
+@inject IApiService ApiService
+
+<!-- Modal Backdrop -->
+<div class="modal fade show d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-cloud-upload me-2"></i>Ladda upp dokument
+                </h5>
+                <button type="button" class="btn-close" @onclick="Close" disabled="@isUploading"></button>
+            </div>
+
+            <div class="modal-body">
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger d-flex align-items-center gap-2 py-2">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span>@errorMessage</span>
+                    </div>
+                }
+
+                @if (uploadSuccess)
+                {
+                    <div class="alert alert-success d-flex align-items-center gap-2 py-2">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>Dokumentet har laddats upp!</span>
+                    </div>
+                }
+
+                <!-- File Picker -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Välj fil <span class="text-danger">*</span></label>
+                    <InputFile class="form-control"
+                               OnChange="OnFileSelected"
+                               accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.zip" />
+                    <div class="form-text text-muted">
+                        Tillåtna format: PDF, Word, PowerPoint, Excel, text, bilder (JPG/PNG) och ZIP. Max 50 MB.
+                    </div>
+                </div>
+
+                <!-- Document Name -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Namn <span class="text-danger">*</span></label>
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Dokumentnamn..."
+                           @bind="documentName"
+                           maxlength="200" />
+                </div>
+
+                <!-- Optional Description -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Beskrivning <span class="text-muted fw-normal">(valfri)</span></label>
+                    <textarea class="form-control"
+                              rows="2"
+                              placeholder="Beskriv dokumentets innehåll..."
+                              @bind="documentDescription"
+                              maxlength="500"></textarea>
+                </div>
+
+                <!-- Selected file info chip -->
+                @if (selectedFile != null)
+                {
+                    <div class="d-flex align-items-center gap-2 p-2 bg-light rounded border">
+                        <i class="bi bi-paperclip text-secondary"></i>
+                        <span class="small text-truncate">@selectedFile.Name</span>
+                        <span class="badge bg-secondary ms-auto">@FormatFileSize(selectedFile.Size)</span>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="Close" disabled="@isUploading">
+                    Avbryt
+                </button>
+                <button type="button"
+                        class="btn btn-primary d-flex align-items-center gap-2"
+                        @onclick="Upload"
+                        disabled="@(isUploading || selectedFile == null)">
+                    @if (isUploading)
+                    {
+                        <span class="spinner-border spinner-border-sm"></span>
+                        <span>Laddar upp...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-cloud-upload"></i>
+                        <span>Ladda upp</span>
+                    }
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop fade show"></div>
+
+@code {
+    // Exactly ONE of these must be set
+    [Parameter] public int? CourseId   { get; set; }
+    [Parameter] public int? ModuleId   { get; set; }
+    [Parameter] public int? ActivityId { get; set; }
+
+    [Parameter] public EventCallback<DocumentDto> OnUploaded { get; set; }
+    [Parameter] public EventCallback              OnClose     { get; set; }
+
+    // ── Allowed file types & max size ───────────────────────────────────────
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".pdf", ".doc", ".docx", ".ppt", ".pptx",
+        ".xls", ".xlsx", ".txt", ".jpg", ".jpeg", ".png", ".zip"
+    };
+    private const long MaxFileSizeBytes = 50 * 1024 * 1024; // 50 MB
+
+    // ── State ────────────────────────────────────────────────────────────────
+    private IBrowserFile? selectedFile;
+    private string documentName        = string.Empty;
+    private string documentDescription = string.Empty;
+    private string? errorMessage;
+    private bool isUploading;
+    private bool uploadSuccess;
+
+    // ── Handlers ─────────────────────────────────────────────────────────────
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        errorMessage  = null;
+        uploadSuccess = false;
+        selectedFile  = e.File;
+
+        // Pre-validate immediately so user sees error at once
+        var (ok, err) = ValidateFile(selectedFile);
+        if (!ok)
+        {
+            errorMessage = err;
+            selectedFile = null;
+            return;
+        }
+
+        // Auto-fill name from filename (without extension)
+        if (string.IsNullOrWhiteSpace(documentName))
+            documentName = Path.GetFileNameWithoutExtension(selectedFile.Name);
+    }
+
+    private async Task Upload()
+    {
+        errorMessage  = null;
+        uploadSuccess = false;
+
+        if (selectedFile == null)
+        {
+            errorMessage = "Ingen fil vald. Välj en fil att ladda upp.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(documentName))
+        {
+            errorMessage = "Dokumentnamnet får inte vara tomt.";
+            return;
+        }
+
+        var (ok, err) = ValidateFile(selectedFile);
+        if (!ok)
+        {
+            errorMessage = err;
+            return;
+        }
+
+        isUploading = true;
+        try
+        {
+            using var stream  = selectedFile.OpenReadStream(MaxFileSizeBytes);
+            using var ms      = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            ms.Position = 0;
+
+            var content = new MultipartFormDataContent();
+            content.Add(new StreamContent(ms), "file", selectedFile.Name);
+            content.Add(new StringContent(documentName.Trim()),                                    "name");
+            content.Add(new StringContent(documentDescription?.Trim() ?? string.Empty),            "description");
+
+            if (CourseId.HasValue)   content.Add(new StringContent(CourseId.Value.ToString()),   "courseId");
+            if (ModuleId.HasValue)   content.Add(new StringContent(ModuleId.Value.ToString()),   "moduleId");
+            if (ActivityId.HasValue) content.Add(new StringContent(ActivityId.Value.ToString()), "activityId");
+
+            var result = await ApiService.PostMultipartAsync<DocumentDto>("api/upload/document", content);
+
+            if (result != null)
+            {
+                uploadSuccess = true;
+                await OnUploaded.InvokeAsync(result);
+                // Small delay so user sees success message before modal closes
+                await Task.Delay(800);
+                await Close();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private Task Close() => OnClose.InvokeAsync();
+
+    // ── Validation ───────────────────────────────────────────────────────────
+    private static (bool Ok, string? Error) ValidateFile(IBrowserFile file)
+    {
+        var ext = Path.GetExtension(file.Name);
+
+        if (!AllowedExtensions.Contains(ext))
+            return (false, $"Filtypen \"{ext}\" är inte tillåten. Tillåtna format: PDF, Word, PowerPoint, Excel, text, bilder (JPG/PNG) och ZIP.");
+
+        if (file.Size > MaxFileSizeBytes)
+            return (false, $"Filen är för stor ({FormatFileSize(file.Size)}). Maximal filstorlek är 50 MB.");
+
+        return (true, null);
+    }
+
+    private static string FormatFileSize(long bytes) => bytes switch
+    {
+        < 1024        => $"{bytes} B",
+        < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
+        _             => $"{bytes / (1024.0 * 1024):F1} MB"
+    };
+}

@@ -1,0 +1,83 @@
+@namespace LMS.Blazor.Client.Components.Shared
+@using LMS.Shared.DTOs.Document
+@inject IApiService ApiService
+@inject NavigationManager NavigationManager
+
+@if (Documents != null && Documents.Any())
+{
+    <div class="document-list mt-2">
+        @foreach (var doc in Documents.OrderByDescending(d => d.UploadTimestamp))
+        {
+            <div class="document-item d-flex align-items-start gap-2 py-2 border-bottom">
+
+                <i class="bi @GetFileIcon(doc.FileExtension) fs-5 text-secondary mt-1 flex-shrink-0"></i>
+
+                <div class="flex-grow-1 overflow-hidden">
+                    <a href="javascript:void(0)"
+                       class="document-link text-primary fw-semibold text-decoration-none d-block text-truncate"
+                       title="@doc.Name"
+                       @onclick="() => DownloadDocument(doc)">
+                        @doc.Name
+                    </a>
+
+                    @if (!string.IsNullOrWhiteSpace(doc.Description))
+                    {
+                        <small class="text-muted d-block">@doc.Description</small>
+                    }
+
+                    <small class="text-muted">
+                        @FormatFileSize(doc.FileSizeBytes) &middot;
+                        @doc.UploadTimestamp.ToString("yyyy-MM-dd HH:mm")
+                    </small>
+                </div>
+
+                @if (CanDelete)
+                {
+                    <button class="btn btn-sm btn-link text-danger p-0 flex-shrink-0"
+                            title="Ta bort dokument"
+                            @onclick="() => DeleteDocument(doc)"
+                            @onclick:stopPropagation="true">
+                        <i class="bi bi-trash fs-6"></i>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public List<DocumentDto>? Documents { get; set; }
+    [Parameter] public bool CanDelete { get; set; } = false;
+    [Parameter] public EventCallback<int> OnDeleted { get; set; }
+
+    private async Task DownloadDocument(DocumentDto doc)
+    {
+        // Navigate to the proxy download endpoint - browser will trigger download
+        var downloadUrl = NavigationManager.BaseUri.TrimEnd('/') + $"/api/proxy/api/documents/{doc.Id}/download";
+        NavigationManager.NavigateTo(downloadUrl, forceLoad: true);
+    }
+
+    private async Task DeleteDocument(DocumentDto doc)
+    {
+        await OnDeleted.InvokeAsync(doc.Id);
+    }
+
+    private static string GetFileIcon(string? extension) => extension?.ToLower() switch
+    {
+        ".pdf"                      => "bi-file-earmark-pdf-fill",
+        ".doc" or ".docx"           => "bi-file-earmark-word-fill",
+        ".ppt" or ".pptx"           => "bi-file-earmark-slides-fill",
+        ".xls" or ".xlsx"           => "bi-file-earmark-excel-fill",
+        ".txt"                      => "bi-file-earmark-text-fill",
+        ".jpg" or ".jpeg" or ".png" => "bi-file-earmark-image-fill",
+        ".zip" or ".rar"            => "bi-file-earmark-zip-fill",
+        _                           => "bi-file-earmark-fill"
+    };
+
+    private static string FormatFileSize(long bytes) => bytes switch
+    {
+        < 1024             => $"{bytes} B",
+        < 1024 * 1024      => $"{bytes / 1024.0:F1} KB",
+        _                  => $"{bytes / (1024.0 * 1024):F1} MB"
+    };
+}

@@ -116,4 +116,28 @@ public class ClientApiService : IApiService
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
     }
 
+    public async Task<TResponse?> PostMultipartAsync<TResponse>(string endpoint, MultipartFormDataContent content, CancellationToken ct = default)
+    {
+        // NOTE: Calls the dedicated Blazor-server upload controller directly (NOT through the generic
+        // api/proxy/... path), because UseAntiforgery() middleware consumes the multipart body
+        // before the generic proxy can forward it.
+        var response = await _httpClient.PostAsync(endpoint, content, ct);
+
+        if (HandleUnauthorized(response)) return default;
+
+        if (response.IsSuccessStatusCode)
+        {
+            return await JsonSerializer.DeserializeAsync<TResponse>(
+                await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+        }
+
+        var errorMessage = await response.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(errorMessage))
+            errorMessage = "Ett fel uppstod vid uppladdning.";
+
+        throw new Exception(errorMessage.Trim('"'));
+    }
+
 }
+
+
