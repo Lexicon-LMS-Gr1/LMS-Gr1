@@ -35,4 +35,16 @@ public class ActivityController : ControllerBase
 			return NotFound();
 		}
 	}
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteActivity(int id)
+    {
+        var success = await _serviceManager.ActivityService.DeleteActivityAsync(id);
+
+        if (!success)
+            return NotFound();
+
+        return NoContent();
+    }
+
 }
