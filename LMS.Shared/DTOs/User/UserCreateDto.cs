@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace LMS.Shared.DTOs.User;
 
 /// <summary>
-/// DTO for creating a new user (Teacher or Student)
+/// DTO för att skapa en ny användare (Lärare eller Elev)
 /// </summary>
 public class UserCreateDto
 {
@@ -32,12 +32,6 @@ public class UserCreateDto
     [RegularExpression("^(Teacher|Student)$", ErrorMessage = "Roll måste vara antingen \"Teacher\" eller \"Student\".")]
     public string Role { get; set; } = string.Empty;
 
-    // Required for Students, must be null for Teachers
+    // Krävs för elever, måste vara null för lärare
     public int? CourseId { get; set; }
-
-    // Business rules validated in service layer:
-    // 1. Email must be unique
-    // 2. If Role is "Student", CourseId must be provided and must exist
-    // 3. If Role is "Teacher", CourseId must be null
-    // 4. Username will be generated from email (part before @)
 }

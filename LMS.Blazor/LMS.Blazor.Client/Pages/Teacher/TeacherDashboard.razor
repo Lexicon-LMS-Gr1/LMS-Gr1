@@ -1,24 +1,68 @@
 ﻿@page "/teacher/dashboard"
+@using LMS.Blazor.Client.Components.Teacher
 @using LMS.Shared.DTOs.TeacherDashboard
+@using LMS.Shared.DTOs.Course
+@using LMS.Shared.DTOs.User
 @inject IApiService ApiService
 @inject NavigationManager Nav
 
+@if (selectedCourseId != null)
+{
+    <CourseDetailsSection CourseId="selectedCourseId.Value"
+                          OnBack="CloseCourseDetails" />
+    return;
+}
+
+@if (showCreateCourse)
+{
+    <CreateCourseSection OnCreated="RefreshCourses"
+                         OnCancel="CloseCreateCourse" />
+    return;
+}
+
 <div class="container py-4">
-    <h1 class="h3 mb-4">Lärarens Dashboard</h1>
+    <h1 class="h3 mb-4">Dashboard</h1>
 
     <!-- Snabbåtgärder -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Snabbåtgärder</h5>
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Snabbåtgärder</h5>
 
-            <button class="btn btn-primary d-flex align-items-center"
-                    @onclick='() => Nav.NavigateTo("/teacher/courses/create")'>
-                <i class="bi bi-plus-circle me-2"></i>
-                Skapa ny kurs
-            </button>
+                    <button class="btn btn-primary d-flex align-items-center"
+                            @onclick="OpenCreateCourse">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Skapa ny kurs
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == "overview" ? "active text-primary fw-semibold" : "text-dark")"
+                    @onclick='() => activeTab = "overview"'>
+                Översikt
+            </button>
+        </li>
+
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == "courses" ? "active text-primary fw-semibold" : "text-dark")"
+                    @onclick='() => activeTab = "courses"'>
+                Kurser
+            </button>
+        </li>
+
+        <li class="nav-item">
+            <button class="nav-link @(activeTab == "participants" ? "active text-primary fw-semibold" : "text-dark")"
+                    @onclick='() => activeTab = "participants"'>
+                Studenter
+            </button>
+        </li>
+    </ul>
 
     @if (dashboard == null)
     {
@@ -26,107 +70,438 @@
     }
     else
     {
-
-        <div class="row g-4">
-
-            <!-- Aktiva kurser -->
-            <div class="col-lg-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Aktiva kurser</h5>
-                        <a class="small text-decoration-none" href="/teacher/courses">Visa alla</a>
-                    </div>
-
-                    <div class="list-group list-group-flush">
-                        @foreach (var c in dashboard.ActiveCourses)
-                        {
-                            <div class="list-group-item">
-                                <div class="fw-semibold">@c.Name</div>
-                                <div class="text-muted small">
-                                    <i class="bi bi-people"></i> @c.StudentCount elever •
-                                    <i class="bi bi-layers"></i> @c.ModuleCount moduler
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Senaste aktivitet -->
-            <div class="col-lg-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white">
-                        <h5 class="card-title mb-0">Senaste aktivitet</h5>
-                    </div>
-
-                    <div class="list-group list-group-flush">
-                        @foreach (var a in dashboard.RecentActivities)
-                        {
-                            <div class="list-group-item">
-                                <span class="badge @GetBadgeColor(a.Type) me-2">@a.Type</span>
-
-                                <div>@a.Description</div>
-
-                                <div class="text-muted small mt-1">
-                                    <i class="bi bi-clock"></i> @a.Timestamp
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kommande aktiviteter -->
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="card-title mb-0">Kommande aktiviteter</h5>
-                    </div>
-
-                    <div class="list-group list-group-flush">
-                        @foreach (var u in dashboard.UpcomingActivities)
-                        {
-                            <div class="list-group-item d-flex justify-content-between">
-                                <div>
-                                    <span class="badge @GetBadgeColor(u.Type) me-2">@u.Type</span>
-
-                                    <strong>@u.Name</strong><br />
-                                    <span class="text-muted small">@u.CourseName</span>
-                                </div>
-
-                                <div class="text-muted small">
-                                    <i class="bi bi-calendar-event"></i> @u.StartTime
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-        </div>
+        @if (activeTab == "overview")
+        {
+            <OverviewSection Dashboard="dashboard" />
+        }
+        else if (activeTab == "courses")
+        {
+            <CoursesSection Courses="allCourses"
+                            OnView="GoToCourse"
+                            OnEdit="OpenEditCourse" />
+        }
+        else if (activeTab == "participants")
+        {
+            <ParticipantsSection Students="allStudents"
+                                 OnEdit="OpenEditUser"
+                                 OnDelete="OpenDeleteUser" />
+        }
     }
 </div>
 
+<!-- ===================== EDIT COURSE MODAL ===================== -->
+<EditCourseModal Show="showEditCourseModal"
+                 FormModel="courseForm"
+                 OnSave="SaveCourseChanges"
+                 OnClose="CloseEditCourse"
+                 IsSaving="isSavingCourse"
+                 ErrorMessage="@courseError" />
+
+<!-- ===================== EDIT USER MODAL ===================== -->
+@if (showEditUserModal && userToEdit != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="bi bi-pencil-square me-2"></span>
+                        Redigera användare
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditUser"></button>
+                </div>
+
+                <EditForm Model="userForm" OnValidSubmit="SaveUserChanges">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+
+                        @if (!string.IsNullOrEmpty(userEditError))
+                        {
+                            <div class="alert alert-danger py-2">
+                                <span class="bi bi-exclamation-triangle me-1"></span> @userEditError
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Förnamn</label>
+                            <InputText class="form-control" @bind-Value="userForm.FirstName" />
+                            <ValidationMessage For="@(() => userForm.FirstName)" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Efternamn</label>
+                            <InputText class="form-control" @bind-Value="userForm.LastName" />
+                            <ValidationMessage For="@(() => userForm.LastName)" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">E‑post</label>
+                            <InputText class="form-control" @bind-Value="userForm.Email" />
+                           <ValidationMessage For="@(() => userForm.Email)" class="text-danger small" />
+                        </div>
+
+                        @if (userToEdit.Role == "Student")
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Kurs</label>
+                                <select class="form-select" @bind="userForm.CourseId">
+                                    <option value="">— Ingen kurs —</option>
+                                    @foreach (var c in allCourses)
+                                    {
+                                        <option value="@c.Id">@c.Name</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseEditUser" disabled="@isSavingUser">Avbryt</button>
+
+                        <button type="submit" class="btn btn-primary d-flex align-items-center gap-2" disabled="@isSavingUser">
+                            @if (isSavingUser)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                            }
+                            <span>Spara ändringar</span>
+                        </button>
+                    </div>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ===================== DELETE USER MODAL ===================== -->
+@if (showDeleteUserModal && userToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="bi bi-exclamation-triangle text-danger me-2"></span>
+                        Bekräfta borttagning
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseDeleteUser"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    @if (!string.IsNullOrEmpty(userDeleteError))
+                    {
+                        <div class="alert alert-danger py-2">
+                            <span class="bi bi-shield-exclamation me-1"></span> @userDeleteError
+                        </div>
+                    }
+
+                    <p>Är du säker på att du vill ta bort följande användare?</p>
+
+                    <div class="card bg-light">
+                        <div class="card-body py-2">
+                            <strong>@userToDelete.FullName</strong><br />
+                            <span class="text-muted">@userToDelete.Email</span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-3 mb-0 py-2">
+                        <span class="bi bi-exclamation-triangle me-1"></span>
+                        Denna åtgärd kan inte ångras.
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDeleteUser" disabled="@isDeletingUser">Avbryt</button>
+
+                    <button type="button" class="btn btn-danger d-flex align-items-center gap-2"
+                            @onclick="ConfirmUserDelete"
+                            disabled="@isDeletingUser">
+
+                        @if (isDeletingUser)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                        }
+                        <span>Ta bort</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private TeacherDashboardDto? dashboard;
+    private List<CourseListDto> allCourses = new();
+    private List<StudentListDto> allStudents = new();
+    private string activeTab = "overview";
+    private int? selectedCourseId;
+    private bool showCreateCourse = false;
+
+    /* ---------------- COURSE EDIT ---------------- */
+    private bool showEditCourseModal;
+    private bool isSavingCourse;
+    private string? courseError;
+    private CourseUpdateDto courseForm = new();
+
+    /* ---------------- USER EDIT ---------------- */
+    private bool showEditUserModal;
+    private bool isSavingUser;
+    private string? userEditError;
+    private UserDto? userToEdit;
+    private UserUpdateDto userForm = new();
+
+    /* ---------------- USER DELETE ---------------- */
+    private bool showDeleteUserModal;
+    private bool isDeletingUser;
+    private string? userDeleteError;
+    private UserDto? userToDelete;
 
     protected override async Task OnInitializedAsync()
     {
-        dashboard = await ApiService.GetAsync<TeacherDashboardDto>(
-            "api/user/me/teacher-dashboard"
-        );
+        await LoadDashboard();
     }
 
-    private string GetBadgeColor(string type)
+    /* ---------------- COURSE EDIT ---------------- */
+    private void OpenEditCourse(CourseListDto course)
     {
-        return type switch
+        courseForm = new CourseUpdateDto
         {
-            "Lecture" => "bg-primary",
-            "Workshop" => "bg-warning text-dark",
-            "Assignment" => "bg-info text-dark",
-            "Exam" => "bg-danger",
-            "Seminar" => "bg-success",
-            _ => "bg-secondary"
+            Id = course.Id,
+            Name = course.Name,
+            Description = course.Description,
+            StartDate = course.StartDate,
+            EndDate = course.EndDate
         };
+
+        courseError = null;
+        showEditCourseModal = true;
     }
+
+    private void CloseEditCourse()
+    {
+        showEditCourseModal = false;
+        courseError = null;
+    }
+
+    private async Task SaveCourseChanges()
+    {
+        isSavingCourse = true;
+        courseError = null;
+
+        try
+        {
+            var result = await ApiService.PutAsync<CourseUpdateDto, CourseDto>(
+                $"api/course/{courseForm.Id}", courseForm);
+
+            if (result != null)
+            {
+                showEditCourseModal = false;
+                allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+            }
+            else
+            {
+                courseError = "Kunde inte uppdatera kursen.";
+            }
+        }
+        catch (Exception ex)
+        {
+            courseError = ex.Message;
+        }
+        finally
+        {
+            isSavingCourse = false;
+        }
+    }
+
+    /* ---------------- USER EDIT ---------------- */
+    private void OpenEditUser(StudentListDto s)
+    {
+        userToEdit = new UserDto
+        {
+            Id = s.Id,
+            FirstName = s.FullName.Split(" ")[0],
+            LastName = s.FullName.Split(" ").Last(),
+            Email = s.Email,
+            CourseId = s.CourseId,
+            CourseName = s.CourseName,
+            Role = "Student"
+        };
+
+        userForm = new UserUpdateDto
+        {
+            Id = userToEdit.Id,
+            FirstName = userToEdit.FirstName,
+            LastName = userToEdit.LastName,
+            Email = userToEdit.Email,
+            CourseId = userToEdit.CourseId
+        };
+
+        userEditError = null;
+        showEditUserModal = true;
+    }
+
+    private void CloseEditUser()
+    {
+        showEditUserModal = false;
+        userEditError = null;
+    }
+
+    private async Task SaveUserChanges()
+    {
+        isSavingUser = true;
+        userEditError = null;
+
+        try
+        {
+            var result = await ApiService.PutAsync<UserUpdateDto, UserDto>(
+                $"api/users/{userForm.Id}", userForm);
+
+            if (result != null)
+            {
+                showEditUserModal = false;
+                await ReloadStudents();
+            }
+            else
+            {
+                userEditError = "Kunde inte uppdatera användaren.";
+            }
+        }
+        catch (Exception ex)
+        {
+            userEditError = ex.Message;
+        }
+        finally
+        {
+            isSavingUser = false;
+        }
+    }
+
+    /* ---------------- USER DELETE ---------------- */
+    private void OpenDeleteUser(StudentListDto s)
+    {
+        userToDelete = new UserDto
+        {
+            Id = s.Id,
+            FirstName = s.FullName.Split(" ")[0],
+            LastName = s.FullName.Split(" ").Last(),
+            Email = s.Email,
+            CourseId = s.CourseId,
+            CourseName = s.CourseName,
+            Role = "Student"
+        };
+
+        userDeleteError = null;
+        showDeleteUserModal = true;
+    }
+
+    private void CloseDeleteUser()
+    {
+        showDeleteUserModal = false;
+        userDeleteError = null;
+    }
+
+    private async Task ConfirmUserDelete()
+    {
+        if (userToDelete == null) return;
+
+        isDeletingUser = true;
+        userDeleteError = null;
+
+        try
+        {
+            var (success, error) = await ApiService.DeleteAsync($"api/users/{userToDelete.Id}");
+
+            if (success)
+            {
+                showDeleteUserModal = false;
+                await ReloadStudents();
+            }
+            else
+            {
+                userDeleteError = error ?? "Kunde inte ta bort användaren.";
+            }
+        }
+        catch (Exception ex)
+        {
+            userDeleteError = ex.Message;
+        }
+        finally
+        {
+            isDeletingUser = false;
+        }
+    }
+
+    private async Task ReloadStudents()
+    {
+        var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
+
+        allStudents = allUsers
+            .Where(u => u.Role == "Student")
+            .Select(u => new StudentListDto
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                Email = u.Email,
+                CourseId = u.CourseId,
+                CourseName = u.CourseName ?? ""
+            })
+            .ToList();
+    }
+
+    private void GoToCourse(int id)
+        {
+            selectedCourseId = id;
+        }
+
+    private void CloseCourseDetails()
+        {
+            selectedCourseId = null;
+        }
+
+    private void OpenCreateCourse()
+    {
+        showCreateCourse = true;
+    }
+
+    private void CloseCreateCourse()
+    {
+        showCreateCourse = false;
+    }
+
+    private async Task RefreshCourses(CourseDto course)
+    {
+        showCreateCourse = false;
+
+        await LoadDashboard();
+
+        StateHasChanged();
+    }
+
+    private async Task LoadDashboard()
+    {
+        dashboard = await ApiService.GetAsync<TeacherDashboardDto>("api/user/me/teacher-dashboard");
+        allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+
+        var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
+
+        allStudents = allUsers
+            .Where(u => u.Role == "Student")
+            .Select(u => new StudentListDto
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                Email = u.Email,
+                CourseId = u.CourseId,
+                CourseName = u.CourseName ?? ""
+            })
+            .ToList();
+    }
+
 }

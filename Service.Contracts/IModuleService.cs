@@ -13,4 +13,6 @@ public interface IModuleService
     Task<bool> DeleteModuleAsync(int id);
 
 	Task<IEnumerable<ActivityDto>> GetActivitiesAsync(int moduleId);
+
+    Task<ModuleDto> CreateModuleAsync(int courseId, ModuleCreateDto moduleDto);
 }

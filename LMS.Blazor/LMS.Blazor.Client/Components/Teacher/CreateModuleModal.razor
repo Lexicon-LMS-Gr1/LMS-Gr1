@@ -1,0 +1,233 @@
+﻿@using LMS.Blazor.Client.Services
+@using LMS.Shared.DTOs.Module
+@using Microsoft.AspNetCore.Components.Forms
+@inject IApiService ApiService
+
+@* @if (Show)
+{ *@
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        Skapa ny modul
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="Close"></button>
+                </div>
+
+                <EditForm Model="model" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+                        @if (!string.IsNullOrWhiteSpace(errorMessage))
+                        {
+                            <div class="alert alert-danger">@errorMessage</div>
+                        }
+
+                        @if (!AvailableDateRanges.Any())
+                        {
+                            <div class="alert alert-warning mt-2">
+                                Lediga datumintervall saknas i kursen! <br/>
+								Ändra/ta bort befintliga moduler för att frigöra datum.
+                            </div>
+                        }
+                        else if (CourseStartDate.HasValue && CourseEndDate.HasValue)
+                        {
+                            <div class="alert alert-info mt-2">
+                                Kursens datumintervall:
+                                @CourseStartDate.Value.ToString("yyyy-MM-dd") – @CourseEndDate.Value.ToString("yyyy-MM-dd")
+                           
+                                <div>Lediga datumintervall för nya moduler:</div>
+                                <ul class="mb-0 mt-2">
+                                    @foreach (var range in AvailableDateRanges)
+                                    {
+                                        <li>@range.Start.ToString("yyyy-MM-dd") – @range.End.ToString("yyyy-MM-dd")</li>
+                                    }
+                                </ul>
+                            </div>
+                        
+
+                            <div class="mb-3">
+                                <label class="form-label">Modulnamn</label>
+                                <InputText class="form-control" @bind-Value="model.Name" />
+                                <ValidationMessage For="() => model.Name" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Beskrivning</label>
+                                <InputTextArea class="form-control" @bind-Value="model.Description" />
+                                <ValidationMessage For="() => model.Description" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Startdatum</label>
+                                    <InputDate class="form-control" @bind-Value="model.StartDate" />
+                                    <ValidationMessage For="() => model.StartDate" />
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Slutdatum</label>
+                                    <InputDate class="form-control" @bind-Value="model.EndDate" />
+                                    <ValidationMessage For="() => model.EndDate" />
+                                </div>
+						    </div>
+					
+						    <div class="modal-footer">
+							    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+								    @(isSubmitting ? "Sparar..." : "Skapa modul")
+							    </button>
+
+							    <button type="button" class="btn btn-outline-secondary" @onclick="Close">
+								    Avbryt
+							    </button>
+						    </div>
+					    }
+                    </div>
+                    
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+@* } *@
+
+@code {
+    // [Parameter] public bool Show { get; set; }
+
+    [Parameter, EditorRequired]
+    public int CourseId { get; set; }
+
+    [Parameter]
+    public DateTime? CourseStartDate { get; set; }
+
+    [Parameter]
+    public DateTime? CourseEndDate { get; set; }
+
+    [Parameter]
+    public IEnumerable<ModuleDto>? ExistingModules { get; set; }
+
+    [Parameter]
+    public EventCallback OnCreated { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private ModuleCreateDto model = new();
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    protected override void OnParametersSet()
+    {
+        // if (Show)
+        // {
+            ResetForm();
+        // }
+    }    
+
+    private async Task HandleValidSubmit()
+    {
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var result = await ApiService.PostAsync<ModuleCreateDto, ModuleDto>(
+                $"api/courses/{CourseId}/modules",
+                model);
+
+            if (result is null)
+            {
+                errorMessage = "Modulen kunde inte skapas.";
+                return;
+            }
+
+            ResetForm();
+
+            if (OnCreated.HasDelegate)
+                await OnCreated.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fel vid skapande av modul: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        errorMessage = null;
+        ResetForm();
+
+        if (OnClose.HasDelegate)
+            await OnClose.InvokeAsync();
+    }
+
+    private void ResetForm()
+    {
+        model = new ModuleCreateDto
+        {
+            StartDate = CourseStartDate ?? DateTime.Today,
+            EndDate = CourseEndDate ?? DateTime.Today
+        };
+    }
+
+    private List<(DateTime Start, DateTime End)> AvailableDateRanges => GetAvailableDateRanges();
+
+    private List<(DateTime Start, DateTime End)> GetAvailableDateRanges()
+    {
+        var availableRanges = new List<(DateTime Start, DateTime End)>();
+
+        if (!CourseStartDate.HasValue || !CourseEndDate.HasValue)
+            return availableRanges;
+
+        var courseStart = CourseStartDate.Value.Date;
+        var courseEnd = CourseEndDate.Value.Date;
+
+        var modules = (ExistingModules ?? Enumerable.Empty<ModuleDto>())
+            .OrderBy(m => m.StartDate)
+            .ToList();
+
+        // Inga moduler alls => hela kursintervallet är ledigt
+        if (!modules.Any())
+        {
+            availableRanges.Add((courseStart, courseEnd));
+            return availableRanges;
+        }
+
+        var currentStart = courseStart;
+
+        foreach (var module in modules)
+        {
+            var moduleStart = module.StartDate.Date;
+            var moduleEnd = module.EndDate.Date;
+
+            // Finns ett glapp före denna modul?
+            if (currentStart < moduleStart)
+            {
+                availableRanges.Add((currentStart, moduleStart.AddDays(-1)));
+            }
+
+            // Nästa möjliga lediga datum börjar dagen efter modulens slut
+            if (moduleEnd.AddDays(1) > currentStart)
+            {
+                currentStart = moduleEnd.AddDays(1);
+            }
+        }
+
+        // Finns ledigt intervall efter sista modulen?
+        if (currentStart <= courseEnd)
+        {
+            availableRanges.Add((currentStart, courseEnd));
+        }
+
+        // Filtrera bort ogiltiga intervall
+        return availableRanges
+            .Where(r => r.Start <= r.End)
+            .ToList();
+    }
+}

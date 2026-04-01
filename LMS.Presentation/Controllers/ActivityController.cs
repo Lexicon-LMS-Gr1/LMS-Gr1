@@ -2,9 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LMS.Presentation.Controllers;
 
@@ -13,35 +10,29 @@ namespace LMS.Presentation.Controllers;
 [Authorize(Roles = "Teacher")]
 public class ActivityController : ControllerBase
 {
-	private readonly IActivityService _activityService;
+	private readonly IServiceManager _serviceManager;
 
-	public ActivityController(IActivityService activityService)
+	public ActivityController(IServiceManager serviceManager)
 	{
-		_activityService = activityService;
+		_serviceManager = serviceManager;
 	}
 
-	[HttpPut("{activityId:int}")]
-	public async Task<IActionResult> UpdateActivity(int activityId, [FromBody] ActivityUpdateDto dto)
+	[HttpPut("{id}")]
+	public async Task<ActionResult<ActivityDto>> UpdateActivity(int id, [FromBody] UpdateActivityDto dto)
 	{
-		if (activityId != dto.Id)
-            return BadRequest("Aktivitets-id stämmer inte.");
+		if (id != dto.Id)
+			return BadRequest();
+		if (!ModelState.IsValid)
+			return BadRequest(ModelState);
 
-		try
-		{
-			var updated = await _activityService.UpdateActivityAsync(dto);
-			return Ok(updated);
+
+		try {
+			var result = await _serviceManager.ActivityService.UpdateActivityAsync2(dto);
+			return Ok(result);
+		} catch (ArgumentException ex) {
+			return BadRequest(ex.Message);
+		} catch (KeyNotFoundException) {
+			return NotFound();
 		}
-		catch (ArgumentException ex)
-		{
-			return BadRequest(new { message = ex.Message });
-		}
-		catch (KeyNotFoundException ex)
-		{
-			return NotFound(new { message = ex.Message });
-		}
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av aktivitet." });
-        }
-    }
+	}
 }

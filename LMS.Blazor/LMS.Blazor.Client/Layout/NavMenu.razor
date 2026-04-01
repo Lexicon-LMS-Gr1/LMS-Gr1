@@ -89,20 +89,19 @@
 
     private List<NavMenuItemModel> StudentMenuItems => new()
     {
-        new("bi bi-house", "Dashboard", "/dashboard", NavLinkMatch.All),
+        new("bi bi-house", "Dashboard", "dashboard", NavLinkMatch.All),
         new("bi bi-book", "Min kurs", "student/course"),
-        new("bi bi-file-earmark-text", "Inlämningar", "counter"),
+        new("bi bi-file-earmark-text", "Inlämningar", "/assignments"),
         new("bi bi-people", "Kursdeltagare", "/participants")
     };
 
     private List<NavMenuItemModel> TeacherMenuItems => new()
     {
-        new("bi bi-house", "Dashboard", "", NavLinkMatch.All),
-        new("bi bi-book", "Kurser", "teacher/courses"),
+        new("bi bi-house", "Dashboard", "teacher/dashboard", NavLinkMatch.All),
+        new("bi bi-book", "Kurser", "teacher/courses", NavLinkMatch.All),
         new("bi bi-plus-circle", "Skapa ny kurs", "teacher/courses/create"),
         new("bi bi-plus-circle", "Skapa ny aktivitet", "/teacher/activities/create"),
-        new("bi bi-people", "Användare", "teacher/users"),
-        new("bi bi-list-task", "Inlämningar", "demoauth")
+        new("bi bi-people", "Användare", "teacher/users")
     };
 
     protected override void OnInitialized()

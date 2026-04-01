@@ -1,293 +1,209 @@
 ﻿using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
 using LMS.Infrastructure.Data;
+using LMS.Services.Mappers;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Module;
 using Microsoft.EntityFrameworkCore;
 using Service.Contracts;
+using System.Diagnostics;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace LMS.Services
 {
-    // https://github.com/Lexicon-NET-2025-HT/CompaniesAPI/blob/master/Companies.Services/EmployeeService.cs
-    public class CourseService : ICourseService
-    {
-        private readonly IUnitOfWork _unitOfWork;
+	// https://github.com/Lexicon-NET-2025-HT/CompaniesAPI/blob/master/Companies.Services/EmployeeService.cs
+	public class CourseService : ICourseService
+	{
+		private readonly IUnitOfWork _unitOfWork;
+		private readonly IProgressService _progressService;
+		public CourseService(IUnitOfWork unitOfWork, IProgressService progressService)
+		{
+			_unitOfWork = unitOfWork;
+			_progressService = progressService;
+		}
 
-        public CourseService(IUnitOfWork unitOfWork)
-        {
-            _unitOfWork = unitOfWork;
-        }
+		public async Task<IEnumerable<CourseListDto>> GetAllCoursesListAsync()
+		{
+			var courses = await _unitOfWork.CourseRepository.GetCoursesForListAsync();
 
-        public async Task<IEnumerable<CourseListDto>> GetAllCoursesListAsync()
-        {
-            var courses = await _unitOfWork.CourseRepository.GetCoursesForListAsync();
+			return courses.Select(CourseMapper.ToCourseListDto);
+		}
 
-            return courses.Select(c => new CourseListDto {
-                Id = c.Id,
-                Name = c.Name,
-                Description = c.Description,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate,
-                StudentCount = c.Students.Count,
-                ModuleCount = c.Modules.Count
-            });
-        }
+		public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
+		{
+			var courses = await _unitOfWork.CourseRepository.GetAllAsync();
 
-        public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
-        {
-            var courses = await _unitOfWork.CourseRepository.GetAllAsync();
+			return courses.Select(CourseMapper.ToBasicCourseDto);
+		}
 
-            return courses.Select(c => new CourseDto {
-                Id = c.Id,
-                Name = c.Name,
-                Description = c.Description,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate
-            });
-        }
+		public async Task<CourseDto?> GetCourseForUserAsync(string userId)
+		{
+			var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(userId);
 
-        public async Task<CourseDto?> GetCourseForUserAsync(string userId)
-        {
-            var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(userId);
+			if (course == null)
+				return null;
 
-            if (course == null)
-                return null;
+			var dto = CourseMapper.ToDetailedCourseDto(course);
 
-            return new CourseDto {
-                Id = course.Id,
-                Name = course.Name,
-                Description = course.Description,
-                StartDate = course.StartDate,
-                EndDate = course.EndDate,
-                Modules = course.Modules.Select(m => new ModuleDto {
-                    Id = m.Id,
-                    Name = m.Name,
-                    Description = m.Description,
-                    StartDate = m.StartDate,
-                    EndDate = m.EndDate,
-                    Activities = m.Activities.Select(a => new ActivityDto {
-                        Id = a.Id,
-                        Name = a.Name,
-                        Description = a.Description,
-                        StartTime = a.StartTime,
-                        EndTime = a.EndTime,
-                        DueDate = a.DueDate,
-                        ActivityTypeName = a.ActivityType.Name
-                    }).ToList()
-                }).ToList()
-            };
-        }
+			dto.Progress = await _progressService.GetCourseProgressAsync(userId, course.Id);
+			foreach (var module in dto.Modules) {
+				module.Progress = await _progressService.GetModuleProgressAsync(userId, module.Id);
+			}
 
-        public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
-        {
-            // DTOn får ej vara null + Grundläggande validering av kursens egna fält
-            if (courseCreateDto is null)
-                throw new ArgumentNullException(nameof(courseCreateDto));
+			return dto;
+		}
 
-            if (string.IsNullOrWhiteSpace(courseCreateDto.Name))
-                throw new ArgumentException("Kursnamn saknas.");
 
-            if (string.IsNullOrWhiteSpace(courseCreateDto.Description))
-                throw new ArgumentException("Kursbeskrivning saknas.");
+		public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
+		{
+			// DTOn får ej vara null + Grundläggande validering av kursens egna fält
+			if (courseCreateDto is null)
+				throw new ArgumentNullException(nameof(courseCreateDto));
 
-            // Kursens startdatum måste vara <= slutdatum
-            if (courseCreateDto.StartDate > courseCreateDto.EndDate)
-                throw new ArgumentException("Startdatum får inte vara senare än slutdatum.");
+			if (string.IsNullOrWhiteSpace(courseCreateDto.Name))
+				throw new ArgumentException("Kursnamn saknas.");
 
-            // Modules är en lista (initierad till tom lista i DTOn)
-            var modules = courseCreateDto.Modules;
+			if (string.IsNullOrWhiteSpace(courseCreateDto.Description))
+				throw new ArgumentException("Kursbeskrivning saknas.");
 
-            // Validera varje modul individuellt
-            foreach (var module in modules)
-            {
-                // TODO: Delvis duplicering av DataAnnotations-validerigen. Ev centralisera denna validering senare.
+			// Kursens startdatum måste vara <= slutdatum
+			if (courseCreateDto.StartDate > courseCreateDto.EndDate)
+				throw new ArgumentException("Startdatum kan inte ligga efter slutdatum.");
 
-                if (string.IsNullOrWhiteSpace(module.Name))
-                    throw new ArgumentException("En modul saknar namn.");
+			// Modules är en lista (initierad till tom lista i DTOn)
+			var modules = courseCreateDto.Modules;
 
-                if (string.IsNullOrWhiteSpace(module.Description))
-                    throw new ArgumentException($"Modul \"{module.Name}\" saknar beskrivning.");
+			// Validera varje modul individuellt
+			foreach (var module in modules) {
+				// TODO: Delvis duplicering av DataAnnotations-validerigen. Ev centralisera denna validering senare.
 
-                // Modulens startdatum <= slutdatum
-                if (module.StartDate > module.EndDate)
-                    throw new ArgumentException($"Modul \"{module.Name}\" har ett startdatum som ligger efter slutdatum.");
+				if (string.IsNullOrWhiteSpace(module.Name))
+					throw new ArgumentException("En modul saknar namn.");
 
-                // Modul måste ligga inom kursens datumintervall
-                if (module.StartDate < courseCreateDto.StartDate || module.EndDate > courseCreateDto.EndDate)
-                    throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
-            }
+				if (string.IsNullOrWhiteSpace(module.Description))
+					throw new ArgumentException($"Modul '{module.Name}' saknar beskrivning.");
 
-            // Kontrollera att moduler inte överlappar varandra (inom samma request)
-            for (int i = 0; i < modules.Count; i++)
-            {
-                for (int j = i + 1; j < modules.Count; j++)
-                {
-                    var a = modules[i];
-                    var b = modules[j];
+				// Modulens startdatum <= slutdatum
+				if (module.StartDate > module.EndDate)
+					throw new ArgumentException($"Modul '{module.Name}' har ett startdatum som ligger efter slutdatum.");
 
-                    // Intervallöverlapp
-                    bool overlaps = a.StartDate <= b.EndDate && a.EndDate >= b.StartDate;
+				// Modul måste ligga inom kursens datumintervall
+				if (module.StartDate < courseCreateDto.StartDate || module.EndDate > courseCreateDto.EndDate)
+					throw new ArgumentException($"Modul '{module.Name}' har datum som ligger utanför kursens datum.");
+			}
 
-                    if (overlaps)
-                    {
-                        throw new ArgumentException(
-                            $"Modulerna \"{a.Name}\" och \"{b.Name}\" överlappar varandra.");
-                    }
-                }
-            }
+			// Kontrollera att moduler inte överlappar varandra (inom samma request)
+			for (int i = 0; i < modules.Count; i++) {
+				for (int j = i + 1; j < modules.Count; j++) {
+					var a = modules[i];
+					var b = modules[j];
 
-            // TODO: Om man senare tillåter att lägga till moduler i en befintlig kurs:
-            // måste man även kontrollera överlapp mot moduler i databasen (inte bara inom en request).
+					// Intervallöverlapp
+					bool overlaps = a.StartDate <= b.EndDate && a.EndDate >= b.StartDate;
 
-            // TODO: Bryt ut mappningslogik till en separat mappningsklass som har ansvar för att ta en Course till en CourseDto.
-            // Tex courseMapper.GetCourseDto(course); som automapper, men man mappar själv och har kontroll på vad som sker.
-            // Återanvändningsbar och om logiken förändras har man en single source of truth.
+					if (overlaps) {
+						throw new ArgumentException(
+							$"Modulerna '{a.Name}' och '{b.Name}' överlappar varandra.");
+					}
+				}
+			}
 
-            // Skapa ny Course-entitet 
-            var course = new Course
-            {
-                Name = courseCreateDto.Name.Trim(),          // Trim undviker whitespace-problem i DB
-                Description = courseCreateDto.Description.Trim(),
-                StartDate = courseCreateDto.StartDate,
-                EndDate = courseCreateDto.EndDate
-            };
+			// TODO: Om man senare tillåter att lägga till moduler i en befintlig kurs:
+			// måste man även kontrollera överlapp mot moduler i databasen (inte bara inom en request).
 
-            // Mappa och koppla moduler till kursen
-            foreach (var module in modules)
-            {
-                course.Modules.Add(new Module
-                {
-                    Name = module.Name.Trim(),
-                    Description = module.Description.Trim(),
-                    StartDate = module.StartDate,
-                    EndDate = module.EndDate,
-                    Course = course // Navigation property så EF förstår relationen
+			// TODO: Bryt ut mappningslogik till en separat mappningsklass som har ansvar för att ta en Course till en CourseDto.
+			// Tex courseMapper.GetCourseDto(course); som automapper, men man mappar själv och har kontroll på vad som sker.
+			// Återanvändningsbar och om logiken förändras har man en single source of truth.
 
-                    // Activities skapas inte här, utan i en separat controller och endpoint för att lägga till aktiviteter i en modul
-                    //  - Create() i ModuleActivitiesController.
-                    // Annars måste hela objektgrafen (Course + Modules + Activities) skapas i en och samma request.
-                });
-            }
+			// Skapa ny Course-entitet
+			var course = new Course {
+				Name = courseCreateDto.Name.Trim(),          // Trim undviker whitespace-problem i DB
+				Description = courseCreateDto.Description.Trim(),
+				StartDate = courseCreateDto.StartDate,
+				EndDate = courseCreateDto.EndDate
+			};
 
-            // Sparar objektgrafen med Course + Modules (om moduler finns med i samma request)
-            _unitOfWork.CourseRepository.Create(course);
+			// Mappa och koppla moduler till kursen
+			foreach (var module in modules) {
+				course.Modules.Add(new Module {
+					Name = module.Name.Trim(),
+					Description = module.Description.Trim(),
+					StartDate = module.StartDate,
+					EndDate = module.EndDate,
+					Course = course // Navigation property så EF förstår relationen
 
-            await _unitOfWork.CompleteAsync();
+					// Activities skapas inte här, utan i en separat controller och endpoint för att lägga till aktiviteter i en modul
+					//  - Create() i ModuleActivitiesController.
+					// Annars måste hela objektgrafen (Course + Modules + Activities) skapas i en och samma request.
+				});
+			}
 
-            // Returnera DTO med ev. moduler - mappning från entitet till DTO
-            return new CourseDto
-            {
-                Id = course.Id,
-                Name = course.Name,
-                Description = course.Description,
-                StartDate = course.StartDate,
-                EndDate = course.EndDate,
+			// Sparar objektgrafen med Course + Modules (om moduler finns med i samma request)
+			_unitOfWork.CourseRepository.Create(course);
 
-                // TODO: Om listan blir stor i framtiden: pagination / lazy loading
-                Modules = course.Modules.Select(m => new ModuleDto
-                {
-                    Id = m.Id,
-                    Name = m.Name,
-                    Description = m.Description,
-                    StartDate = m.StartDate,
-                    EndDate = m.EndDate
-                }).ToList()
-            };
-        }
+			await _unitOfWork.CompleteAsync();
 
-        public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
-        {
-            var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseUpdateDto.Id);
+			// Returnera DTO med ev. moduler - mappning från entitet till DTO
+			return new CourseDto {
+				Id = course.Id,
+				Name = course.Name,
+				Description = course.Description,
+				StartDate = course.StartDate,
+				EndDate = course.EndDate,
 
-            if (course == null)
-                throw new Exception("Kursen kunde inte hittas.");
+				// TODO: Om listan blir stor i framtiden: pagination / lazy loading
+				Modules = course.Modules.Select(m => new ModuleDto {
+					Id = m.Id,
+					Name = m.Name,
+					Description = m.Description,
+					StartDate = m.StartDate,
+					EndDate = m.EndDate
+				}).ToList()
+			};
+		}
 
-            if (string.IsNullOrWhiteSpace(courseUpdateDto.Name))
-                throw new ArgumentException("Kursnamn saknas.");
+		public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
+		{
+			var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseUpdateDto.Id);
 
-            if (string.IsNullOrWhiteSpace(courseUpdateDto.Description))
-                throw new ArgumentException("Kursbeskrivning saknas.");
+			if (course == null)
+				throw new Exception("Course not found");
 
-            if (courseUpdateDto.StartDate > courseUpdateDto.EndDate)
-                throw new Exception("Startdatum får inte vara senare än slutdatum.");
+			if (courseUpdateDto.EndDate < courseUpdateDto.StartDate)
+				throw new Exception("End date must not be earlier than start date");
 
-            if (course.Modules.Count != 0)
-            {
-                // Tillåt inte ändring av kursdatum om kursen innehåller moduler, för moduldatumen kan då
-                // hamna utanför kursdatumen.
-                throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
+			course.Name = courseUpdateDto.Name;
+			course.Description = courseUpdateDto.Description;
+			course.StartDate = courseUpdateDto.StartDate;
+			course.EndDate = courseUpdateDto.EndDate;
 
-                /*
-                // Alternativt: Validera varje modul individuellt.
-                foreach (var module in course.Modules)
-                {
-                    // Modul måste ligga inom kursens datumintervall.
-                    if (module.StartDate < courseUpdateDto.StartDate || module.EndDate > courseUpdateDto.EndDate)
-                        throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
-                }
-                */
-            }
+			_unitOfWork.CourseRepository.Update(course);
+			await _unitOfWork.CompleteAsync();
 
-            course.Name = courseUpdateDto.Name.Trim();
-            course.Description = courseUpdateDto.Description.Trim();
-            course.StartDate = courseUpdateDto.StartDate;
-            course.EndDate = courseUpdateDto.EndDate;
+			return CourseMapper.ToBasicCourseDto(course);
+		}
 
-            _unitOfWork.CourseRepository.Update(course);
-            await _unitOfWork.CompleteAsync();
+		public async Task<IEnumerable<ParticipantDto>> GetParticipantsForUserCourseAsync(string userId)
+		{
+			var users = await _unitOfWork.CourseRepository.GetParticipantsForUserCourseAsync(userId);
 
-            return new CourseDto
-            {
-                Id = course.Id,
-                Name = course.Name,
-                Description = course.Description,
-                StartDate = course.StartDate,
-                EndDate = course.EndDate
-            };
-        }
+			return users.Select(u => new ParticipantDto {
+				Id = u.Id,
+				FullName = $"{u.FirstName} {u.LastName}",
+				Email = u.Email!
+			});
+		}
 
-        public async Task<IEnumerable<ParticipantDto>> GetParticipantsForUserCourseAsync(string userId)
-        {
-            var users = await _unitOfWork.CourseRepository.GetParticipantsForUserCourseAsync(userId);
+		public async Task<CourseDto?> GetCourseByIdAsync(int courseId)
+		{
+			var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
+			if (course == null)
+				return null;
+			return CourseMapper.ToDetailedCourseDto(course);
+		}
 
-            return users.Select(u => new ParticipantDto {
-                Id = u.Id,
-                FullName = $"{u.FirstName} {u.LastName}",
-                Email = u.Email!
-            });
-        }
 
-        public async Task<CourseDto?> GetCourseByIdAsync(int courseId)
-        {
-            var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
-            if (course == null)
-                return null;
-
-            return new CourseDto {
-                Id = course.Id,
-                Name = course.Name,
-                Description = course.Description,
-                StartDate = course.StartDate,
-                EndDate = course.EndDate,
-                Modules = course.Modules.Select(m => new ModuleDto {
-                    Id = m.Id,
-                    Name = m.Name,
-                    Description = m.Description,
-                    StartDate = m.StartDate,
-                    EndDate = m.EndDate,
-                    Activities = m.Activities.Select(a => new ActivityDto {
-                        Id = a.Id,
-                        Name = a.Name,
-                        Description = a.Description,
-                        StartTime = a.StartTime,
-                        EndTime = a.EndTime,
-                        DueDate = a.DueDate,
-                        ActivityTypeName = a.ActivityType.Name
-                    }).ToList()
-                }).ToList()
-            };
-        }
-    }
+		
+	}
 }

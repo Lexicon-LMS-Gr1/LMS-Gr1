@@ -12,4 +12,7 @@ public interface IActivityRepository : IRepositoryBase<Activity>
     Task<Activity?> GetByIdAsync(int id, bool trackChanges = false);
     Task<bool> ActivityTypeExistsAsync(int activityTypeId);
     Task<IEnumerable<ActivityType>> GetAllActivityTypesAsync(bool trackChanges = false);
+    Task<IEnumerable<Activity>> GetSubmissionActivitiesForCourseAsync(int courseId);
+	Task<IEnumerable<Activity>> GetSubmissionActivitiesForModuleAsync(int moduleId);
+	Task<IEnumerable<Activity>> GetByCourseIdAsync(int courseId, bool trackChanges = false);
 }

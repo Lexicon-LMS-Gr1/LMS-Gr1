@@ -84,4 +84,39 @@ public class ActivityRepository : IActivityRepository
             .OrderBy(at => at.Name)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<Activity>> GetSubmissionActivitiesForCourseAsync(int courseId)
+    {
+        return await _context.Activities
+            .Include(a => a.ActivityType)
+            .Include(a => a.Module)
+            .Where(a =>
+                a.ActivityType.Name == "Assignment" &&
+                a.Module.CourseId == courseId)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+	public async Task<IEnumerable<Activity>> GetByCourseIdAsync(int courseId, bool trackChanges = false)
+	{
+        var query = _context.Activities
+            .Include(a => a.ActivityType)
+            .Include(a => a.Module)
+            .Where(a => a.Module.CourseId == courseId)
+            .AsQueryable();
+        if (!trackChanges)
+            query = query.AsNoTracking();
+        return await query.OrderBy(a => a.StartTime).ToListAsync();
+	}
+
+	public async  Task<IEnumerable<Activity>> GetSubmissionActivitiesForModuleAsync(int moduleId)
+	{
+		return await _context.Activities
+            .Include(a => a.ActivityType)
+			.Where(a =>
+                a.ActivityType.Name == "Assignment" &&
+				a.ModuleId == moduleId)
+			.AsNoTracking()
+			.ToListAsync();
+	}
 }

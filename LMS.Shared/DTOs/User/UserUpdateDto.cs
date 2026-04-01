@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations;
 namespace LMS.Shared.DTOs.User;
 
 /// <summary>
-/// DTO for updating an existing user
-/// Note: Password change should be handled separately via a different endpoint
+/// DTO för att uppdatera en befintlig användare.
+/// Obs: Lösenordsändring hanteras via ett separat endpoint.
 /// </summary>
 public class UserUpdateDto
 {
@@ -26,13 +26,6 @@ public class UserUpdateDto
     [StringLength(100, ErrorMessage = "E-postadress kan inte överstiga 100 tecken.")]
     public string Email { get; set; } = string.Empty;
 
-    // For students only - can be used to move student to another course
+    // Endast för elever – används för att flytta elev till en annan kurs
     public int? CourseId { get; set; }
-
-    // Business rules validated in service layer:
-    // 1. User with given Id must exist
-    // 2. Email must be unique (if changed)
-    // 3. Cannot change a Teacher's CourseId (should remain null)
-    // 4. If user is Student and CourseId is provided, course must exist
-    // 5. Cannot change user's role via this DTO
 }
