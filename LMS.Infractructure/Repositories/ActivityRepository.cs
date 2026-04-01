@@ -97,4 +97,15 @@ public class ActivityRepository : IActivityRepository
             .ToListAsync();
     }
 
+	public async Task<IEnumerable<Activity>> GetByCourseIdAsync(int courseId, bool trackChanges = false)
+	{
+        var query = _context.Activities
+            .Include(a => a.ActivityType)
+            .Include(a => a.Module)
+            .Where(a => a.Module.CourseId == courseId)
+            .AsQueryable();
+        if (!trackChanges)
+            query = query.AsNoTracking();
+        return await query.OrderBy(a => a.StartTime).ToListAsync();
+	}
 }
