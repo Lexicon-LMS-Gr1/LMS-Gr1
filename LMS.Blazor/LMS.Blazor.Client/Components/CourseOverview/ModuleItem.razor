@@ -8,10 +8,16 @@
          @onclick="ToggleExpandModule">
 
         <div>
+
             <h3 class="h4 mb-2">
                 <i class="bi bi-book h4 pe-2 text-primary"></i>
                 @Module.Name
             </h3>
+
+            <span class="fw-bold text-primary">
+                @Module.Progress%
+            </span>
+    
 
             <p class="text-muted mb-0">
                 <i class="bi bi-calendar"></i>

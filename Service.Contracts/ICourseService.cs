@@ -17,7 +17,6 @@ namespace Service.Contracts
         Task<IEnumerable<ParticipantDto>> GetParticipantsForUserCourseAsync(string userId);
 		Task<CourseDto?> GetCourseByIdAsync(int courseId);
 
-
 	}
 
 }

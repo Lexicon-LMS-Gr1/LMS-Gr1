@@ -1,0 +1,22 @@
+﻿@page "/assignments"
+@using LMS.Blazor.Client.Components.Student
+@attribute [Authorize(Roles = "Student")]
+
+<PageTitle>Inlämningar — Lexicon LMS</PageTitle>
+
+<div class="container-fluid py-4">
+
+    <!-- HEADER -->
+    <div class="mb-3">
+        <h2 class="mb-1">
+            <span class="bi bi-journal-text me-2"></span>Mina inlämningar
+        </h2>
+        <p class="text-muted mb-0">
+            Här hittar du alla uppgifter som du behöver lämna in under kursens gång.
+        </p>
+    </div>
+
+    <!-- CONTENT -->
+    <AssignmentsList />
+
+</div>

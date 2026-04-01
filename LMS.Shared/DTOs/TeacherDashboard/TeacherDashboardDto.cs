@@ -37,4 +37,16 @@ namespace LMS.Shared.DTOs.TeacherDashboard
         public string CourseName { get; set; } = null!;
         public DateTime StartTime { get; set; }
     }
+
+    public class StudentListDto
+    {
+        public string Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+
+        public string CourseName { get; set; } = string.Empty;
+        public int? CourseId { get; set; }
+
+        public string Status { get; set; } = string.Empty;
+    }
 }

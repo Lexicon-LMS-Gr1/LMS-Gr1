@@ -313,44 +313,88 @@ public class DataSeedHostingService : IHostedService
 		return modules;
 	}
 
-	private async Task<List<Activity>> CreateActivitiesAsync(
-		ApplicationDbContext context,
-		Module module,
-		List<ActivityType> activityTypes)
-	{
-		var names = new[]
-		{
-			"Introduktion",
-			"Workshop",
-			"Inlämning",
-			"Examination"
-		};
+    private async Task<List<Activity>> CreateActivitiesAsync(
+    ApplicationDbContext context,
+    Module module,
+    List<ActivityType> activityTypes)
+    {
+        var lectureNames = new[]
+        {
+        "Föreläsning: Introduktion",
+        "Föreläsning: SQL-grunder",
+        "Föreläsning: Web API",
+        "Föreläsning: Säkerhet",
+        "Föreläsning: Arkitektur"
+    };
 
-		var activities = new List<Activity>();
+        var assignmentNames = new[]
+        {
+        "Inlämning: Databasmodell",
+        "Inlämning: API-endpoints",
+        "Inlämning: Entity Framework",
+        "Inlämning: Autentisering",
+        "Inlämning: Designmönster"
+    };
 
-		for (int i = 0; i < activityTypes.Count; i++) {
-			var type = activityTypes[i];
-			var day = module.StartDate.AddDays(i);
+        var workshopNames = new[]
+        {
+        "Workshop: Grupparbete",
+        "Workshop: Kodgenomgång",
+        "Workshop: Refaktorering",
+        "Workshop: Testning",
+        "Workshop: Arkitektur"
+    };
 
-			var startTime = day.AddHours(9);
-			var endTime = day.AddHours(11);
+        var examNames = new[]
+        {
+        "Examination: Modultest",
+        "Examination: Slutprov",
+        "Examination: Praktiskt prov"
+    };
 
-			activities.Add(new Activity {
-				Name = names[i],
-				Description = "Planerat moment",
-				StartTime = startTime,
-				EndTime = endTime,
-				DueDate = type.Name == "Assignment" || type.Name == "Exam" ? endTime : null,
-				ActivityTypeId = type.Id,
-				ActivityType = type,
-				ModuleId = module.Id,
-				Module = module
-			});
-		}
+        var activities = new List<Activity>();
 
-		context.Set<Activity>().AddRange(activities);
-		await context.SaveChangesAsync();
+       
+        int moduleIndex = module.Id % 5;
 
-		return activities;
-	}
+        int typeIndex = 0;
+        foreach (var type in activityTypes)
+        {
+            var day = module.StartDate.AddDays(typeIndex);
+            var startTime = day.AddHours(9);
+            var endTime = day.AddHours(11);
+
+            string name = type.Name switch
+            {
+                "Lecture" => lectureNames[moduleIndex % lectureNames.Length],
+                "Assignment" => assignmentNames[moduleIndex % assignmentNames.Length],
+                "Workshop" => workshopNames[moduleIndex % workshopNames.Length],
+                "Exam" => examNames[moduleIndex % examNames.Length],
+                _ => "Aktivitet"
+            };
+
+            activities.Add(new Activity
+            {
+                Name = name,
+                Description = "Planerat moment",
+                StartTime = startTime,
+                EndTime = endTime,
+                DueDate = type.Name is "Assignment" or "Exam" ? endTime : null,
+                ActivityTypeId = type.Id,
+                ActivityType = type,
+                ModuleId = module.Id,
+                Module = module
+            });
+
+            typeIndex++;
+        }
+
+        context.Set<Activity>().AddRange(activities);
+        await context.SaveChangesAsync();
+
+        return activities;
+    }
+
+
+
 }

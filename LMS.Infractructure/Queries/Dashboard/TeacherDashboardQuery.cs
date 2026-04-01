@@ -44,15 +44,18 @@ public class TeacherDashboardQuery : ITeacherDashboardQuery
 
         return new TeacherDashboardDto
         {
-            ActiveCourses = courses.Select(c => new TeacherCourseSummaryDto
-            {
-                Id = c.Id,
-                Name = c.Name,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate,
-                ModuleCount = c.Modules.Count,
-                StudentCount = c.Students.Count
-            }).ToList(),
+            ActiveCourses = courses
+                .Where(c => c.StartDate <= now && c.EndDate >= now)
+                .Select(c => new TeacherCourseSummaryDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    StartDate = c.StartDate,
+                    EndDate = c.EndDate,
+                    ModuleCount = c.Modules.Count,
+                    StudentCount = c.Students.Count
+                })
+                .ToList(),
 
             RecentActivities = recent.Select(a => new RecentActivityDto
             {
