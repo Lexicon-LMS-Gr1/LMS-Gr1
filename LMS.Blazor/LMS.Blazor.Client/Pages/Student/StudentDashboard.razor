@@ -81,10 +81,36 @@
                 <h4 class="mb-0 fw-semibold">Kommande inlämningar</h4>
             </div>
 
-            <div class="p-4 text-center text-muted">
-                Inga kommande inlämningar
+            <div class="card-body">
+                @if (isLoadingUpcoming)
+                {
+                    <div class="text-center text-muted py-3">
+                        Laddar...
+                    </div>
+                }
+                else if (upcomingAssignments == null || !upcomingAssignments.Any())
+                {
+                    <div class="text-center text-muted py-3">
+                        Inga kommande inlämningar
+                    </div>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var a in upcomingAssignments)
+                        {
+                            <li class="list-group-item">
+                                <div class="fw-semibold">@a.Name</div>
+                                <div class="text-muted small">
+                                    Deadline: @a.DueDate?.ToString("yyyy-MM-dd HH:mm")
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
             </div>
         </div>
+
 
         <!-- Module Progress -->
         <div class="card shadow-sm mb-4">
@@ -102,10 +128,18 @@
 @code {
     private StudentDashboardDto? dashboard;
     private int currentWeek;
+    private List<StudentAssignmentDto>? upcomingAssignments;
+    private bool isLoadingUpcoming = true;
 
     protected override async Task OnInitializedAsync()
     {
         dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
+
+        upcomingAssignments = await Api.GetAsync<List<StudentAssignmentDto>>(
+            "api/student/assignments/upcoming"
+        );
+
+        isLoadingUpcoming = false;
 
         var today = DateTime.Today;
         var culture = new System.Globalization.CultureInfo("sv-SE");
@@ -113,4 +147,5 @@
             System.Globalization.CalendarWeekRule.FirstFourDayWeek,
             DayOfWeek.Monday);
     }
+
 }

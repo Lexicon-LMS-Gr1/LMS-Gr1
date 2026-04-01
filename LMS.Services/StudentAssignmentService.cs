@@ -41,6 +41,42 @@ namespace LMS.Services
             }).ToList();
         }
 
+        public async Task<List<StudentAssignmentDto>> GetUpcomingAssignmentsAsync(string studentId)
+        {
+            var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(studentId);
+            if (course == null)
+                return new List<StudentAssignmentDto>();
+
+            var activities = await _unitOfWork.ActivityRepository
+                .GetSubmissionActivitiesForCourseAsync(course.Id);
+
+            var submissions = await _unitOfWork.SubmissionRepository
+                .GetByStudentIdAsync(studentId);
+
+            var now = DateTime.UtcNow;
+
+            return activities
+                .Where(a => a.DueDate > now)
+                .OrderBy(a => a.DueDate)
+                .Take(5)
+                .Select(a =>
+                {
+                    var submission = submissions.FirstOrDefault(s => s.ActivityId == a.Id);
+
+                    return new StudentAssignmentDto
+                    {
+                        ActivityId = a.Id,
+                        Name = a.Name,
+                        DueDate = a.DueDate,
+                        IsSubmitted = submission != null,
+                        IsLate = submission == null && now > a.DueDate
+                    };
+                })
+                .ToList();
+        }
+
+
+
     }
 
 }

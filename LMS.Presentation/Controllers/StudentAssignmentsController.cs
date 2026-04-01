@@ -39,6 +39,20 @@ namespace LMS.Presentation.Controllers
             return Ok(result);
         }
 
+        // GET api/student/assignments/upcoming
+        [HttpGet("upcoming")]
+        public async Task<IActionResult> GetUpcomingAssignments()
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user.CourseId == null)
+                return BadRequest("Student is not assigned to any course.");
+
+            var result = await _serviceManager.StudentAssignmentService
+                .GetUpcomingAssignmentsAsync(user.Id);
+
+            return Ok(result);
+        }
 
     }
 

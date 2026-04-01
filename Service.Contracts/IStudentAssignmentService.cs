@@ -7,5 +7,6 @@ namespace Service.Contracts
     public interface IStudentAssignmentService
     {
         Task<List<StudentAssignmentDto>> GetStudentAssignmentsAsync(string studentId, int courseId);
+        Task<List<StudentAssignmentDto>> GetUpcomingAssignmentsAsync(string studentId);
     }
 }
