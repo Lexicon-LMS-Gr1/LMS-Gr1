@@ -116,7 +116,12 @@ public static class ServiceExtensions
 
         services.AddScoped<IDashboardQuery, DashboardQuery>();
         services.AddScoped<ITeacherDashboardQuery, TeacherDashboardQuery>();
-        services.AddScoped<ICourseService, CourseService>();
+
+		services.AddScoped<IProgressService, ProgressService>();
+		services.AddScoped(provider => new Lazy<IProgressService>(() => provider.GetRequiredService<IProgressService>()));
+
+
+		services.AddScoped<ICourseService, CourseService>();
 		services.AddScoped(provider => new Lazy<ICourseService>(() => provider.GetRequiredService<ICourseService>()));
 
         services.AddScoped<IModuleService, ModuleService>();
@@ -136,6 +141,7 @@ public static class ServiceExtensions
         services.AddScoped<IStudentAssignmentService, StudentAssignmentService>();
         services.AddScoped(provider =>
             new Lazy<IStudentAssignmentService>(() => provider.GetRequiredService<IStudentAssignmentService>()));
+
 
     }
 }
