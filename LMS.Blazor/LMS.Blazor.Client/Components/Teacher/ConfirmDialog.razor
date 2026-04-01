@@ -1,4 +1,9 @@
-﻿<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1">
+﻿@if (IsVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
