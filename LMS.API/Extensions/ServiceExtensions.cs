@@ -99,6 +99,10 @@ public static class ServiceExtensions
         services.AddScoped(provider =>
           new Lazy<IActivityRepository>(() => provider.GetRequiredService<IActivityRepository>()));
 
+        services.AddScoped<IDocumentRepository, DocumentRepository>();
+        services.AddScoped(provider =>
+          new Lazy<IDocumentRepository>(() => provider.GetRequiredService<IDocumentRepository>()));
+
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.AddScoped<ISubmissionRepository, SubmissionRepository>();
@@ -138,10 +142,12 @@ public static class ServiceExtensions
         services.AddScoped<IActivityService, ActivityService>();
         services.AddScoped(provider => new Lazy<IActivityService>(() => provider.GetRequiredService<IActivityService>()));
 
+        services.AddScoped<IDocumentService, DocumentService>();
+        services.AddScoped(provider => new Lazy<IDocumentService>(() => provider.GetRequiredService<IDocumentService>()));
+
         services.AddScoped<IStudentAssignmentService, StudentAssignmentService>();
         services.AddScoped(provider =>
             new Lazy<IStudentAssignmentService>(() => provider.GetRequiredService<IStudentAssignmentService>()));
-
 
     }
 }
