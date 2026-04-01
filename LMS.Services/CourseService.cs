@@ -7,6 +7,7 @@ using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Module;
 using Microsoft.EntityFrameworkCore;
 using Service.Contracts;
+using System.Diagnostics;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace LMS.Services
@@ -41,7 +42,11 @@ namespace LMS.Services
 
 			if (course == null)
 				return null;
-			return CourseMapper.ToDetailedCourseDto(course);
+
+			var dto = CourseMapper.ToDetailedCourseDto(course);
+			dto.Progress = await GetCourseProgressAsync(userId, course.Id);
+
+			return dto;
 		}
 
 		public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
@@ -190,6 +195,56 @@ namespace LMS.Services
 			if (course == null)
 				return null;
 			return CourseMapper.ToDetailedCourseDto(course);
+		}
+
+		public async Task<int> GetCourseProgressAsync(string userId, int courseId)
+		{
+			// All activities for the course
+			var activities = await _unitOfWork.ActivityRepository.GetByCourseIdAsync(courseId);
+
+			var activityCount = activities.Count();
+			if (activityCount == 0) return 0;
+
+			// All submissions for the course
+			var submissionActivities = await _unitOfWork.ActivityRepository.GetSubmissionActivitiesForCourseAsync(courseId);
+
+			// All submissions by the user
+			var submissions = await _unitOfWork.SubmissionRepository.GetByStudentIdAsync(userId);
+
+
+			// All submission id's
+			var submissionActivityIds = submissionActivities
+				.Select(a => a.Id)
+				.ToHashSet();
+
+			// All submission id's by the user
+			var submittedActivityIds = submissions
+				.Select(s => s.ActivityId)
+				.ToHashSet();
+
+			// Current date
+			var now = DateTime.UtcNow;
+
+			var completedCount = activities.Count(activity => {
+				var hasEnded = activity.EndTime <= now;
+				var reqSubmission = submissionActivityIds.Contains(activity.Id);
+				
+				// If the activity require a submission it is completed only if a submission is made
+				if (reqSubmission) {
+					var hasSubmitted = submittedActivityIds.Contains(activity.Id);
+					return hasSubmitted;
+				}
+
+				// No submission required, completed when it has ended
+				return hasEnded;
+
+			});
+
+			// return whole percentage points
+			return (int) Math.Round((double)completedCount / activityCount * 100);
+
+		
+
 		}
 	}
 }
