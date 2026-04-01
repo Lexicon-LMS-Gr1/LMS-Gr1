@@ -1,7 +1,7 @@
 using Domain.Contracts.Repositories;
+using Domain.Contracts.Services;
 using Domain.Models.Entities;
 using LMS.Shared.DTOs.Document;
-using Microsoft.AspNetCore.Hosting;
 using Service.Contracts;
 
 namespace LMS.Services;
@@ -9,7 +9,7 @@ namespace LMS.Services;
 public class DocumentService : IDocumentService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IFileStorageService _fileStorage;
 
     // Allowed file extensions
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -21,10 +21,10 @@ public class DocumentService : IDocumentService
     // Max file size: 50 MB
     private const long MaxFileSize = 50 * 1024 * 1024;
 
-    public DocumentService(IUnitOfWork unitOfWork, IWebHostEnvironment environment)
+    public DocumentService(IUnitOfWork unitOfWork, IFileStorageService fileStorage)
     {
         _unitOfWork = unitOfWork;
-        _environment = environment;
+        _fileStorage = fileStorage;
     }
 
     public async Task<DocumentDto> UploadAsync(
@@ -51,19 +51,8 @@ public class DocumentService : IDocumentService
         if (string.IsNullOrWhiteSpace(extension) || !AllowedExtensions.Contains(extension))
             throw new ArgumentException($"File type '{extension}' is not allowed. Allowed types: {string.Join(", ", AllowedExtensions)}");
 
-        // Create uploads directory if it doesn't exist
-        var uploadsDir = Path.Combine(_environment.ContentRootPath, "uploads");
-        Directory.CreateDirectory(uploadsDir);
-
-        // Generate unique filename to prevent collisions
-        var storedFileName = $"{Guid.NewGuid()}{extension}";
-        var filePath = Path.Combine(uploadsDir, storedFileName);
-
-        // Save file to disk
-        using (var outputStream = new FileStream(filePath, FileMode.Create))
-        {
-            await fileStream.CopyToAsync(outputStream);
-        }
+        // Save file via storage abstraction
+        var relativePath = await _fileStorage.SaveFileAsync(fileStream, fileName);
 
         // Create entity
         var document = new Document
@@ -71,7 +60,7 @@ public class DocumentService : IDocumentService
             Name = dto.Name,
             Description = dto.Description,
             UploadTimestamp = DateTime.UtcNow,
-            FilePath = $"uploads/{storedFileName}",
+            FilePath = relativePath,
             FileName = fileName,
             ContentType = contentType,
             FileSize = fileSize,
@@ -117,12 +106,10 @@ public class DocumentService : IDocumentService
         if (document == null)
             return null;
 
-        var fullPath = Path.Combine(_environment.ContentRootPath, document.FilePath);
-
-        if (!File.Exists(fullPath))
+        if (!_fileStorage.FileExists(document.FilePath))
             throw new FileNotFoundException($"File not found on disk: {document.FilePath}");
 
-        var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var stream = _fileStorage.OpenReadStream(document.FilePath);
         return (stream, document.ContentType, document.FileName);
     }
 
@@ -133,11 +120,7 @@ public class DocumentService : IDocumentService
             return false;
 
         // Delete file from disk
-        var fullPath = Path.Combine(_environment.ContentRootPath, document.FilePath);
-        if (File.Exists(fullPath))
-        {
-            File.Delete(fullPath);
-        }
+        _fileStorage.DeleteFile(document.FilePath);
 
         // Delete DB record
         _unitOfWork.DocumentRepository.Delete(document);
