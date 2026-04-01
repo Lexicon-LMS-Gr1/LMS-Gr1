@@ -35,8 +35,6 @@ namespace LMS.Services
             });
         }
 
-
-
         public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
         {
             var courses = await _unitOfWork.CourseRepository.GetAllAsync();
@@ -49,6 +47,7 @@ namespace LMS.Services
                 EndDate = c.EndDate
             });
         }
+
         public async Task<CourseDto?> GetCourseForUserAsync(string userId)
         {
             var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(userId);
@@ -95,7 +94,7 @@ namespace LMS.Services
 
             // Kursens startdatum måste vara <= slutdatum
             if (courseCreateDto.StartDate > courseCreateDto.EndDate)
-                throw new ArgumentException("Startdatum kan inte ligga efter slutdatum.");
+                throw new ArgumentException("Startdatum får inte vara senare än slutdatum.");
 
             // Modules är en lista (initierad till tom lista i DTOn)
             var modules = courseCreateDto.Modules;
@@ -109,15 +108,15 @@ namespace LMS.Services
                     throw new ArgumentException("En modul saknar namn.");
 
                 if (string.IsNullOrWhiteSpace(module.Description))
-                    throw new ArgumentException($"Modul '{module.Name}' saknar beskrivning.");
+                    throw new ArgumentException($"Modul \"{module.Name}\" saknar beskrivning.");
 
                 // Modulens startdatum <= slutdatum
                 if (module.StartDate > module.EndDate)
-                    throw new ArgumentException($"Modul '{module.Name}' har ett startdatum som ligger efter slutdatum.");
+                    throw new ArgumentException($"Modul \"{module.Name}\" har ett startdatum som ligger efter slutdatum.");
 
                 // Modul måste ligga inom kursens datumintervall
                 if (module.StartDate < courseCreateDto.StartDate || module.EndDate > courseCreateDto.EndDate)
-                    throw new ArgumentException($"Modul '{module.Name}' har datum som ligger utanför kursens datum.");
+                    throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
             }
 
             // Kontrollera att moduler inte överlappar varandra (inom samma request)
@@ -134,7 +133,7 @@ namespace LMS.Services
                     if (overlaps)
                     {
                         throw new ArgumentException(
-                            $"Modulerna '{a.Name}' och '{b.Name}' överlappar varandra.");
+                            $"Modulerna \"{a.Name}\" och \"{b.Name}\" överlappar varandra.");
                     }
                 }
             }
@@ -163,7 +162,7 @@ namespace LMS.Services
                     Name = module.Name.Trim(),
                     Description = module.Description.Trim(),
                     StartDate = module.StartDate,
-                    EndDate = module.EndDate,                    
+                    EndDate = module.EndDate,
                     Course = course // Navigation property så EF förstår relationen
 
                     // Activities skapas inte här, utan i en separat controller och endpoint för att lägga till aktiviteter i en modul
@@ -198,19 +197,41 @@ namespace LMS.Services
             };
         }
 
-
         public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
         {
             var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseUpdateDto.Id);
 
             if (course == null)
-                throw new Exception("Course not found");
+                throw new Exception("Kursen kunde inte hittas.");
 
-            if (courseUpdateDto.EndDate < courseUpdateDto.StartDate)
-                throw new Exception("End date must not be earlier than start date");
+            if (string.IsNullOrWhiteSpace(courseUpdateDto.Name))
+                throw new ArgumentException("Kursnamn saknas.");
 
-            course.Name = courseUpdateDto.Name;
-            course.Description = courseUpdateDto.Description;
+            if (string.IsNullOrWhiteSpace(courseUpdateDto.Description))
+                throw new ArgumentException("Kursbeskrivning saknas.");
+
+            if (courseUpdateDto.StartDate > courseUpdateDto.EndDate)
+                throw new Exception("Startdatum får inte vara senare än slutdatum.");
+
+            if (course.Modules.Count != 0)
+            {
+                // Tillåt inte ändring av kursdatum om kursen innehåller moduler, för moduldatumen kan då
+                // hamna utanför kursdatumen.
+                throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
+
+                /*
+                // Alternativt: Validera varje modul individuellt.
+                foreach (var module in course.Modules)
+                {
+                    // Modul måste ligga inom kursens datumintervall.
+                    if (module.StartDate < courseUpdateDto.StartDate || module.EndDate > courseUpdateDto.EndDate)
+                        throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
+                }
+                */
+            }
+
+            course.Name = courseUpdateDto.Name.Trim();
+            course.Description = courseUpdateDto.Description.Trim();
             course.StartDate = courseUpdateDto.StartDate;
             course.EndDate = courseUpdateDto.EndDate;
 
@@ -226,8 +247,6 @@ namespace LMS.Services
                 EndDate = course.EndDate
             };
         }
-
-
 
         public async Task<IEnumerable<ParticipantDto>> GetParticipantsForUserCourseAsync(string userId)
         {
@@ -245,6 +264,7 @@ namespace LMS.Services
             var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
             if (course == null)
                 return null;
+
             return new CourseDto {
                 Id = course.Id,
                 Name = course.Name,
@@ -269,9 +289,5 @@ namespace LMS.Services
                 }).ToList()
             };
         }
-
-    
-	
-
-	}
+    }
 }

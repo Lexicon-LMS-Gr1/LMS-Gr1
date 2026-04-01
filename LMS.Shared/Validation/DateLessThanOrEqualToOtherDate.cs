@@ -16,14 +16,14 @@ public class DateLessThanOrEqualToOtherDate : ValidationAttribute
         var currentValue = value as DateTime?;
 
         var property = validationContext.ObjectType.GetProperty(_comparisonProperty) ??
-            throw new ArgumentException($"Property '{_comparisonProperty}' not found.");
+            throw new ArgumentException($"Property \"{_comparisonProperty}\" kunde inte hittas.");
 
         var comparisonValue = property.GetValue(validationContext.ObjectInstance) as DateTime?;
 
         if (currentValue.HasValue && comparisonValue.HasValue && currentValue > comparisonValue)
         {
             return new ValidationResult(ErrorMessage ??
-                $"{validationContext.MemberName} must be less than or equal to {_comparisonProperty}.");
+                $"{validationContext.MemberName} får inte vara senare än {_comparisonProperty}.");
         }
 
         return ValidationResult.Success;

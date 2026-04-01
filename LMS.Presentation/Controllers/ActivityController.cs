@@ -11,7 +11,7 @@ namespace LMS.Presentation.Controllers;
 [ApiController]
 [Route("api/activity")]
 [Authorize(Roles = "Teacher")]
-public class ActivityController : ControllerBase	
+public class ActivityController : ControllerBase
 {
 	private readonly IActivityService _activityService;
 
@@ -24,15 +24,24 @@ public class ActivityController : ControllerBase
 	public async Task<IActionResult> UpdateActivity(int activityId, [FromBody] ActivityUpdateDto dto)
 	{
 		if (activityId != dto.Id)
-			return BadRequest("Id mismatch");
-		try {
+            return BadRequest("Aktivitets-id stämmer inte.");
+
+		try
+		{
 			var updated = await _activityService.UpdateActivityAsync(dto);
 			return Ok(updated);
-		} catch (ArgumentException ex) {
+		}
+		catch (ArgumentException ex)
+		{
 			return BadRequest(new { message = ex.Message });
-		} catch (KeyNotFoundException ex) {
+		}
+		catch (KeyNotFoundException ex)
+		{
 			return NotFound(new { message = ex.Message });
 		}
-	}
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av aktivitet." });
+        }
+    }
 }
-

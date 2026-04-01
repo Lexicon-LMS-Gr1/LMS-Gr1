@@ -51,12 +51,12 @@ public class ActivityService : IActivityService
         var normalizedEnd = activityDto.EndTime.Date.AddHours(17);
 
         if (normalizedStart > normalizedEnd)
-            throw new ArgumentException("Aktivitetens startdatum kan inte ligga efter slutdatum.");
+            throw new ArgumentException("Aktivitetens starttidpunkt kan inte ligga efter sluttidpunkt.");
 
         var module = await _unitOfWork.ModuleRepository.GetModuleWithActivitiesAsync(moduleId, trackChanges: false);
 
         if (module is null)
-            throw new KeyNotFoundException($"Modul med id {moduleId} hittades inte.");
+            throw new KeyNotFoundException($"Modul med id \"{moduleId}\" hittades inte.");
 
         // Modulens StartDate/EndDate används som datumgränser
         if (normalizedStart.Date < module.StartDate.Date || normalizedEnd.Date > module.EndDate.Date)
@@ -66,7 +66,7 @@ public class ActivityService : IActivityService
             throw new ArgumentException("Angiven aktivitetstyp finns inte.");
 
         if (activityDto.DueDate.HasValue && activityDto.DueDate.Value > normalizedEnd)
-            throw new ArgumentException("Förfallodatum kan inte ligga efter aktivitetens sluttid.");
+            throw new ArgumentException("Förfallodatum kan inte ligga efter aktivitetens sluttidpunkt.");
 
         // Regeln är "en aktivitet per dag och modul" och en aktivitet kan sträcka sig över flera dagar,
         // Då räcker det med en vanlig intervallöverlapp för att stoppa alla krockar.
@@ -89,7 +89,7 @@ public class ActivityService : IActivityService
             DueDate = activityDto.DueDate,
             ActivityTypeId = activityDto.ActivityTypeId,
             ModuleId = moduleId,
-            Module = null!,      
+            Module = null!,
             ActivityType = null!
         };
 
@@ -99,7 +99,7 @@ public class ActivityService : IActivityService
         var savedActivity = await _unitOfWork.ActivityRepository.GetByIdAsync(activity.Id);
 
         if (savedActivity is null)
-            throw new InvalidOperationException("Aktiviteten skapades men kunde inte läsas tillbaka.");
+            throw new InvalidOperationException("Aktiviteten skapades, men kunde inte läsas tillbaka.");
 
         return MapToDto(savedActivity);
     }
@@ -109,10 +109,10 @@ public class ActivityService : IActivityService
         if (activityDto is null)
             throw new ArgumentNullException(nameof(activityDto));
 
-        var existing = await _unitOfWork.ActivityRepository.GetByIdAsync(activityDto.Id, trackChanges: true);
+        var existingActivity = await _unitOfWork.ActivityRepository.GetByIdAsync(activityDto.Id, trackChanges: true);
 
-        if (existing is null)
-            throw new KeyNotFoundException($"Aktivitet med id {activityDto.Id} hittades inte.");
+        if (existingActivity is null)
+            throw new KeyNotFoundException($"Aktivitet med id \"{activityDto.Id}\" hittades inte.");
 
         if (string.IsNullOrWhiteSpace(activityDto.Name))
             throw new ArgumentException("Aktivitetsnamn saknas.");
@@ -124,12 +124,12 @@ public class ActivityService : IActivityService
         var normalizedEnd = activityDto.EndTime.Date.AddHours(17);
 
         if (normalizedStart > normalizedEnd)
-            throw new ArgumentException("Aktivitetens startdatum kan inte ligga efter slutdatum.");
+            throw new ArgumentException("Aktivitetens starttidpunkt kan inte ligga efter sluttidpunkt.");
 
-        var module = await _unitOfWork.ModuleRepository.GetModuleWithActivitiesAsync(existing.ModuleId, trackChanges: false);
+        var module = await _unitOfWork.ModuleRepository.GetModuleWithActivitiesAsync(existingActivity.ModuleId, trackChanges: false);
 
         if (module is null)
-            throw new KeyNotFoundException($"Modul med id {existing.ModuleId} hittades inte.");
+            throw new KeyNotFoundException($"Modul med id \"{existingActivity.ModuleId}\" hittades inte.");
 
         if (normalizedStart.Date < module.StartDate.Date || normalizedEnd.Date > module.EndDate.Date)
             throw new ArgumentException("Aktiviteten ligger utanför modulens datumintervall.");
@@ -138,7 +138,7 @@ public class ActivityService : IActivityService
             throw new ArgumentException("Angiven aktivitetstyp finns inte.");
 
         if (activityDto.DueDate.HasValue && activityDto.DueDate.Value > normalizedEnd)
-            throw new ArgumentException("Förfallodatum kan inte ligga efter aktivitetens sluttid.");
+            throw new ArgumentException("Förfallodatum kan inte ligga efter aktivitetens sluttidpunkt.");
 
         bool overlaps = module.Activities
             .Where(a => a.Id != activityDto.Id)
@@ -147,20 +147,20 @@ public class ActivityService : IActivityService
         if (overlaps)
             throw new ArgumentException("Aktiviteten överlappar en annan aktivitet i modulen.");
 
-        existing.Name = activityDto.Name.Trim();
-        existing.Description = activityDto.Description.Trim();
-        existing.StartTime = normalizedStart;
-        existing.EndTime = normalizedEnd;
-        existing.DueDate = activityDto.DueDate;
-        existing.ActivityTypeId = activityDto.ActivityTypeId;
+        existingActivity.Name = activityDto.Name.Trim();
+        existingActivity.Description = activityDto.Description.Trim();
+        existingActivity.StartTime = normalizedStart;
+        existingActivity.EndTime = normalizedEnd;
+        existingActivity.DueDate = activityDto.DueDate;
+        existingActivity.ActivityTypeId = activityDto.ActivityTypeId;
 
-        _unitOfWork.ActivityRepository.Update(existing);
+        _unitOfWork.ActivityRepository.Update(existingActivity);
         await _unitOfWork.CompleteAsync();
 
-        var updated = await _unitOfWork.ActivityRepository.GetByIdAsync(existing.Id);
+        var updated = await _unitOfWork.ActivityRepository.GetByIdAsync(existingActivity.Id);
 
         if (updated is null)
-            throw new InvalidOperationException("Aktiviteten uppdaterades men kunde inte läsas tillbaka.");
+            throw new InvalidOperationException("Aktiviteten uppdaterades, men kunde inte läsas tillbaka.");
 
         return MapToDto(updated);
     }

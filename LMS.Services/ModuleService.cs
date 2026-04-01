@@ -17,6 +17,7 @@ public class ModuleService : IModuleService
 	{
 		_unitOfWork = unitOfWork;
 	}
+
 	public async Task<IEnumerable<ActivityDto>> GetActivitiesAsync(int moduleId)
 	{
 		var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(moduleId);
@@ -34,7 +35,6 @@ public class ModuleService : IModuleService
 			ActivityTypeName = a.ActivityType.Name
 		});
 	}
-
 
 	public Task<ModuleDto> CreateModuleAsync(ModuleCreateDto moduleDto)
 	{
@@ -71,18 +71,30 @@ public class ModuleService : IModuleService
         });
     }
 
-    public async Task<ModuleDto?> UpdateModuleAsync(ModuleUpdateDto dto)
+    public async Task<ModuleDto?> UpdateModuleAsync(ModuleUpdateDto moduleUpdateDto)
     {
-        var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(dto.Id, trackChanges: true);
+        var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(moduleUpdateDto.Id, trackChanges: true);
 
         if (module == null)
             return null;
 
-        module.Name = dto.Name;
-        module.Description = dto.Description;
-        module.StartDate = dto.StartDate;
-        module.EndDate = dto.EndDate;
-        module.CourseId = dto.CourseId;
+        if (string.IsNullOrWhiteSpace(moduleUpdateDto.Name))
+            throw new ArgumentException("Modulnamn saknas.");
+
+        if (string.IsNullOrWhiteSpace(moduleUpdateDto.Description))
+            throw new ArgumentException("Modulbeskrivning saknas.");
+
+        if (moduleUpdateDto.StartDate > moduleUpdateDto.EndDate)
+            throw new Exception("Startdatum får inte vara senare än slutdatum.");
+
+        if (moduleUpdateDto.StartDate < module.Course.StartDate || moduleUpdateDto.EndDate > module.Course.EndDate)
+            throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
+
+        module.Name = moduleUpdateDto.Name.Trim();
+        module.Description = moduleUpdateDto.Description.Trim();
+        module.StartDate = moduleUpdateDto.StartDate;
+        module.EndDate = moduleUpdateDto.EndDate;
+        module.CourseId = moduleUpdateDto.CourseId;
 
         await _unitOfWork.CompleteAsync();
 
