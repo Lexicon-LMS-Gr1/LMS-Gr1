@@ -108,4 +108,15 @@ public class ActivityRepository : IActivityRepository
             query = query.AsNoTracking();
         return await query.OrderBy(a => a.StartTime).ToListAsync();
 	}
+
+	public async  Task<IEnumerable<Activity>> GetSubmissionActivitiesForModuleAsync(int moduleId)
+	{
+		return await _context.Activities
+            .Include(a => a.ActivityType)
+			.Where(a =>
+                a.ActivityType.Name == "Assignment" &&
+				a.ModuleId == moduleId)
+			.AsNoTracking()
+			.ToListAsync();
+	}
 }
