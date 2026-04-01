@@ -9,7 +9,6 @@ public interface IServiceManager
     IDashboardService DashboardService { get; }
     ITeacherDashboardService TeacherDashboardService { get; }
     IActivityService ActivityService { get; }
-    IDocumentService DocumentService { get; }
     IStudentAssignmentService StudentAssignmentService { get; }
-    IProgressService ProgressService { get; }
+	IProgressService ProgressService { get; }
 }
