@@ -1,7 +1,8 @@
-﻿@using System.ComponentModel.DataAnnotations
-@using LMS.Blazor.Client.Services
+﻿@using LMS.Blazor.Client.Services
+@using LMS.Blazor.Client.Models
 @using LMS.Shared.DTOs.Course
 @using LMS.Shared.DTOs.Module
+@using Microsoft.AspNetCore.Components.Forms
 @inject IApiService ApiService
 
 <div class="card shadow-sm border-0">
@@ -15,7 +16,7 @@
             <div class="alert alert-danger">@errorMessage</div>
         }
 
-        <EditForm Model="model" OnValidSubmit="HandleValidSubmit">
+        <EditForm EditContext="courseEditContext" OnSubmit="HandleSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
@@ -56,57 +57,21 @@
                 </button>
             </div>
 
-            @if (model.Modules.Count == 0)
+            @if (moduleItems.Count == 0)
             {
                 <p class="text-muted">Inga moduler tillagda ännu.</p>
             }
 
-            @for (int i = 0; i < model.Modules.Count; i++)
+            @for (int i = 0; i < moduleItems.Count; i++)
             {
+                var item = moduleItems[i];
                 var moduleIndex = i;
-                var module = model.Modules[moduleIndex];
 
-                <div class="card mb-3 border">
-                    <div class="card-body">
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h3 class="h6 mb-0">Modul @(moduleIndex + 1)</h3>
-                            <button type="button"
-                                    class="btn btn-outline-danger btn-sm"
-                                    @onclick="() => RemoveModule(moduleIndex)">
-                                Ta bort
-                            </button>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Modulnamn</label>
-                            <InputText class="form-control" @bind-Value="module.Name" />
-                        </div>
-                        @* TODO: ValidationMessage för module.Name. Testa att det visas snyggt. *@
-
-                        <div class="mb-3">
-                            <label class="form-label">Beskrivning</label>
-                            <InputTextArea class="form-control" @bind-Value="module.Description" />
-                        </div>
-                        @* TODO:ValidationMessage module.Description. *@
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Startdatum</label>
-                                <InputDate class="form-control" @bind-Value="module.StartDate" />
-                            </div>
-                            @* TODO:ValidationMessage module.StartDate. *@
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Slutdatum</label>
-                                <InputDate class="form-control" @bind-Value="module.EndDate" />
-                            </div>
-                            @* TODO:ValidationMessage module.EndDate. *@
-                        </div>
-                        @* TODO: Visa modulspecifika fel här, tex: modul utanför kursens datum, modul överlappar annan modul
-                                       Just nu fångar backend detta med generellt felmeddelande. *@
-                    </div>
-                </div>
+                <CreateCourseModuleEditor @key="item.RowId"
+                                          @ref="item.EditorRef"
+                                          Module="item.Module"
+                                          ModuleIndex="moduleIndex"
+                                          OnRemove="() => RemoveModule(item.RowId)" />
             }
 
             <div class="d-flex gap-2 mt-4">
@@ -118,7 +83,6 @@
                     Avbryt
                 </button>
             </div>
-
         </EditForm>
     </div>
 </div>
@@ -130,37 +94,73 @@
     private CourseCreateDto model = new()
     {
         StartDate = DateTime.Today,
-        EndDate = DateTime.Today.AddMonths(6),
-        Modules = new List<ModuleCreateDto>()
+        EndDate = DateTime.Today.AddMonths(6)
     };
-    // TODO:CourseCreateDto har redan List<ModuleCreateDto> Modules { get; set; } = new();
-    // då behövs sannolikt inte explicit initiering här.
 
+    private EditContext? courseEditContext;
     private string? errorMessage;
     private bool isSubmitting;
 
+    private List<CreateCourseModuleItem> moduleItems = new();
+
+    protected override void OnInitialized()
+    {
+        courseEditContext = new EditContext(model);
+    }
+
     private void AddModule()
     {
-        model.Modules.Add(new ModuleCreateDto
+        var module = new ModuleCreateDto
         {
             StartDate = model.StartDate,
             EndDate = model.EndDate
+        };
+
+        model.Modules.Add(module);
+
+        moduleItems.Add(new CreateCourseModuleItem
+        {
+            Module = module
         });
     }
-    // TODO: Om kursdatum ändras efter att moduler lagts till, uppdateras inte befintliga moduler automatiskt.
-    // Ok nu men framöver: synka modulers defaultdatum alt. visa tydlig info om att moduldatum måste justeras manuellt.
 
-    private void RemoveModule(int index)
+    private void RemoveModule(Guid rowId)
     {
-        if (index >= 0 && index < model.Modules.Count)
-            model.Modules.RemoveAt(index);
+        var item = moduleItems.FirstOrDefault(x => x.RowId == rowId);
+
+        if (item is null)
+            return;
+
+        model.Modules.Remove(item.Module);
+        moduleItems.Remove(item);
     }
-    // TODO: Om man inför EditContext/manuell validering kan man
-    // behöva trigga validering igen efter remove så gamla felmeddelanden försvinner korrekt.
 
-    private async Task HandleValidSubmit()
+    private async Task HandleSubmit(EditContext _)
     {
+        if (isSubmitting)
+            return;
+
         errorMessage = null;
+
+        bool courseIsValid = courseEditContext?.Validate() ?? false;
+
+        bool modulesAreValid = true;
+
+        foreach (var item in moduleItems)
+        {
+            if (item.EditorRef is not null)
+            {
+                if (!item.EditorRef.Validate())
+                    modulesAreValid = false;
+            }
+        }
+
+        if (!courseIsValid || !modulesAreValid)
+        {
+            errorMessage = "Formuläret innehåller fel.";
+            return;
+        }
+
         isSubmitting = true;
 
         try
@@ -169,7 +169,7 @@
 
             if (result is null)
             {
-                errorMessage = "Kursen kunde inte skapas.";
+                errorMessage = "Kunde inte skapa kurs.";
                 return;
             }
 
@@ -177,8 +177,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Fel vid skapande av kurs: {ex.Message}";
-            // TODO:Bättre att låta ApiService hantera HTTP 400/500 tydligare och returnera kontrollerade felmeddelanden.
+            errorMessage = ex.Message;
         }
         finally
         {
@@ -189,12 +188,12 @@
     private async Task Cancel()
     {
         await OnCancel.InvokeAsync();
-        // TODO:Om formuläret blir större kan man fråga användaren
-        // 'är du säker?' om osparade ändringar finns.
     }
 
-        // TODO: Bryt ut modulredigeringen till egen komponent, tex CreateCourseModuleEditor.razor
-        // För att kunna visa klientvalideringmeddelanden
-
-        // TODO: Klientvalidering för modulens startdatum <= slutdatum, samt modul ligger inom kursens datum
+    public class CreateCourseModuleItem
+    {
+        public Guid RowId { get; set; } = Guid.NewGuid();
+        public ModuleCreateDto Module { get; set; } = new();
+        public CreateCourseModuleEditor? EditorRef { get; set; }
+    }
 }
