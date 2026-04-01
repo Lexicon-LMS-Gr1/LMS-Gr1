@@ -130,7 +130,9 @@
             participants = (await Api.GetAsync<List<ParticipantDto>>(
                 "api/user/me/course/participants"
                 ))?
-                .OrderBy(p => p.FullName.Split(' ').Last())
+                .OrderBy(p => p.LastName)
+                .ThenBy(p => p.FirstName)
+                .ThenBy(p => p.Id)
                 .ToList();
         }
         finally

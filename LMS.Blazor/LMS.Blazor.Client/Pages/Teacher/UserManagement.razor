@@ -285,7 +285,11 @@
                 filtered = filtered.Where(u => u.Role == roleFilter);
             }
 
-            return filtered.OrderBy(u => u.Role).ThenBy(u => u.LastName);
+            return filtered
+                .OrderBy(u => u.Role)
+                .ThenBy(u => u.LastName)
+                .ThenBy(u => u.FirstName)
+                .ThenBy(u => u.Id);
         }
     }
 

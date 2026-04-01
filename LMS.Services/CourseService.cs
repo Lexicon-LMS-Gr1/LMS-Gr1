@@ -190,7 +190,8 @@ namespace LMS.Services
 
 			return users.Select(u => new ParticipantDto {
 				Id = u.Id,
-				FullName = $"{u.FirstName} {u.LastName}",
+				FirstName = u.FirstName,
+				LastName = u.LastName,
 				Email = u.Email!
 			});
 		}

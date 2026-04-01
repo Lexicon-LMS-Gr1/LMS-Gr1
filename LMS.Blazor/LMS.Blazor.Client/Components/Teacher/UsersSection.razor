@@ -159,5 +159,7 @@
                  u.Role == roleFilter)
             )
             .OrderBy(u => u.Role)
-            .ThenBy(u => u.LastName);
+            .ThenBy(u => u.LastName)
+            .ThenBy(u => u.FirstName)
+            .ThenBy(u => u.Id);
 }

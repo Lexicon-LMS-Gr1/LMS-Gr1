@@ -50,7 +50,7 @@
                             @onclick:stopPropagation="true"
                             @onclick="() => OpenModuleModal(module)">
                         <i class="bi bi-pencil"></i>
-                        Edit
+                        Redigera
                     </button>
                 </div>
             </div>
@@ -135,7 +135,7 @@
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit activity</h5>
+                    <h5 class="modal-title">Redigera aktivitet</h5>
                     <button type="button" class="btn-close" @onclick="CloseActivityModal"></button>
                 </div>
 
@@ -205,7 +205,7 @@
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit module</h5>
+                    <h5 class="modal-title">Redigera modul</h5>
                     <button type="button" class="btn-close" @onclick="CloseModuleModal"></button>
                 </div>
 
@@ -361,9 +361,7 @@
         } catch (Exception ex) {
             activityError = ex.Message;
         }
-
     }
-
 
     private async Task LoadCourseAsync()
     {
@@ -388,7 +386,6 @@
         await LoadCourseAsync();
     }
 
-
     private void ToggleModule(int moduleId)
     {
         openModuleId = openModuleId == moduleId ? null : moduleId;
@@ -397,7 +394,5 @@
     private void ClearDeadline()
     {
         activityForm.DueDate = null;
-
     }
-
 }
