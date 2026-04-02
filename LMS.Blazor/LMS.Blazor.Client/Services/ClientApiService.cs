@@ -110,7 +110,30 @@ public class ClientApiService : IApiService
 
         if (HandleUnauthorized(response)) return default;
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var json = await response.Content.ReadAsStringAsync(ct);
+
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+
+                if (doc.RootElement.TryGetProperty("message", out var messageProp))
+                    throw new Exception(messageProp.GetString());
+
+                if (doc.RootElement.TryGetProperty("detail", out var detailProp))
+                    throw new Exception(detailProp.GetString());
+
+                if (doc.RootElement.TryGetProperty("title", out var titleProp))
+                    throw new Exception(titleProp.GetString());
+            }
+            catch (JsonException)
+            {
+                // inte giltig JSON, fall tillbaka till rå text
+            }
+
+            throw new Exception(json);
+        }
 
         return await JsonSerializer.DeserializeAsync<TResponse>(
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
