@@ -209,15 +209,15 @@
 
     <div class="modal-backdrop fade show"></div>
 }
-
 <!-- EDIT MODULE MODAL -->
-@if (showModuleModal) {
+@if (showModuleModal)
+{
     <div class="modal fade show d-block" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit module</h5>
+                    <h5 class="modal-title">Redigera modul</h5>
                     <button type="button" class="btn-close" @onclick="CloseModuleModal"></button>
                 </div>
 
@@ -226,28 +226,33 @@
 
                     <div class="modal-body">
 
-                        @if (!string.IsNullOrEmpty(moduleError)) {
+                        @if (!string.IsNullOrEmpty(moduleError))
+                        {
                             <div class="alert alert-danger">@moduleError</div>
                         }
 
                         <div class="mb-3">
                             <label class="form-label">Namn</label>
                             <InputText class="form-control" @bind-Value="moduleForm.Name" />
+                            <ValidationMessage For="@(() => moduleForm.Name)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Beskrivning</label>
                             <InputTextArea class="form-control" @bind-Value="moduleForm.Description" />
+                            <ValidationMessage For="@(() => moduleForm.Description)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Startdatum</label>
                             <InputDate class="form-control" @bind-Value="moduleForm.StartDate" />
+                            <ValidationMessage For="@(() => moduleForm.StartDate)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Slutdatum</label>
                             <InputDate class="form-control" @bind-Value="moduleForm.EndDate" />
+                            <ValidationMessage For="@(() => moduleForm.EndDate)" />
                         </div>
                     </div>
 
@@ -262,6 +267,7 @@
 
     <div class="modal-backdrop fade show"></div>
 }
+
 
 <ConfirmDialog @ref="confirmDeleteActivity"
                Title="Ta bort aktivitet"
