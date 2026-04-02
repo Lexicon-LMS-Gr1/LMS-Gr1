@@ -5,6 +5,7 @@ using LMS.Services.Mappers;
 using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Module;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Service.Contracts;
 using System.Diagnostics;
@@ -17,13 +18,18 @@ namespace LMS.Services
 	{
 		private readonly IUnitOfWork _unitOfWork;
 		private readonly IProgressService _progressService;
-		public CourseService(IUnitOfWork unitOfWork, IProgressService progressService)
-		{
-			_unitOfWork = unitOfWork;
-			_progressService = progressService;
-		}
+        private readonly IUserManagementService _userManagementService;
+        public CourseService(
+			IUnitOfWork unitOfWork,
+			IProgressService progressService,
+			IUserManagementService userManagementService)
+        {
+            _unitOfWork = unitOfWork;
+            _progressService = progressService;
+            _userManagementService = userManagementService;
+        }
 
-		public async Task<IEnumerable<CourseListDto>> GetAllCoursesListAsync()
+        public async Task<IEnumerable<CourseListDto>> GetAllCoursesListAsync()
 		{
 			var courses = await _unitOfWork.CourseRepository.GetCoursesForListAsync();
 
@@ -184,7 +190,34 @@ namespace LMS.Services
 			return CourseMapper.ToBasicCourseDto(course);
 		}
 
-		public async Task<IEnumerable<ParticipantDto>> GetParticipantsForUserCourseAsync(string userId)
+        public async Task<bool> DeleteCourseAsync(int courseId)
+        {
+            var course = await _unitOfWork.CourseRepository.GetCourseWithAllDataAsync(courseId);
+
+            if (course == null)
+                return false;
+
+            await _userManagementService.DeleteStudentsByCourseAsync(courseId);
+
+            foreach (var module in course.Modules.ToList())
+            {
+                foreach (var activity in module.Activities.ToList())
+                {
+                    _unitOfWork.ActivityRepository.Delete(activity);
+                }
+
+                _unitOfWork.ModuleRepository.Delete(module);
+            }
+
+            _unitOfWork.CourseRepository.Delete(course);
+
+            await _unitOfWork.CompleteAsync();
+
+            return true;
+        }
+
+
+        public async Task<IEnumerable<ParticipantDto>> GetParticipantsForUserCourseAsync(string userId)
 		{
 			var users = await _unitOfWork.CourseRepository.GetParticipantsForUserCourseAsync(userId);
 

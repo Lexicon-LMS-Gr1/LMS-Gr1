@@ -186,6 +186,19 @@ public class UserManagementService : IUserManagementService
         return result.Succeeded;
     }
 
+    public async Task DeleteStudentsByCourseAsync(int courseId)
+    {
+        var students = await _userManager.Users
+            .Where(u => u.CourseId == courseId)
+            .ToListAsync();
+
+        foreach (var student in students)
+        {
+            await _userManager.DeleteAsync(student);
+        }
+    }
+
+
     private static UserDto MapToDto(ApplicationUser user, string role)
     {
         return new UserDto

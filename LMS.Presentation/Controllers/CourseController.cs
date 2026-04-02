@@ -79,4 +79,16 @@ public class CourseController : ControllerBase
         return Ok(updated);
     }
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCourse(int id)
+    {
+        var result = await _serviceManager.CourseService.DeleteCourseAsync(id);
+
+        if (!result)
+            return NotFound();
+
+        return NoContent();
+    }
+
+
 }

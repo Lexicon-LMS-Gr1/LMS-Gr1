@@ -1,10 +1,5 @@
 ﻿@using LMS.Shared.DTOs.Course
-
-@code {
-    [Parameter] public IEnumerable<CourseListDto> Courses { get; set; } = new List<CourseListDto>();
-    [Parameter] public EventCallback<int> OnView { get; set; }
-    [Parameter] public EventCallback<CourseListDto> OnEdit { get; set; }
-}
+@inject IApiService ApiService
 
 <div class="card shadow-sm">
     <div class="card-header bg-white py-3">
@@ -46,17 +41,53 @@
                         <td class="text-end pe-4">
                             <button class="btn btn-sm btn-outline-secondary me-2"
                                     @onclick="() => OnView.InvokeAsync(c.Id)">
-                                <span class="bi bi-eye me-1"></span> Detaljer
+                                <span class="bi bi-eye me-1"></span>
                             </button>
 
                             <button class="btn btn-sm btn-outline-primary"
                                     @onclick="() => OnEdit.InvokeAsync(c)">
-                                <span class="bi bi-pencil-fill me-1"></span> Redigera
+                                <span class="bi bi-pencil-fill me-1"></span>
+                            </button>
+
+                            <button class="btn btn-sm btn-outline-danger"
+                                    @onclick="() => AskDeleteCourse(c.Id)">
+                                <span class="bi bi-trash me-1"></span>
                             </button>
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
+
+        <ConfirmDialog @ref="confirmDeleteCourse"
+                       Title="Ta bort kurs"
+                       Message="Är du säker på att du vill ta bort hela kursen och allt innehåll?"
+                       OnClose="OnConfirmDeleteCourse" />
+
     </div>
 </div>
+@code {
+    [Parameter] public IEnumerable<CourseListDto> Courses { get; set; } = new List<CourseListDto>();
+    [Parameter] public EventCallback<int> OnView { get; set; }
+    [Parameter] public EventCallback<CourseListDto> OnEdit { get; set; }
+
+    private ConfirmDialog? confirmDeleteCourse;
+    private int courseIdToDelete;
+
+    private void AskDeleteCourse(int id)
+    {
+        courseIdToDelete = id;
+        confirmDeleteCourse!.Show();
+    }
+
+    private async Task OnConfirmDeleteCourse(bool confirmed)
+    {
+        if (!confirmed)
+            return;
+
+        await ApiService.DeleteAsync($"api/course/{courseIdToDelete}");
+
+        Courses = Courses.Where(c => c.Id != courseIdToDelete).ToList();
+        StateHasChanged();
+    }
+}
