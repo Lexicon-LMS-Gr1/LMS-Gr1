@@ -71,7 +71,7 @@
                         <h6 class="mb-3">Aktiviteter</h6>
 
                         @foreach (var a in module.Activities.OrderBy(a => a.StartTime)) {
-                            <div class="card mb-2">
+                            <div class="card mb-2 @(highlightedActivityId == a.Id ? "bg-success-subtle" : "")">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
@@ -296,6 +296,7 @@
     private UpdateActivityDto activityForm = new();
     private string? activityError;
     private EditContext? activityEditContext;
+    private int? highlightedActivityId;
 
     // MODULE EDIT
     private bool showModuleModal;
@@ -386,8 +387,14 @@
                 $"api/activity/{activityForm.Id}", activityForm);
 
             if (result != null) {
+                var id = activityForm.Id;
                 showActivityModal = false;
                 await LoadCourseAsync();
+                highlightedActivityId = id;
+                StateHasChanged();
+                await Task.Delay(10000);
+
+                highlightedActivityId = null;
             } else {
                 activityError = "Kunde inte uppdatera aktiviteten.";
             }
