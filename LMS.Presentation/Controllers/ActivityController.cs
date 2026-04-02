@@ -25,22 +25,26 @@ public class ActivityController : ControllerBase
 		if (!ModelState.IsValid)
 			return BadRequest(ModelState);
 
-		try
-		{
+
+		try {
 			var result = await _serviceManager.ActivityService.UpdateActivityAsync2(dto);
 			return Ok(result);
-		}
-		catch (ArgumentException ex)
-		{
+		} catch (ArgumentException ex) {
 			return BadRequest(ex.Message);
-		}
-		catch (KeyNotFoundException)
-		{
+		} catch (KeyNotFoundException) {
 			return NotFound();
 		}
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av aktivitet." });
-        }
+	}
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteActivity(int id)
+    {
+        var success = await _serviceManager.ActivityService.DeleteActivityAsync(id);
+
+        if (!success)
+            return NotFound();
+
+        return NoContent();
     }
+
 }
