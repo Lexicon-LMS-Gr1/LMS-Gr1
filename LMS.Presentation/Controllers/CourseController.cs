@@ -87,4 +87,17 @@ public class CourseController : ControllerBase
             return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av kurs." });
         }
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCourse(int id)
+    {
+        var result = await _serviceManager.CourseService.DeleteCourseAsync(id);
+
+        if (!result)
+            return NotFound();
+
+        return NoContent();
+    }
+
+
 }
