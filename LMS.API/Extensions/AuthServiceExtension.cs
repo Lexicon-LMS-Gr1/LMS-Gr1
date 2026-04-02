@@ -22,11 +22,11 @@ public static class AuthServiceExtension
         var jwtSettings = configuration
                          .GetSection(JwtSettings.Section)
                          .Get<JwtSettings>()
-                         ?? throw new InvalidOperationException("JwtSettings section is missing or invalid.");
+                         ?? throw new InvalidOperationException("Sektionen \"JwtSettings\" saknas eller är ogiltig.");
 
         services.AddOptions<JwtSettings>()
                         .Bind(configuration.GetSection(JwtSettings.Section))
-                        .Validate(config => !string.IsNullOrWhiteSpace(config.SecretKey), "SecretKey is required")
+                        .Validate(config => !string.IsNullOrWhiteSpace(config.SecretKey), "SecretKey krävs.")
                         .ValidateDataAnnotations();
 
         services.AddAuthentication(options =>

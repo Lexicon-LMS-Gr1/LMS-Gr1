@@ -11,36 +11,37 @@ namespace LMS.Services;
 
 public class ModuleService : IModuleService
 {
-	private readonly IUnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
 
-	public ModuleService(IUnitOfWork unitOfWork)
-	{
-		_unitOfWork = unitOfWork;
-	}
-	public async Task<IEnumerable<ActivityDto>> GetActivitiesAsync(int moduleId)
-	{
-		var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(moduleId);
+    public ModuleService(IUnitOfWork unitOfWork)
+    {
+        _unitOfWork = unitOfWork;
+    }
 
-		if (module == null)
-			return Enumerable.Empty<ActivityDto>();
+    public async Task<IEnumerable<ActivityDto>> GetActivitiesAsync(int moduleId)
+    {
+        var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(moduleId);
 
-		return module.Activities.Select(a => new ActivityDto {
-			Id = a.Id,
-			Name = a.Name,
-			Description = a.Description,
-			StartTime = a.StartTime,
-			EndTime = a.EndTime,
-			DueDate = a.DueDate,
-			ActivityTypeName = a.ActivityType.Name
-		});
-	}
+        if (module == null)
+            return Enumerable.Empty<ActivityDto>();
 
+        return module.Activities.Select(a => new ActivityDto
+        {
+            Id = a.Id,
+            Name = a.Name,
+            Description = a.Description,
+            StartTime = a.StartTime,
+            EndTime = a.EndTime,
+            DueDate = a.DueDate,
+            ActivityTypeName = a.ActivityType.Name
+        });
+    }
 
     //TODO: Skapar modul utan att koppla den till en kurs, används inte. Tas Bort?
     public Task<ModuleDto> CreateModuleAsync(ModuleCreateDto moduleDto)
-	{
-		throw new NotImplementedException();
-	}
+    {
+        throw new NotImplementedException();
+    }
 
     public async Task<ModuleDto> CreateModuleAsync(int courseId, ModuleCreateDto moduleDto)
     {
@@ -54,15 +55,15 @@ public class ModuleService : IModuleService
             throw new ArgumentException("Modulbeskrivning saknas.");
 
         if (moduleDto.StartDate > moduleDto.EndDate)
-            throw new ArgumentException("Modulens startdatum kan inte ligga efter slutdatum.");
+            throw new ArgumentException("Startdatum får inte vara senare än slutdatum.");
 
         var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
 
         if (course is null)
-            throw new KeyNotFoundException($"Kurs med id {courseId} hittades inte.");
+            throw new KeyNotFoundException($"Kurs med id \"{courseId}\" hittades inte.");
 
         if (moduleDto.StartDate < course.StartDate || moduleDto.EndDate > course.EndDate)
-            throw new ArgumentException("Modulen ligger utanför kursens datumintervall.");
+            throw new ArgumentException("Modul \"{module.Name}\" ligger utanför kursens datumintervall.");
 
         bool overlaps = course.Modules.Any(m =>
             moduleDto.StartDate <= m.EndDate && moduleDto.EndDate >= m.StartDate);
@@ -116,16 +117,15 @@ public class ModuleService : IModuleService
         return true;
     }
 
-
     public Task<IEnumerable<ModuleDto>> GetAllModulesAsync()
-	{
-		throw new NotImplementedException();
-	}
+    {
+        throw new NotImplementedException();
+    }
 
-	public Task<ModuleDto?> GetModuleByIdAsync(int id)
-	{
-		throw new NotImplementedException();
-	}
+    public Task<ModuleDto?> GetModuleByIdAsync(int id)
+    {
+        throw new NotImplementedException();
+    }
 
     public async Task<IEnumerable<ModuleDto>> GetModulesByCourseIdAsync(int courseId)
     {
@@ -142,18 +142,36 @@ public class ModuleService : IModuleService
         });
     }
 
-    public async Task<ModuleDto?> UpdateModuleAsync(ModuleUpdateDto dto)
+    public async Task<ModuleDto?> UpdateModuleAsync(ModuleUpdateDto moduleUpdateDto)
     {
-        var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(dto.Id, trackChanges: true);
+        var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(moduleUpdateDto.Id, trackChanges: true);
 
         if (module == null)
             return null;
 
-        module.Name = dto.Name;
-        module.Description = dto.Description;
-        module.StartDate = dto.StartDate;
-        module.EndDate = dto.EndDate;
-        module.CourseId = dto.CourseId;
+        if (string.IsNullOrWhiteSpace(moduleUpdateDto.Name))
+            throw new ArgumentException("Modulnamn saknas.");
+
+        if (string.IsNullOrWhiteSpace(moduleUpdateDto.Description))
+            throw new ArgumentException("Modulbeskrivning saknas.");
+
+        if (moduleUpdateDto.StartDate > moduleUpdateDto.EndDate)
+            throw new Exception("Startdatum får inte vara senare än slutdatum.");
+
+        if (moduleUpdateDto.StartDate < module.Course.StartDate || moduleUpdateDto.EndDate > module.Course.EndDate)
+            throw new ArgumentException($"Modul \"{module.Name}\" ligger utanför kursens datumintervall.");
+
+        bool overlaps = module.Course.Modules.Any(m =>
+            moduleUpdateDto.StartDate <= m.EndDate && moduleUpdateDto.EndDate >= m.StartDate);
+
+        if (overlaps)
+            throw new ArgumentException("Modulen överlappar en annan modul i kursen.");
+
+        module.Name = moduleUpdateDto.Name.Trim();
+        module.Description = moduleUpdateDto.Description.Trim();
+        module.StartDate = moduleUpdateDto.StartDate;
+        module.EndDate = moduleUpdateDto.EndDate;
+        module.CourseId = moduleUpdateDto.CourseId;
 
         await _unitOfWork.CompleteAsync();
 
