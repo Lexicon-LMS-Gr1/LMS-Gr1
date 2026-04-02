@@ -47,13 +47,22 @@
                             @module.EndDate.ToString("yyyy-MM-dd")
                         </p>
                     </div>
-                    <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
-                            @onclick:stopPropagation="true"
-                            @onclick="() => OpenModuleModal(module)">
-                        <i class="bi bi-pencil"></i>
-                        Edit
-                    </button>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => OpenModuleModal(module)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => AskDeleteModule(module.Id)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
+
             </div>
 
             @if (openModuleId == module.Id) {
@@ -89,7 +98,7 @@
 
                                             <button class="btn btn-sm btn-outline-danger"
                                                     @onclick:stopPropagation="true"
-                                                    @onclick="() => AskDelete(a.Id)">
+                                                    @onclick="() => AskDeleteActivity(a.Id)">
                                                 <i class="bi bi-trash"></i>
                                             </button>
 
@@ -254,10 +263,16 @@
     <div class="modal-backdrop fade show"></div>
 }
 
-<ConfirmDialog @ref="confirmDialog"
+<ConfirmDialog @ref="confirmDeleteActivity"
                Title="Ta bort aktivitet"
                Message="Är du säker på att du vill ta bort denna aktivitet?"
-               OnClose="OnConfirmDelete" />
+               OnClose="OnConfirmDeleteActivity" />
+
+<ConfirmDialog @ref="confirmDeleteModule"
+               Title="Ta bort modul"
+               Message="Är du säker på att du vill ta bort denna modul?"
+               OnClose="OnConfirmDeleteModule" />
+
 
 @code {
     [Parameter] public int CourseId { get; set; }
@@ -265,8 +280,10 @@
 
     private CourseDto? Course;
     private int? openModuleId;
-    private ConfirmDialog? confirmDialog;
+    private ConfirmDialog? confirmDeleteActivity;
+    private ConfirmDialog? confirmDeleteModule;
     private int activityIdToDelete;
+    private int moduleIdToDelete;
 
     // ACTIVITY EDIT
     private bool showActivityModal;
@@ -410,18 +427,34 @@
 
     }
 
-    private void AskDelete(int id)
+    private void AskDeleteActivity(int id)
     {
         activityIdToDelete = id;
-        confirmDialog!.Show();
+        confirmDeleteActivity!.Show();
     }
 
-    private async Task OnConfirmDelete(bool confirmed)
+    private void AskDeleteModule(int id)
+    {
+        moduleIdToDelete = id;
+        confirmDeleteModule!.Show();
+    }
+
+    private async Task OnConfirmDeleteActivity(bool confirmed)
     {
         if (!confirmed)
             return;
 
         await ApiService.DeleteAsync($"api/activity/{activityIdToDelete}");
+
+        await LoadCourseAsync();
+    }
+
+    private async Task OnConfirmDeleteModule(bool confirmed)
+    {
+        if (!confirmed)
+            return;
+
+        await ApiService.DeleteAsync($"api/module/{moduleIdToDelete}");
 
         await LoadCourseAsync();
     }

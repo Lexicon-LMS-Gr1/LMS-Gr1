@@ -41,4 +41,16 @@ public class ModuleController : ControllerBase
         return Ok(updated);
     }
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteModule(int id)
+    {
+        var result = await _serviceManager.ModuleService.DeleteModuleAsync(id);
+
+        if (!result)
+            return NotFound();
+
+        return NoContent();
+    }
+
+
 }

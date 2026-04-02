@@ -94,12 +94,30 @@ public class ModuleService : IModuleService
         };
     }
 
-    public Task<bool> DeleteModuleAsync(int id)
-	{
-		throw new NotImplementedException();
-	}
+    public async Task<bool> DeleteModuleAsync(int id)
+    {
+        var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(id, trackChanges: true);
 
-	public Task<IEnumerable<ModuleDto>> GetAllModulesAsync()
+        if (module == null)
+            return false;
+
+        if (module.Activities != null && module.Activities.Any())
+        {
+            foreach (var activity in module.Activities.ToList())
+            {
+                _unitOfWork.ActivityRepository.Delete(activity);
+            }
+        }
+
+        _unitOfWork.ModuleRepository.Delete(module);
+
+        await _unitOfWork.CompleteAsync();
+
+        return true;
+    }
+
+
+    public Task<IEnumerable<ModuleDto>> GetAllModulesAsync()
 	{
 		throw new NotImplementedException();
 	}
