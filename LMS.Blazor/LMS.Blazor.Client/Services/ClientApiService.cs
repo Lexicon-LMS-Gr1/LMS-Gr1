@@ -49,31 +49,48 @@ public class ClientApiService : IApiService
     }
     */
 
-	public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
-	{
-		var response = await _httpClient.PutAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
+    public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
 
-		if (HandleUnauthorized(response)) return default;
+        if (HandleUnauthorized(response))
+            return default;
 
-		if (response.IsSuccessStatusCode) {
-			return await JsonSerializer.DeserializeAsync<TResponse>(
-				await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
-		}
-		var errorMessage = await response.Content.ReadAsStringAsync(ct);
+        if (response.IsSuccessStatusCode)
+        {
+            return await JsonSerializer.DeserializeAsync<TResponse>(
+                await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+        }
 
-		if (string.IsNullOrWhiteSpace(errorMessage))
-			errorMessage = "Ett fel uppstod.";
+        var json = await response.Content.ReadAsStringAsync(ct);
 
-		errorMessage = errorMessage.Trim('"');
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
 
-		throw new Exception(errorMessage);
-	}
+            if (doc.RootElement.TryGetProperty("message", out var messageProp))
+                throw new Exception(messageProp.GetString());
+
+            if (doc.RootElement.TryGetProperty("detail", out var detailProp))
+                throw new Exception(detailProp.GetString());
+
+            if (doc.RootElement.TryGetProperty("title", out var titleProp))
+                throw new Exception(titleProp.GetString());
+        }
+        catch (JsonException)
+        {
+            // inte giltig JSON, fall tillbaka till rå text
+        }
+
+        throw new Exception(json);
+    }
 
 
 
 
 
-	public async Task<(bool Success, string? Error)> DeleteAsync(string endpoint, CancellationToken ct = default)
+
+    public async Task<(bool Success, string? Error)> DeleteAsync(string endpoint, CancellationToken ct = default)
     {
         var response = await _httpClient.DeleteAsync($"api/proxy/{endpoint}", ct);
 
