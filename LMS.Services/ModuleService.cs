@@ -162,6 +162,7 @@ public class ModuleService : IModuleService
             throw new ArgumentException($"Modul \"{module.Name}\" ligger utanför kursens datumintervall.");
 
         bool overlaps = module.Course.Modules.Any(m =>
+            m.Id != module.Id &&
             moduleUpdateDto.StartDate <= m.EndDate && moduleUpdateDto.EndDate >= m.StartDate);
 
         if (overlaps)
