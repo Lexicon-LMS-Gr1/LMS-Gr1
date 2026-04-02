@@ -72,7 +72,8 @@ public class UserManagementService : IUserManagementService
             .Include(u => u.Course)
             .FirstOrDefaultAsync(u => u.Id == id);
 
-        if (user == null) return null;
+        if (user == null)
+            return null;
 
         var roles = await _userManager.GetRolesAsync(user);
         return MapToDto(user, roles.FirstOrDefault() ?? string.Empty);
@@ -82,19 +83,19 @@ public class UserManagementService : IUserManagementService
     {
         // Validate role exists
         if (!await _roleManager.RoleExistsAsync(dto.Role))
-            throw new ArgumentException($"Role '{dto.Role}' does not exist.");
+            throw new ArgumentException($"Rollen \"{dto.Role}\" finns inte.");
 
         // Validate email uniqueness
-        var existingUser = await _userManager.FindByEmailAsync(dto.Email);
-        if (existingUser != null)
-            throw new ArgumentException($"A user with email '{dto.Email}' already exists.");
+        var existingUserWithSameEmail = await _userManager.FindByEmailAsync(dto.Email);
+        if (existingUserWithSameEmail != null)
+            throw new ArgumentException($"En användare med e-postadressen \"{dto.Email}\" finns redan.");
 
         // Validate business rules
         if (dto.Role == "Teacher" && dto.CourseId.HasValue)
-            throw new ArgumentException("A Teacher cannot be assigned to a course.");
+            throw new ArgumentException("En lärare kan inte kopplas till en kurs på samma sätt som en student.");
 
         if (dto.Role == "Student" && !dto.CourseId.HasValue)
-            throw new ArgumentException("A Student must be assigned to a course.");
+            throw new ArgumentException("En student måste kopplas till en kurs.");
 
         var user = new ApplicationUser
         {
@@ -109,7 +110,7 @@ public class UserManagementService : IUserManagementService
         if (!createResult.Succeeded)
         {
             var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"Failed to create user: {errors}");
+            throw new InvalidOperationException($"Kunde inte skapa användare: {errors}");
         }
 
         var roleResult = await _userManager.AddToRoleAsync(user, dto.Role);
@@ -118,7 +119,7 @@ public class UserManagementService : IUserManagementService
             // Rollback: delete the created user
             await _userManager.DeleteAsync(user);
             var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"Failed to assign role: {errors}");
+            throw new InvalidOperationException($"Misslyckades med att tilldela rollen: {errors}");
         }
 
         return MapToDto(user, dto.Role);
@@ -131,14 +132,14 @@ public class UserManagementService : IUserManagementService
             .FirstOrDefaultAsync(u => u.Id == dto.Id);
 
         if (user == null)
-            throw new KeyNotFoundException($"User with ID '{dto.Id}' not found.");
+            throw new KeyNotFoundException($"Användare med id \"{dto.Id}\" hittades inte.");
 
         // Validate email uniqueness if changed
         if (!string.Equals(user.Email, dto.Email, StringComparison.OrdinalIgnoreCase))
         {
-            var existingUser = await _userManager.FindByEmailAsync(dto.Email);
-            if (existingUser != null)
-                throw new ArgumentException($"A user with email '{dto.Email}' already exists.");
+            var existingUserWithSameEmail = await _userManager.FindByEmailAsync(dto.Email);
+            if (existingUserWithSameEmail != null)
+                throw new ArgumentException($"En användare med e-postadressen \"{dto.Email}\" finns redan.");
         }
 
         var roles = await _userManager.GetRolesAsync(user);
@@ -146,22 +147,22 @@ public class UserManagementService : IUserManagementService
 
         // Teachers cannot have CourseId
         if (currentRole == "Teacher" && dto.CourseId.HasValue)
-            throw new ArgumentException("A Teacher cannot be assigned to a course.");
+            throw new ArgumentException("En lärare kan inte kopplas till en kurs på samma sätt som en student.");
 
         if (currentRole == "Student" && !dto.CourseId.HasValue)
-            throw new ArgumentException("A Student must be assigned to a course.");
+            throw new ArgumentException("En student måste kopplas till en kurs.");
 
-        user.FirstName = dto.FirstName;
-        user.LastName = dto.LastName;
-        user.Email = dto.Email;
-        user.UserName = dto.Email;
+        user.FirstName = dto.FirstName.Trim();
+        user.LastName = dto.LastName.Trim();
+        user.Email = dto.Email.Trim();
+        user.UserName = dto.Email.Trim();
         user.CourseId = currentRole == "Student" ? dto.CourseId : null;
 
         var result = await _userManager.UpdateAsync(user);
         if (!result.Succeeded)
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"Failed to update user: {errors}");
+            throw new InvalidOperationException($"Kunde inte uppdatera användare: {errors}");
         }
 
         return MapToDto(user, currentRole);
@@ -170,7 +171,8 @@ public class UserManagementService : IUserManagementService
     public async Task<bool> DeleteUserAsync(string id)
     {
         var user = await _userManager.FindByIdAsync(id);
-        if (user == null) return false;
+        if (user == null)
+            return false;
 
         // Prevent deleting the last teacher
         var roles = await _userManager.GetRolesAsync(user);
@@ -179,7 +181,7 @@ public class UserManagementService : IUserManagementService
             var teacherCount = (await _userManager.GetUsersInRoleAsync("Teacher")).Count;
             if (teacherCount <= 1)
                 throw new InvalidOperationException(
-                    "Cannot delete the last teacher in the system. At least one teacher must exist.");
+                    "Kan inte ta bort den sista läraren i systemet. Åtminstone en lärare måste finnas.");
         }
 
         var result = await _userManager.DeleteAsync(user);

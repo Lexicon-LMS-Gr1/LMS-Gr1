@@ -34,7 +34,7 @@
                         <td><span class="badge bg-secondary">@c.ModuleCount</span></td>
                         <td>
                             <span class="badge @(c.Status == "Active" ? "bg-success" : "bg-warning text-dark")">
-                                @c.Status
+                                @(c.Status == "Upcoming" ? "Kommande" : (c.Status == "Completed" ? "Avslutad" : "Pågående"))
                             </span>
                         </td>
 

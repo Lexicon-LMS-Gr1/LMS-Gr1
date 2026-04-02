@@ -53,13 +53,13 @@ namespace LMS.Services
 			var dto = CourseMapper.ToDetailedCourseDto(course);
 
 			dto.Progress = await _progressService.GetCourseProgressAsync(userId, course.Id);
-			foreach (var module in dto.Modules) {
+			foreach (var module in dto.Modules)
+			{
 				module.Progress = await _progressService.GetModuleProgressAsync(userId, module.Id);
 			}
 
 			return dto;
 		}
-
 
 		public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
 		{
@@ -75,42 +75,46 @@ namespace LMS.Services
 
 			// Kursens startdatum måste vara <= slutdatum
 			if (courseCreateDto.StartDate > courseCreateDto.EndDate)
-				throw new ArgumentException("Startdatum kan inte ligga efter slutdatum.");
+				throw new ArgumentException("Startdatum får inte vara senare än slutdatum.");
 
 			// Modules är en lista (initierad till tom lista i DTOn)
 			var modules = courseCreateDto.Modules;
 
 			// Validera varje modul individuellt
-			foreach (var module in modules) {
+			foreach (var module in modules)
+			{
 				// TODO: Delvis duplicering av DataAnnotations-validerigen. Ev centralisera denna validering senare.
 
 				if (string.IsNullOrWhiteSpace(module.Name))
 					throw new ArgumentException("En modul saknar namn.");
 
 				if (string.IsNullOrWhiteSpace(module.Description))
-					throw new ArgumentException($"Modul '{module.Name}' saknar beskrivning.");
+					throw new ArgumentException($"Modul \"{module.Name}\" saknar beskrivning.");
 
 				// Modulens startdatum <= slutdatum
 				if (module.StartDate > module.EndDate)
-					throw new ArgumentException($"Modul '{module.Name}' har ett startdatum som ligger efter slutdatum.");
+					throw new ArgumentException($"Modul \"{module.Name}\" har ett startdatum som ligger efter slutdatum.");
 
 				// Modul måste ligga inom kursens datumintervall
 				if (module.StartDate < courseCreateDto.StartDate || module.EndDate > courseCreateDto.EndDate)
-					throw new ArgumentException($"Modul '{module.Name}' har datum som ligger utanför kursens datum.");
+					throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
 			}
 
 			// Kontrollera att moduler inte överlappar varandra (inom samma request)
-			for (int i = 0; i < modules.Count; i++) {
-				for (int j = i + 1; j < modules.Count; j++) {
+			for (int i = 0; i < modules.Count; i++)
+			{
+				for (int j = i + 1; j < modules.Count; j++)
+				{
 					var a = modules[i];
 					var b = modules[j];
 
 					// Intervallöverlapp
 					bool overlaps = a.StartDate <= b.EndDate && a.EndDate >= b.StartDate;
 
-					if (overlaps) {
+					if (overlaps)
+					{
 						throw new ArgumentException(
-							$"Modulerna '{a.Name}' och '{b.Name}' överlappar varandra.");
+							$"Modulerna \"{a.Name}\" och \"{b.Name}\" överlappar varandra.");
 					}
 				}
 			}
@@ -123,7 +127,8 @@ namespace LMS.Services
 			// Återanvändningsbar och om logiken förändras har man en single source of truth.
 
 			// Skapa ny Course-entitet
-			var course = new Course {
+			var course = new Course
+			{
 				Name = courseCreateDto.Name.Trim(),          // Trim undviker whitespace-problem i DB
 				Description = courseCreateDto.Description.Trim(),
 				StartDate = courseCreateDto.StartDate,
@@ -131,8 +136,10 @@ namespace LMS.Services
 			};
 
 			// Mappa och koppla moduler till kursen
-			foreach (var module in modules) {
-				course.Modules.Add(new Module {
+			foreach (var module in modules)
+			{
+				course.Modules.Add(new Module
+				{
 					Name = module.Name.Trim(),
 					Description = module.Description.Trim(),
 					StartDate = module.StartDate,
@@ -151,7 +158,8 @@ namespace LMS.Services
 			await _unitOfWork.CompleteAsync();
 
 			// Returnera DTO med ev. moduler - mappning från entitet till DTO
-			return new CourseDto {
+			return new CourseDto
+			{
 				Id = course.Id,
 				Name = course.Name,
 				Description = course.Description,
@@ -159,7 +167,8 @@ namespace LMS.Services
 				EndDate = course.EndDate,
 
 				// TODO: Om listan blir stor i framtiden: pagination / lazy loading
-				Modules = course.Modules.Select(m => new ModuleDto {
+				Modules = course.Modules.Select(m => new ModuleDto
+				{
 					Id = m.Id,
 					Name = m.Name,
 					Description = m.Description,
@@ -174,13 +183,36 @@ namespace LMS.Services
 			var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseUpdateDto.Id);
 
 			if (course == null)
-				throw new Exception("Course not found");
+				throw new Exception("Kursen kunde inte hittas.");
 
-			if (courseUpdateDto.EndDate < courseUpdateDto.StartDate)
-				throw new Exception("End date must not be earlier than start date");
+            if (string.IsNullOrWhiteSpace(courseUpdateDto.Name))
+                throw new ArgumentException("Kursnamn saknas.");
 
-			course.Name = courseUpdateDto.Name;
-			course.Description = courseUpdateDto.Description;
+            if (string.IsNullOrWhiteSpace(courseUpdateDto.Description))
+                throw new ArgumentException("Kursbeskrivning saknas.");
+
+            if (courseUpdateDto.StartDate > courseUpdateDto.EndDate)
+                throw new Exception("Startdatum får inte vara senare än slutdatum.");
+
+            if (course.Modules.Count != 0)
+            {
+                // Tillåt inte ändring av kursdatum om kursen innehåller moduler, för moduldatumen kan då
+                // hamna utanför kursdatumen.
+                throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
+
+                /*
+                // Alternativt: Validera varje modul individuellt.
+                foreach (var module in course.Modules)
+                {
+                    // Modul måste ligga inom kursens datumintervall.
+                    if (module.StartDate < courseUpdateDto.StartDate || module.EndDate > courseUpdateDto.EndDate)
+                        throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
+                }
+                */
+            }
+
+            course.Name = courseUpdateDto.Name.Trim();
+			course.Description = courseUpdateDto.Description.Trim();
 			course.StartDate = courseUpdateDto.StartDate;
 			course.EndDate = courseUpdateDto.EndDate;
 
@@ -221,9 +253,11 @@ namespace LMS.Services
 		{
 			var users = await _unitOfWork.CourseRepository.GetParticipantsForUserCourseAsync(userId);
 
-			return users.Select(u => new ParticipantDto {
+			return users.Select(u => new ParticipantDto
+			{
 				Id = u.Id,
-				FullName = $"{u.FirstName} {u.LastName}",
+				FirstName = u.FirstName,
+				LastName = u.LastName,
 				Email = u.Email!
 			});
 		}
@@ -235,8 +269,5 @@ namespace LMS.Services
 				return null;
 			return CourseMapper.ToDetailedCourseDto(course);
 		}
-
-
-		
 	}
 }

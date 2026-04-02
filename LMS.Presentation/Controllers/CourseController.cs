@@ -5,12 +5,9 @@ using Service.Contracts;
 
 namespace LMS.Presentation.Controllers;
 
-
-
 /*
  * https://github.com/Lexicon-NET-2025-HT/CompaniesAPI/blob/master/Companies.Presentation/Controllers/EmployeesController.cs
  */
-
 
 [ApiController]
 [Route("api/[controller]")]
@@ -24,14 +21,12 @@ public class CourseController : ControllerBase
 		this._serviceManager = serviceManager;
 	}
 
-
 	[HttpGet]
 	public async Task<ActionResult<IEnumerable<CourseDto>>> GetAllCourses()
 	{
 		var courses = await _serviceManager.CourseService.GetAllCoursesAsync();
 		return Ok(courses);
 	}
-
 
 	[HttpGet("list")]
 	public async Task<ActionResult<IEnumerable<CourseListDto>>> GetCoursesList()
@@ -46,6 +41,7 @@ public class CourseController : ControllerBase
 		var course = await _serviceManager.CourseService.GetCourseByIdAsync(courseId);
 		if (course == null) 
 			return NotFound();
+
 		return Ok(course);
 	}
 
@@ -67,16 +63,29 @@ public class CourseController : ControllerBase
         }
     }
 
-
     [HttpPut("{id}")]
     public async Task<ActionResult<CourseDto>> UpdateCourse(int id, [FromBody] CourseUpdateDto dto)
     {
         if (id != dto.Id)
-            return BadRequest("Course ID mismatch");
+            return BadRequest("Kurs-id stämmer inte.");
 
-        var updated = await _serviceManager.CourseService.UpdateCourseAsync(dto);
-
-        return Ok(updated);
+		try
+		{
+			var updated = await _serviceManager.CourseService.UpdateCourseAsync(dto);
+			return Ok(updated);
+		}
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av kurs." });
+        }
     }
 
     [HttpDelete("{id}")]

@@ -326,8 +326,8 @@
         userToEdit = new UserDto
         {
             Id = s.Id,
-            FirstName = s.FullName.Split(" ")[0],
-            LastName = s.FullName.Split(" ").Last(),
+            FirstName = s.FirstName,
+            LastName = s.LastName,
             Email = s.Email,
             CourseId = s.CourseId,
             CourseName = s.CourseName,
@@ -389,8 +389,8 @@
         userToDelete = new UserDto
         {
             Id = s.Id,
-            FirstName = s.FullName.Split(" ")[0],
-            LastName = s.FullName.Split(" ").Last(),
+            FirstName = s.FirstName,
+            LastName = s.LastName,
             Email = s.Email,
             CourseId = s.CourseId,
             CourseName = s.CourseName,
@@ -447,7 +447,8 @@
             .Select(u => new StudentListDto
             {
                 Id = u.Id,
-                FullName = u.FullName,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
                 Email = u.Email,
                 CourseId = u.CourseId,
                 CourseName = u.CourseName ?? ""
@@ -496,12 +497,12 @@
             .Select(u => new StudentListDto
             {
                 Id = u.Id,
-                FullName = u.FullName,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
                 Email = u.Email,
                 CourseId = u.CourseId,
                 CourseName = u.CourseName ?? ""
             })
             .ToList();
     }
-
 }
