@@ -18,7 +18,8 @@
     else 
     {
 
-            <h2>@Course.Name</h2>
+		<h2>@Course.Name </h2>
+		<h5>@Course.DateRange</h5>
             <p class="text-muted">@Course.Description</p>
 
             <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
@@ -50,7 +51,7 @@
                             @onclick:stopPropagation="true"
                             @onclick="() => OpenModuleModal(module)">
                         <i class="bi bi-pencil"></i>
-                        Redigera
+                        Edit
                     </button>
                 </div>
             </div>
@@ -87,9 +88,11 @@
                                             </button>
 
                                             <button class="btn btn-sm btn-outline-danger"
-                                                    @onclick:stopPropagation="true">
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="() => AskDelete(a.Id)">
                                                 <i class="bi bi-trash"></i>
                                             </button>
+
                                         </div>
                                     </div>
 
@@ -135,7 +138,7 @@
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Redigera aktivitet</h5>
+                    <h5 class="modal-title">Edit activity</h5>
                     <button type="button" class="btn-close" @onclick="CloseActivityModal"></button>
                 </div>
 
@@ -205,7 +208,7 @@
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Redigera modul</h5>
+                    <h5 class="modal-title">Edit module</h5>
                     <button type="button" class="btn-close" @onclick="CloseModuleModal"></button>
                 </div>
 
@@ -251,12 +254,19 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+<ConfirmDialog @ref="confirmDialog"
+               Title="Ta bort aktivitet"
+               Message="Är du säker på att du vill ta bort denna aktivitet?"
+               OnClose="OnConfirmDelete" />
+
 @code {
     [Parameter] public int CourseId { get; set; }
     [Parameter] public EventCallback OnBack { get; set; }
 
     private CourseDto? Course;
     private int? openModuleId;
+    private ConfirmDialog? confirmDialog;
+    private int activityIdToDelete;
 
     // ACTIVITY EDIT
     private bool showActivityModal;
@@ -361,7 +371,9 @@
         } catch (Exception ex) {
             activityError = ex.Message;
         }
+
     }
+
 
     private async Task LoadCourseAsync()
     {
@@ -386,6 +398,7 @@
         await LoadCourseAsync();
     }
 
+
     private void ToggleModule(int moduleId)
     {
         openModuleId = openModuleId == moduleId ? null : moduleId;
@@ -394,5 +407,23 @@
     private void ClearDeadline()
     {
         activityForm.DueDate = null;
+
     }
+
+    private void AskDelete(int id)
+    {
+        activityIdToDelete = id;
+        confirmDialog!.Show();
+    }
+
+    private async Task OnConfirmDelete(bool confirmed)
+    {
+        if (!confirmed)
+            return;
+
+        await ApiService.DeleteAsync($"api/activity/{activityIdToDelete}");
+
+        await LoadCourseAsync();
+    }
+
 }
