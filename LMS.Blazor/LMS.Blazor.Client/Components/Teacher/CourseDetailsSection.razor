@@ -47,20 +47,30 @@
                             @module.EndDate.ToString("yyyy-MM-dd")
                         </p>
                     </div>
+                   
+                    <div class="d-flex flex-column align-items-end gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => OpenModuleModal(module)">
+                                <i class="bi bi-pencil"></i>
+                            </button>
 
-                    <div class="d-flex align-items-center gap-2">
-                        <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
-                                @onclick:stopPropagation="true"
-                                @onclick="() => OpenModuleModal(module)">
-                            <i class="bi bi-pencil"></i>
-                        </button>
+                            <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => AskDeleteModule(module.Id)">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
 
-                        <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
+                        <button class="btn btn-sm btn-primary d-flex align-items-center gap-1"
                                 @onclick:stopPropagation="true"
-                                @onclick="() => AskDeleteModule(module.Id)">
-                            <i class="bi bi-trash"></i>
+                                @onclick="() => OpenCreateActivityModal(module)">
+                            <i class="bi bi-plus-circle"></i>
+                            Skapa ny aktivitet
                         </button>
                     </div>
+
                 </div>
 
             </div>
@@ -137,6 +147,17 @@
                        ExistingModules="@Course?.Modules"
                        OnCreated="HandleModuleCreated"
                        OnClose="CloseCreateModuleModal" />
+}
+
+<!-- SKAPA NY AKTIVITET I MODALT FÖNSTER-->
+@if (showCreateActivityModal && selectedModuleForNewActivity != null)
+{
+    <CreateActivityModal ModuleId="@selectedModuleForNewActivity.Id"
+                         ModuleStartDate="@selectedModuleForNewActivity.StartDate"
+                         ModuleEndDate="@selectedModuleForNewActivity.EndDate"
+                         ExistingActivities="@selectedModuleForNewActivity.Activities"
+                         OnCreated="HandleActivityCreated"
+                         OnClose="CloseCreateActivityModal" />
 }
 
 
@@ -306,6 +327,10 @@
     // SKAPA NY MODUL
     private bool showCreateModuleModal;
 
+    // SKAPA NY AKTIVITET
+    private bool showCreateActivityModal;
+    private ModuleDto? selectedModuleForNewActivity;
+
     protected override async Task OnParametersSetAsync()
     {
         await LoadCourseAsync();
@@ -376,7 +401,7 @@
         }
     }
 
-    <!-- UPPDATERA REDIGERAD AKTIVITET -->
+    // UPPDATERA REDIGERAD AKTIVITET -->
     private async Task SaveActivity()
     {
         activityError = null;
@@ -403,7 +428,7 @@
         Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
     }
 
-    <!-- HANTERA MODALT FÖNSTER FÖR SKAPA NY MODUL -->
+    // HANTERA MODALT FÖNSTER FÖR SKAPA NY MODUL 
     private void OpenCreateModuleModal()
     {
         showCreateModuleModal = true;
@@ -462,6 +487,26 @@
 
         await ApiService.DeleteAsync($"api/module/{moduleIdToDelete}");
 
+        await LoadCourseAsync();
+    }
+
+    private void OpenCreateActivityModal(ModuleDto module)
+    {
+        selectedModuleForNewActivity = module;
+        showCreateActivityModal = true;
+    }
+
+    private Task CloseCreateActivityModal()
+    {
+        showCreateActivityModal = false;
+        selectedModuleForNewActivity = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleActivityCreated()
+    {
+        showCreateActivityModal = false;
+        selectedModuleForNewActivity = null;
         await LoadCourseAsync();
     }
 
