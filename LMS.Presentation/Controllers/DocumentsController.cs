@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using LMS.Presentation.Models;
 using LMS.Shared.DTOs.Document;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -21,20 +22,14 @@ public class DocumentsController : ControllerBase
 
     /// <summary>
     /// Upload a document to a Course, Module, or Activity.
+    /// Provide exactly one of courseId, moduleId, or activityId.
     /// </summary>
     [HttpPost("upload")]
     [Authorize(Roles = "Teacher")]
-    [Consumes("multipart/form-data")]
-    [RequestSizeLimit(52_428_800)] // 50 MB
-    public async Task<ActionResult<DocumentDto>> Upload(
-        [FromForm] IFormFile file,
-        [FromForm] string name,
-        [FromForm] string? description,
-        [FromForm] int? courseId,
-        [FromForm] int? moduleId,
-        [FromForm] int? activityId)
+    [RequestSizeLimit(52_428_800)]
+    public async Task<ActionResult<DocumentDto>> Upload([FromForm] DocumentUploadForm form)
     {
-        if (file == null || file.Length == 0)
+        if (form.File == null || form.File.Length == 0)
             return BadRequest("No file was provided.");
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -43,18 +38,18 @@ public class DocumentsController : ControllerBase
 
         var dto = new DocumentCreateDto
         {
-            Name = name,
-            Description = description,
-            CourseId = courseId,
-            ModuleId = moduleId,
-            ActivityId = activityId
+            Name = form.Name,
+            Description = form.Description,
+            CourseId = form.CourseId,
+            ModuleId = form.ModuleId,
+            ActivityId = form.ActivityId
         };
 
         try
         {
-            using var stream = file.OpenReadStream();
+            using var stream = form.File.OpenReadStream();
             var result = await _serviceManager.DocumentService.UploadAsync(
-                dto, stream, file.FileName, file.ContentType, file.Length, userId);
+                dto, stream, form.File.FileName, form.File.ContentType, form.File.Length, userId);
 
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }

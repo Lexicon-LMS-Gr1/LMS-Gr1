@@ -1,6 +1,7 @@
-﻿@using LMS.Shared.DTOs.Course
+@using LMS.Shared.DTOs.Course
 @using LMS.Shared.DTOs.Module
 @using LMS.Shared.DTOs.Activity
+@using LMS.Shared.DTOs.Document
 @inject IApiService ApiService
 
 <div class="container py-4">
@@ -21,6 +22,20 @@
             <h2>@Course.Name</h2>
             <p class="text-muted">@Course.Description</p>
 
+            <!-- Course-level documents -->
+            <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+                <h6 class="mb-0 text-secondary">Kursdokument</h6>
+                <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                        @onclick="() => OpenUploadModal(courseId: CourseId)">
+                    <i class="bi bi-upload"></i> Ladda upp
+                </button>
+            </div>
+            <DocumentList Documents="@courseDocuments" CanDelete="true" OnDeleted="HandleDeleteDocument" />
+            @if (courseDocuments?.Any() != true)
+            {
+                <p class="text-muted small">Inga dokument.</p>
+            }
+
             <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
                 <h4 class="mb-0">Moduler</h4>
 
@@ -38,7 +53,7 @@
                  style="cursor:pointer;"
                  @onclick="() => ToggleModule(module.Id)">
                 <div class="card-body d-flex justify-content-between align-items-start">
-                    <div>
+                    <div class="flex-grow-1">
                         <h5 class="mb-1">@module.Name</h5>
                         <p class="text-muted mb-1">@module.Description</p>
                         <p class="small text-secondary mb-0">
@@ -57,8 +72,23 @@
 
             @if (openModuleId == module.Id) {
                 <div class="ms-4 mb-3">
+                    <!-- Module-level documents -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0 text-secondary">Moduldokument</h6>
+                        <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => OpenUploadModal(moduleId: module.Id)">
+                            <i class="bi bi-upload"></i> Ladda upp
+                        </button>
+                    </div>
+                    <DocumentList Documents="@GetModuleDocuments(module.Id)" CanDelete="true" OnDeleted="HandleDeleteDocument" />
+                    @if (GetModuleDocuments(module.Id)?.Any() != true)
+                    {
+                        <p class="text-muted small">Inga dokument.</p>
+                    }
+
                     @if (module.Activities?.Any() == true) {
-                        <h6 class="mb-3">Aktiviteter</h6>
+                        <h6 class="mb-3 mt-3">Aktiviteter</h6>
 
                         @foreach (var a in module.Activities.OrderBy(a => a.StartTime)) {
                             <div class="card mb-2">
@@ -105,6 +135,17 @@
                                             @a.DueDate.Value.ToString("yyyy-MM-dd")
                                         </div>
                                     }
+
+                                    <!-- Activity-level documents -->
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <span class="small text-secondary fw-semibold">Dokument</span>
+                                        <button class="btn btn-sm btn-outline-primary py-0 px-1"
+                                                @onclick:stopPropagation="true"
+                                                @onclick="() => OpenUploadModal(activityId: a.Id)">
+                                            <i class="bi bi-upload"></i>
+                                        </button>
+                                    </div>
+                                    <DocumentList Documents="@GetActivityDocuments(a.Id)" CanDelete="true" OnDeleted="HandleDeleteDocument" />
                                 </div>
                             </div>
                         }
@@ -251,6 +292,16 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+<!-- DOCUMENT UPLOAD MODAL -->
+@if (showUploadModal)
+{
+    <DocumentUploadModal CourseId="@uploadCourseId"
+                         ModuleId="@uploadModuleId"
+                         ActivityId="@uploadActivityId"
+                         OnUploaded="HandleDocumentUploaded"
+                         OnClose="CloseUploadModal" />
+}
+
 @code {
     [Parameter] public int CourseId { get; set; }
     [Parameter] public EventCallback OnBack { get; set; }
@@ -273,9 +324,19 @@
     // SKAPA NY MODUL
     private bool showCreateModuleModal;
 
+    // DOCUMENTS
+    private List<DocumentDto>? courseDocuments;
+    private List<DocumentDto>? allModuleDocuments;
+    private List<DocumentDto>? allActivityDocuments;
+    private bool showUploadModal;
+    private int? uploadCourseId;
+    private int? uploadModuleId;
+    private int? uploadActivityId;
+
     protected override async Task OnParametersSetAsync()
     {
         await LoadCourseAsync();
+        await LoadDocumentsAsync();
     }
 
     private void OpenActivityModal(ActivityDto activity)
@@ -397,7 +458,66 @@
     private void ClearDeadline()
     {
         activityForm.DueDate = null;
-
     }
 
+    // DOCUMENT METHODS
+    private async Task LoadDocumentsAsync()
+    {
+        courseDocuments = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?courseId={CourseId}");
+
+        allModuleDocuments = new List<DocumentDto>();
+        allActivityDocuments = new List<DocumentDto>();
+
+        if (Course?.Modules != null)
+        {
+            foreach (var module in Course.Modules)
+            {
+                var moduleDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?moduleId={module.Id}");
+                if (moduleDocs != null)
+                    allModuleDocuments.AddRange(moduleDocs);
+
+                if (module.Activities != null)
+                {
+                    foreach (var activity in module.Activities)
+                    {
+                        var actDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?activityId={activity.Id}");
+                        if (actDocs != null)
+                            allActivityDocuments.AddRange(actDocs);
+                    }
+                }
+            }
+        }
+    }
+
+    private List<DocumentDto>? GetModuleDocuments(int moduleId)
+        => allModuleDocuments?.Where(d => d.ModuleId == moduleId).ToList();
+
+    private List<DocumentDto>? GetActivityDocuments(int activityId)
+        => allActivityDocuments?.Where(d => d.ActivityId == activityId).ToList();
+
+    private void OpenUploadModal(int? courseId = null, int? moduleId = null, int? activityId = null)
+    {
+        uploadCourseId = courseId;
+        uploadModuleId = moduleId;
+        uploadActivityId = activityId;
+        showUploadModal = true;
+    }
+
+    private async Task HandleDocumentUploaded(DocumentDto doc)
+    {
+        showUploadModal = false;
+        await LoadDocumentsAsync();
+    }
+
+    private void CloseUploadModal()
+    {
+        showUploadModal = false;
+    }
+
+    private async Task HandleDeleteDocument(int documentId)
+    {
+        var result = await ApiService.DeleteAsync($"api/documents/{documentId}");
+        if (result.Success)
+            await LoadDocumentsAsync();
+    }
 }

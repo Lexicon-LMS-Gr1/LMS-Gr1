@@ -1,5 +1,3 @@
-using LMS.Shared.DTOs.Course;
-using LMS.Shared.DTOs.StudentDashboard;
 using Microsoft.AspNetCore.Components;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -34,7 +32,6 @@ public class ClientApiService : IApiService
         return await JsonSerializer.DeserializeAsync<T>(
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
     }
-    /*
 
     public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
     {
@@ -42,38 +39,23 @@ public class ClientApiService : IApiService
 
         if (HandleUnauthorized(response)) return default;
 
-        response.EnsureSuccessStatusCode();
+        if (response.IsSuccessStatusCode)
+        {
+            return await JsonSerializer.DeserializeAsync<TResponse>(
+                await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+        }
 
-        return await JsonSerializer.DeserializeAsync<TResponse>(
-            await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+        var errorMessage = await response.Content.ReadAsStringAsync(ct);
+
+        if (string.IsNullOrWhiteSpace(errorMessage))
+            errorMessage = "Ett fel uppstod.";
+
+        errorMessage = errorMessage.Trim('"');
+
+        throw new Exception(errorMessage);
     }
-    */
 
-	public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
-	{
-		var response = await _httpClient.PutAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
-
-		if (HandleUnauthorized(response)) return default;
-
-		if (response.IsSuccessStatusCode) {
-			return await JsonSerializer.DeserializeAsync<TResponse>(
-				await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
-		}
-		var errorMessage = await response.Content.ReadAsStringAsync(ct);
-
-		if (string.IsNullOrWhiteSpace(errorMessage))
-			errorMessage = "Ett fel uppstod.";
-
-		errorMessage = errorMessage.Trim('"');
-
-		throw new Exception(errorMessage);
-	}
-
-
-
-
-
-	public async Task<(bool Success, string? Error)> DeleteAsync(string endpoint, CancellationToken ct = default)
+    public async Task<(bool Success, string? Error)> DeleteAsync(string endpoint, CancellationToken ct = default)
     {
         var response = await _httpClient.DeleteAsync($"api/proxy/{endpoint}", ct);
 
@@ -86,23 +68,10 @@ public class ClientApiService : IApiService
         if (response.IsSuccessStatusCode)
             return (true, null);
 
-        // Read the error message returned by the API
         var errorBody = await response.Content.ReadAsStringAsync(ct);
-        var errorMessage = errorBody.Trim('"'); // strip JSON string quotes if any
+        var errorMessage = errorBody.Trim('"');
         return (false, string.IsNullOrWhiteSpace(errorMessage) ? null : errorMessage);
     }
-
-    private bool HandleUnauthorized(HttpResponseMessage response)
-    {
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
-            response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-        {
-            _navigationManager.NavigateTo("/Account/Login", forceLoad: true);
-            return true;
-        }
-        return false;
-    }
-
 
     public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
     {
@@ -116,4 +85,36 @@ public class ClientApiService : IApiService
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
     }
 
+    public async Task<TResponse?> PostMultipartAsync<TResponse>(string endpoint, MultipartFormDataContent content, CancellationToken ct = default)
+    {
+        // Calls the dedicated Blazor-server upload controller directly (NOT through the generic
+        // api/proxy/... path), because UseAntiforgery() middleware consumes the multipart body
+        // before the generic proxy can forward it.
+        var response = await _httpClient.PostAsync(endpoint, content, ct);
+
+        if (HandleUnauthorized(response)) return default;
+
+        if (response.IsSuccessStatusCode)
+        {
+            return await JsonSerializer.DeserializeAsync<TResponse>(
+                await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+        }
+
+        var errorMessage = await response.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(errorMessage))
+            errorMessage = "Ett fel uppstod vid uppladdning.";
+
+        throw new Exception(errorMessage.Trim('"'));
+    }
+
+    private bool HandleUnauthorized(HttpResponseMessage response)
+    {
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+            response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            _navigationManager.NavigateTo("/Account/Login", forceLoad: true);
+            return true;
+        }
+        return false;
+    }
 }

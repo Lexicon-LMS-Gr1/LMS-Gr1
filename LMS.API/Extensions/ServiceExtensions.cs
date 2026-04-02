@@ -1,6 +1,8 @@
 using Domain.Contracts.Queries;
 using Domain.Contracts.Repositories;
+using Domain.Contracts.Services;
 using LMS.Infractructure.Repositories;
+using LMS.Infractructure.Services;
 using LMS.Infrastructure.Data;
 using LMS.Infrastructure.Queries.Dashboard;
 using LMS.Infrastructure.Queries.TeacherDashboard;
@@ -9,7 +11,6 @@ using LMS.Presentation;
 using LMS.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using Service.Contracts;
 using Swashbuckle.AspNetCore.Filters;
@@ -50,7 +51,6 @@ public static class ServiceExtensions
                        Title = "LMS API",
                        Version = "v1"
                    });
-
 
                    setup.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
                    {
@@ -141,6 +141,8 @@ public static class ServiceExtensions
         services.AddScoped(provider => new Lazy<ITeacherDashboardService>(() => provider.GetRequiredService<ITeacherDashboardService>()));
         services.AddScoped<IActivityService, ActivityService>();
         services.AddScoped(provider => new Lazy<IActivityService>(() => provider.GetRequiredService<IActivityService>()));
+
+        services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
         services.AddScoped<IDocumentService, DocumentService>();
         services.AddScoped(provider => new Lazy<IDocumentService>(() => provider.GetRequiredService<IDocumentService>()));
