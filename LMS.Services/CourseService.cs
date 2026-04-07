@@ -81,25 +81,37 @@ namespace LMS.Services
 			return courses.Select(CourseMapper.ToBasicCourseDto);
 		}
 
-		public async Task<CourseDto?> GetCourseForUserAsync(string userId)
-		{
-			var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(userId);
+        public async Task<CourseDto?> GetCourseForUserAsync(string userId)
+        {
+            var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(userId);
 
-			if (course == null)
-				return null;
+            if (course == null)
+                return null;
 
-			var dto = CourseMapper.ToDetailedCourseDto(course);
+            var dto = CourseMapper.ToDetailedCourseDto(course);
 
-			dto.Progress = await _progressService.GetCourseProgressAsync(userId, course.Id);
-			foreach (var module in dto.Modules)
-			{
-				module.Progress = await _progressService.GetModuleProgressAsync(userId, module.Id);
-			}
+            // Lägg till läraren
+            foreach (var user in course.Users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("Teacher"))
+                {
+                    dto.TeacherName = $"{user.FirstName} {user.LastName}";
+                    break;
+                }
+            }
 
-			return dto;
-		}
+            dto.Progress = await _progressService.GetCourseProgressAsync(userId, course.Id);
+            foreach (var module in dto.Modules)
+            {
+                module.Progress = await _progressService.GetModuleProgressAsync(userId, module.Id);
+            }
 
-		public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
+            return dto;
+        }
+
+
+        public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
 		{
 			// DTOn får ej vara null + Grundläggande validering av kursens egna fält
 			if (courseCreateDto is null)

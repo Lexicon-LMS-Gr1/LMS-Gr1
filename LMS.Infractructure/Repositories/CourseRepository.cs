@@ -56,6 +56,7 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
             return null;
 
         return await context.Courses
+            .Include(c => c.Users)
             .Include(c => c.Modules)
                 .ThenInclude(m => m.Activities)
                     .ThenInclude(a => a.ActivityType)

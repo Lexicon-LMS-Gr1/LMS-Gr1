@@ -11,7 +11,16 @@
             <i class="bi bi-calendar"></i>
             @Course.DateRange
         </p>
+
+        <p class="text-muted mt-2">
+            <i class="bi bi-person-badge"></i>
+            <strong>Lärare:</strong>
+            @(!string.IsNullOrWhiteSpace(Course.TeacherName)
+                ? Course.TeacherName
+                : "Ingen lärare tilldelad")
+        </p>
     </div>
+
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-4">

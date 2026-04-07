@@ -184,11 +184,9 @@ public class DataSeedHostingService : IHostedService
             }
         }
 
-        await CreateSpecificUserAsync("Teacher", "Demo", "teacher@test.com", TeacherRole);
-        await CreateSpecificUserAsync("Student", "Demo", "student@test.com", StudentRole);
+        await CreateSpecificUserAsync("Teacher", "Demo", "teacher@test.com", TeacherRole, courses.Last().Id);
+        await CreateSpecificUserAsync("Student", "Demo", "student@test.com", StudentRole, courses.Last().Id);
 
-        await CreateUsersWithoutCourseAsync(2, TeacherRole);
-        await CreateUsersWithoutCourseAsync(5, StudentRole);
     }
 
 
