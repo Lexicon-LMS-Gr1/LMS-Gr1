@@ -33,6 +33,19 @@
                 <ValidationMessage For="() => model.Description" />
             </div>
 
+            <div class="mb-3">
+                <label class="form-label">Lärare</label>
+                <select class="form-select" @bind="model.TeacherId">
+                    <option value="">-- Välj lärare --</option>
+
+                    @foreach (var t in teachers)
+                    {
+                        <option value="@t.Id">@t.FullName</option>
+                    }
+                </select>
+                <ValidationMessage For="() => model.TeacherId" />
+            </div>
+
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Startdatum</label>
@@ -102,9 +115,14 @@
 
     private List<CreateCourseModuleItem> moduleItems = new();
 
-    protected override void OnInitialized()
+    private List<TeacherItem> teachers = new();
+
+    protected override async Task OnInitializedAsync()
     {
         courseEditContext = new EditContext(model);
+
+        teachers = await ApiService.GetAsync<List<TeacherItem>>("api/course/teachers")
+                   ?? new List<TeacherItem>();
     }
 
     private void AddModule()
@@ -194,5 +212,11 @@
         public Guid RowId { get; set; } = Guid.NewGuid();
         public ModuleCreateDto Module { get; set; } = new();
         public CreateCourseModuleEditor? EditorRef { get; set; }
+    }
+
+    public class TeacherItem
+    {
+        public string Id { get; set; } = "";
+        public string FullName { get; set; } = "";
     }
 }

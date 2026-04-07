@@ -15,6 +15,7 @@ public class CourseUpdateDto
     [Required(ErrorMessage = "Beskrivning måste anges.")]
     [StringLength(500, MinimumLength = 10, ErrorMessage = "Kursbeskrivning måste vara mellan 10 och 500 tecken.")]
     public string Description { get; set; } = string.Empty;
+    public string TeacherId { get; set; }
 
     [Required(ErrorMessage = "Startdatum måste anges.")]
     [DateLessThanOrEqualToOtherDate(nameof(EndDate), ErrorMessage = "Startdatum får inte vara senare än slutdatum.")]

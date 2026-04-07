@@ -99,5 +99,18 @@ public class CourseController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("teachers")]
+    public async Task<IActionResult> GetTeachers()
+    {
+        var teachers = await _serviceManager.UserManagementService.GetTeachersAsync();
+
+        return Ok(teachers.Select(t => new {
+            t.Id,
+            FullName = $"{t.FirstName} {t.LastName}",
+            t.Email
+        }));
+    }
+
+
 
 }

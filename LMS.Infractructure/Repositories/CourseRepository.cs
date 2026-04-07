@@ -62,7 +62,7 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
 	public async Task<IEnumerable<Course>> GetCoursesForListAsync(bool trackChanges = false)
 	{
 		return await context.Courses
-			.Include(c => c.Students)
+			.Include(c => c.Users)
 			.Include(c => c.Modules)
 			.ToListAsync();
 	}
@@ -70,7 +70,7 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
     public async Task<Course?> GetCourseWithAllDataAsync(int courseId)
     {
         return await context.Courses
-            .Include(c => c.Students)
+            .Include(c => c.Users)
             .Include(c => c.Modules)
                 .ThenInclude(m => m.Activities)
                     .ThenInclude(a => a.ActivityType)

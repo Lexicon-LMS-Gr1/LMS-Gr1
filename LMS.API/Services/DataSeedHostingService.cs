@@ -155,56 +155,44 @@ public class DataSeedHostingService : IHostedService
 		return courses;
 	}
 
-	private async Task SeedUsersModulesAndActivitiesAsync(
-		ApplicationDbContext context,
-		List<Course> courses,
-		List<ActivityType> activityTypes)
-	{
-		var today = DateTime.UtcNow.Date;
-		var password = configuration["password"];
-		ArgumentNullException.ThrowIfNull(password);
+    private async Task SeedUsersModulesAndActivitiesAsync(
+    ApplicationDbContext context,
+    List<Course> courses,
+    List<ActivityType> activityTypes)
+    {
+        var password = configuration["password"];
+        ArgumentNullException.ThrowIfNull(password);
 
-		foreach (var course in courses) {
-			var isOngoing = course.StartDate <= today && course.EndDate >= today;
+        foreach (var course in courses)
+        {
+            var teacher = await CreateUserAsync(TeacherRole);
+            teacher.CourseId = course.Id;
+            await userManager.UpdateAsync(teacher);
 
-			if (isOngoing) {
-				await CreateSpecificUserAsync(
-					firstName: "Teacher",
-					lastName: "Demo",
-					email: "teacher@test.com",
-					role: TeacherRole,
-					courseId: course.Id);
+            for (int i = 0; i < 20; i++)
+            {
+                var student = await CreateUserAsync(StudentRole);
+                student.CourseId = course.Id;
+                await userManager.UpdateAsync(student);
+            }
 
-				await CreateSpecificUserAsync(
-					firstName: "Student",
-					lastName: "Demo",
-					email: "student@test.com",
-					role: StudentRole,
-					courseId: course.Id);
-			} else {
-				await CreateAndAssignUserAsync(TeacherRole, course.Id);
-			}
+            var modules = await CreateModulesAsync(context, course, 5);
 
-			for (int i = 0; i < 19; i++) {
-				await CreateAndAssignUserAsync(StudentRole, course.Id);
-			}
+            foreach (var module in modules)
+            {
+                await CreateActivitiesAsync(context, module, activityTypes);
+            }
+        }
 
-			if (!isOngoing) {
-				await CreateAndAssignUserAsync(StudentRole, course.Id);
-			}
+        await CreateSpecificUserAsync("Teacher", "Demo", "teacher@test.com", TeacherRole);
+        await CreateSpecificUserAsync("Student", "Demo", "student@test.com", StudentRole);
 
-			var modules = await CreateModulesAsync(context, course, 5);
+        await CreateUsersWithoutCourseAsync(2, TeacherRole);
+        await CreateUsersWithoutCourseAsync(5, StudentRole);
+    }
 
-			foreach (var module in modules) {
-				await CreateActivitiesAsync(context, module, activityTypes);
-			}
-		}
 
-		await CreateUsersWithoutCourseAsync(2, TeacherRole);
-		await CreateUsersWithoutCourseAsync(5, StudentRole);
-	}
-
-	private async Task<ApplicationUser> CreateUserAsync(string role)
+    private async Task<ApplicationUser> CreateUserAsync(string role)
 	{
 		var password = configuration["password"];
 		ArgumentNullException.ThrowIfNull(password);

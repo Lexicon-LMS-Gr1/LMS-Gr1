@@ -19,14 +19,18 @@ namespace LMS.Services
 		private readonly IUnitOfWork _unitOfWork;
 		private readonly IProgressService _progressService;
         private readonly IUserManagementService _userManagementService;
+        private readonly UserManager<ApplicationUser> _userManager;
+
         public CourseService(
 			IUnitOfWork unitOfWork,
 			IProgressService progressService,
-			IUserManagementService userManagementService)
+			IUserManagementService userManagementService,
+            UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _progressService = progressService;
             _userManagementService = userManagementService;
+			_userManager = userManager;
         }
 
         public async Task<IEnumerable<CourseListDto>> GetAllCoursesListAsync()
@@ -156,15 +160,34 @@ namespace LMS.Services
 			_unitOfWork.CourseRepository.Create(course);
 
 			await _unitOfWork.CompleteAsync();
+            string teacherName = "";
+            if (!string.IsNullOrWhiteSpace(courseCreateDto.TeacherId))
+            {
+                var teacher = await _userManager.FindByIdAsync(courseCreateDto.TeacherId);
 
-			// Returnera DTO med ev. moduler - mappning från entitet till DTO
-			return new CourseDto
+                if (teacher == null)
+                    throw new ArgumentException("Läraren kunde inte hittas.");
+
+                if (!await _userManager.IsInRoleAsync(teacher, "Teacher"))
+                    throw new ArgumentException("Vald användare är inte lärare.");
+
+
+                teacher.CourseId = course.Id;
+
+                await _userManager.UpdateAsync(teacher);
+                teacherName = $"{teacher.FirstName} {teacher.LastName}";
+
+            }
+
+
+            // Returnera DTO med ev. moduler - mappning från entitet till DTO
+            return new CourseDto
 			{
 				Id = course.Id,
 				Name = course.Name,
 				Description = course.Description,
-				StartDate = course.StartDate,
-				EndDate = course.EndDate,
+                TeacherName = teacherName,
+                StartDate = course.StartDate,
 
 				// TODO: Om listan blir stor i framtiden: pagination / lazy loading
 				Modules = course.Modules.Select(m => new ModuleDto

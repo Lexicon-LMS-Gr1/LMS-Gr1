@@ -19,7 +19,7 @@ public class TeacherDashboardQuery : ITeacherDashboardQuery
         var courses = await _context.Courses
             .AsNoTracking()
             .Include(c => c.Modules)
-            .Include(c => c.Students)
+            .Include(c => c.Users)
             .ToListAsync();
 
         var recent = await _context.Activities
@@ -53,7 +53,7 @@ public class TeacherDashboardQuery : ITeacherDashboardQuery
                     StartDate = c.StartDate,
                     EndDate = c.EndDate,
                     ModuleCount = c.Modules.Count,
-                    StudentCount = c.Students.Count
+                    StudentCount = c.Users.Count
                 })
                 .ToList(),
 
