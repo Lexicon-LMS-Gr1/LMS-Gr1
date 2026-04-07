@@ -72,7 +72,12 @@
     {
         @if (activeTab == "overview")
         {
-            <OverviewSection Dashboard="dashboard" />
+            <OverviewSection Dashboard="dashboard"
+                             OnOpenCourse="GoToCourse"
+                             OnEditCourse="OpenEditCourse"
+                             OnDeleteCourse="AskDeleteCourse" />
+
+
         }
         else if (activeTab == "courses")
         {
@@ -96,6 +101,14 @@
                  OnClose="CloseEditCourse"
                  IsSaving="isSavingCourse"
                  ErrorMessage="@courseError" />
+
+<!-- ===================== DELETE COURSE MODAL ===================== -->
+
+<ConfirmDialog @ref="confirmDeleteCourse"
+               Title="Ta bort kurs"
+               Message="Är du säker på att du vill ta bort hela kursen och allt innehåll?"
+               OnClose="OnConfirmDeleteCourse" />
+
 
 <!-- ===================== EDIT USER MODAL ===================== -->
 @if (showEditUserModal && userToEdit != null)
@@ -243,6 +256,10 @@
     private string activeTab = "overview";
     private int? selectedCourseId;
     private bool showCreateCourse = false;
+    private ConfirmDialog? confirmDeleteCourse;
+    private int courseIdToDelete;
+    [Parameter] public EventCallback<int> OnView { get; set; }
+    [Parameter] public EventCallback<CourseListDto> OnEdit { get; set; }
 
     /* ---------------- COURSE EDIT ---------------- */
     private bool showEditCourseModal;
@@ -304,6 +321,7 @@
             {
                 showEditCourseModal = false;
                 allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+                await LoadDashboard();
             }
             else
             {
@@ -456,6 +474,7 @@
             .ToList();
     }
 
+    /* -------- OPEN COURSE DETAILS -------- */
     private void GoToCourse(int id)
         {
             selectedCourseId = id;
@@ -505,4 +524,25 @@
             })
             .ToList();
     }
+
+    /* -------- DELETE COURSE -------- */
+    private void AskDeleteCourse(int id)
+    {
+        courseIdToDelete = id;
+        confirmDeleteCourse!.Show();
+    }
+
+    private async Task OnConfirmDeleteCourse(bool confirmed)
+    {
+        if (!confirmed)
+            return;
+
+        await ApiService.DeleteAsync($"api/course/{courseIdToDelete}");
+
+        allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+        await LoadDashboard();
+
+        StateHasChanged();
+    }
+
 }
