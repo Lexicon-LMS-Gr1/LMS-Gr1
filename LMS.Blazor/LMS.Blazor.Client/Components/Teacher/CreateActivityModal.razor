@@ -1,0 +1,201 @@
+﻿@using LMS.Blazor.Client.Services
+@using LMS.Shared.DTOs.Activity
+@using Microsoft.AspNetCore.Components.Forms
+@inject IApiService ApiService
+
+<div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Skapa ny aktivitet</h5>
+                <button type="button" class="btn-close" @onclick="Close"></button>
+            </div>
+
+            <EditForm Model="model" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="modal-body">
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+
+                    @if (ModuleStartDate.HasValue && ModuleEndDate.HasValue)
+                    {
+                        <div class="alert alert-info mt-2">
+                            <div>Aktiviteten måste ligga inom modulens datumintervall:</div>
+                            <ul class="mb-0 mt-2">
+                                <li>@ModuleStartDate.Value.ToString("yyyy-MM-dd") – @ModuleEndDate.Value.ToString("yyyy-MM-dd")</li>
+                            </ul>
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label">Aktivitetsnamn</label>
+                        <InputText class="form-control" @bind-Value="model.Name" />
+                        <ValidationMessage For="() => model.Name" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Beskrivning</label>
+                        <InputTextArea class="form-control" @bind-Value="model.Description" />
+                        <ValidationMessage For="() => model.Description" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Startdatum</label>
+                            <InputDate class="form-control" @bind-Value="model.StartTime" />
+                            <ValidationMessage For="() => model.StartTime" />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Slutdatum</label>
+                            <InputDate class="form-control" @bind-Value="model.EndTime" />
+                            <ValidationMessage For="() => model.EndTime" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Deadline</label>
+                        <div class="d-flex gap-2">
+                            <InputDate class="form-control" @bind-Value="model.DueDate" />
+                            <button type="button"
+                                    class="btn btn-outline-danger"
+                                    title="Ta bort deadline"
+                                    @onclick="ClearDeadline">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Aktivitetstyp</label>
+                        <InputSelect class="form-select" @bind-Value="model.ActivityTypeId">
+                            <option value="0">Välj aktivitetstyp</option>
+
+                            @foreach (var type in activityTypes)
+                            {
+                                <option value="@type.Id">@type.Name</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => model.ActivityTypeId" />
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                        @(isSubmitting ? "Sparar..." : "Skapa aktivitet")
+                    </button>
+
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Close">
+                        Avbryt
+                    </button>
+                </div>
+            </EditForm>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public int ModuleId { get; set; }
+
+    [Parameter]
+    public DateTime? ModuleStartDate { get; set; }
+
+    [Parameter]
+    public DateTime? ModuleEndDate { get; set; }
+
+    [Parameter]
+    public IEnumerable<ActivityDto>? ExistingActivities { get; set; }
+
+    [Parameter]
+    public EventCallback OnCreated { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private ActivityCreateDto model = new();
+    private List<ActivityTypeDto> activityTypes = new();
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        ResetForm();
+        await LoadActivityTypesAsync();
+    }
+
+    private async Task LoadActivityTypesAsync()
+    {
+        try
+        {
+            activityTypes = (await ApiService.GetAsync<List<ActivityTypeDto>>("api/activitytypes")) ?? new();
+        }
+        catch
+        {
+            activityTypes = new();
+            errorMessage = "Kunde inte ladda aktivitetstyper.";
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var result = await ApiService.PostAsync<ActivityCreateDto, ActivityDto>(
+                $"api/modules/{ModuleId}/activities",
+                model);
+
+            if (result is null)
+            {
+                errorMessage = "Aktiviteten kunde inte skapas.";
+                return;
+            }
+
+            ResetForm();
+
+            if (OnCreated.HasDelegate)
+                await OnCreated.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        errorMessage = null;
+        ResetForm();
+
+        if (OnClose.HasDelegate)
+            await OnClose.InvokeAsync();
+    }
+
+    private void ClearDeadline()
+    {
+        model.DueDate = null;
+    }
+
+    private void ResetForm()
+    {
+        model = new ActivityCreateDto
+        {
+            StartTime = ModuleStartDate ?? DateTime.Today,
+            EndTime = ModuleEndDate ?? DateTime.Today,
+            DueDate = null,
+            ActivityTypeId = 0
+        };
+    }
+}
