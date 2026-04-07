@@ -34,13 +34,40 @@ namespace LMS.Services
         }
 
         public async Task<IEnumerable<CourseListDto>> GetAllCoursesListAsync()
-		{
-			var courses = await _unitOfWork.CourseRepository.GetCoursesForListAsync();
+        {
+            var courses = await _unitOfWork.CourseRepository.GetCoursesForListAsync();
 
-			return courses.Select(CourseMapper.ToCourseListDto);
-		}
+            var result = new List<CourseListDto>();
 
-		public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
+            foreach (var course in courses)
+            {
+                int studentCount = 0;
+
+                foreach (var user in course.Users)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    if (roles.Contains("Student"))
+                        studentCount++;
+                }
+
+                result.Add(new CourseListDto
+                {
+                    Id = course.Id,
+                    Name = course.Name,
+                    Description = course.Description,
+                    StartDate = course.StartDate,
+                    EndDate = course.EndDate,
+                    StudentCount = studentCount,
+                    ModuleCount = course.Modules.Count
+                });
+            }
+
+            return result;
+        }
+
+
+
+        public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
 		{
 			var courses = await _unitOfWork.CourseRepository.GetAllAsync();
 
