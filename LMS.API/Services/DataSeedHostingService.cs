@@ -14,6 +14,7 @@ namespace LMS.API.Services;
 //        "secretkey": "ThisMustBeReallyLong!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 //        }
 //}
+
 public class DataSeedHostingService : IHostedService
 {
 	private readonly IServiceProvider serviceProvider;
@@ -201,7 +202,6 @@ public class DataSeedHostingService : IHostedService
 		}
 
 		await CreateUsersWithoutCourseAsync(2, TeacherRole);
-		await CreateUsersWithoutCourseAsync(5, StudentRole);
 	}
 
 	private async Task<ApplicationUser> CreateUserAsync(string role)
@@ -353,7 +353,6 @@ public class DataSeedHostingService : IHostedService
     };
 
         var activities = new List<Activity>();
-
        
         int moduleIndex = module.Id % 5;
 
@@ -394,7 +393,4 @@ public class DataSeedHostingService : IHostedService
 
         return activities;
     }
-
-
-
 }
