@@ -37,16 +37,18 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
 		return await FindAll(trackChanges).ToListAsync();
 	}
 
-	public async Task<Course?> GetCourseById(int courseId)
-	{
-		return await context.Courses
-			.Include(c => c.Modules)
-				.ThenInclude(m => m.Activities)
-					.ThenInclude(a => a.ActivityType)
-			.FirstOrDefaultAsync(c => c.Id == courseId);
-	}
+    public async Task<Course?> GetCourseById(int courseId)
+    {
+        return await context.Courses
+            .Include(c => c.Users)
+            .Include(c => c.Modules)
+                .ThenInclude(m => m.Activities)
+                    .ThenInclude(a => a.ActivityType)
+            .FirstOrDefaultAsync(c => c.Id == courseId);
+    }
 
-	public async Task<Course?> GetCourseForUserAsync(string userId)
+
+    public async Task<Course?> GetCourseForUserAsync(string userId)
     {
         var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 

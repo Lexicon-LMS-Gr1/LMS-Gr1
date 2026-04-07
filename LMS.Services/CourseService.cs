@@ -312,12 +312,27 @@ namespace LMS.Services
 			});
 		}
 
-		public async Task<CourseDto?> GetCourseByIdAsync(int courseId)
-		{
-			var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
-			if (course == null)
-				return null;
-			return CourseMapper.ToDetailedCourseDto(course);
-		}
-	}
+        public async Task<CourseDto?> GetCourseByIdAsync(int courseId)
+        {
+            var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
+            if (course == null)
+                return null;
+
+            var dto = CourseMapper.ToDetailedCourseDto(course);
+
+            foreach (var user in course.Users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("Teacher"))
+                {
+                    dto.TeacherName = $"{user.FirstName} {user.LastName}";
+                    break;
+                }
+            }
+
+            return dto;
+        }
+
+
+    }
 }

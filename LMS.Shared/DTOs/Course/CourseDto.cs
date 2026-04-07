@@ -8,12 +8,12 @@ namespace LMS.Shared.DTOs.Course
     public class CourseDto
     {
         public int Id { get; set; }
-        public string Name { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string TeacherName { get; set; } = "";
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public string? TeacherName { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public string DateRange => $"{StartDate:yyyy-MM-dd} – {EndDate:yyyy-MM-dd}";
+        public string? DateRange => $"{StartDate:yyyy-MM-dd} – {EndDate:yyyy-MM-dd}";
 
         public List<ModuleDto> Modules { get; set; } = new();
         public int Progress { get; set; }
