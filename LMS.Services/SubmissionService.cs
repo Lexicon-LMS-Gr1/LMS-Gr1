@@ -1,0 +1,76 @@
+﻿using Domain.Contracts.Repositories;
+using LMS.Shared.DTOs.Submission;
+using LMS.Shared.DTOs.TeacherDashboard;
+using Service.Contracts;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace LMS.Services;
+
+public class SubmissionService : ISubmissionService
+{
+	private readonly IUnitOfWork _unitOfWork;
+
+	public SubmissionService(IUnitOfWork unitOfWork)
+	{
+		_unitOfWork = unitOfWork;
+	}
+
+	public async Task<SubmissionDto?> GetSubmissionByIdAsync(int submissionId, string currentUserId, bool isTeacher)
+	{
+		var submission = await _unitOfWork.SubmissionRepository.GetByIdAsync(submissionId);
+
+		if (submission is null)
+			return null;
+
+		// studenter får endast se egna 
+		if (submission.StudentId != currentUserId) {
+			// lärare får se alla submissions
+			if (isTeacher == false)
+				return null;
+		}
+
+
+
+		return ToSubmissionDto(submission);
+	}
+
+	public async Task<IEnumerable<SubmissionDto>> GetSubmissionsForCourseAsync(int courseId, string currentUserId, bool isTeacher)
+	{
+		var submissions = await _unitOfWork.SubmissionRepository.GetByCourseIdAsync(courseId);
+
+		// Lärare får se alla, studenter bara egna
+		if (!isTeacher) {
+			submissions = submissions.Where(s => s.StudentId == currentUserId);
+		}
+
+		return submissions.Select(s => ToSubmissionDto(s));
+	}
+
+
+	private static SubmissionDto ToSubmissionDto(Submission submission)
+	{
+		var dto = new SubmissionDto {
+			Id = submission.Id,
+			ActivityId = submission.ActivityId,
+			StudentId = submission.StudentId,
+			FileName = submission.FileName,
+			Comment = submission.Comment,
+			SubmittedAt = submission.SubmittedAt,
+			Feedback = submission.Feedback,
+			FeedbackGivenAt = submission.FeedbackGivenAt,
+			FeedbackGivenByTeacherId = submission.FeedbackGivenByTeacherId
+		};
+
+		string? teacherName = null;
+
+		if (submission.FeedbackGivenByTeacher != null) {
+			teacherName = $"{submission.FeedbackGivenByTeacher.FirstName} {submission.FeedbackGivenByTeacher.LastName}";
+		}
+
+		dto.FeedbackGivenByTeacherName = teacherName;
+
+		return dto;
+	}
+}

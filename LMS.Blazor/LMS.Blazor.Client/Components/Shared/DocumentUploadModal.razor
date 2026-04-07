@@ -155,10 +155,14 @@
         return (true, null);
     }
 
-    private static string FormatFileSize(long bytes) => bytes switch
-    {
-        < 1024 => $"{bytes} B",
-        < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
-        _ => $"{bytes / (1024.0 * 1024.0):F1} MB"
-    };
+    private static string FormatFileSize(long bytes)
+{
+    if (bytes < 1024)
+        return $"{bytes} B";
+
+    if (bytes < 1024 * 1024)
+        return $"{bytes / 1024.0:F1} KB";
+
+    return $"{bytes / (1024.0 * 1024.0):F1} MB";
+}
 }

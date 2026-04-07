@@ -14,6 +14,7 @@ public class ServiceManager : IServiceManager
     private readonly Lazy<IDocumentService> _documentService;
     private readonly Lazy<IStudentAssignmentService> studentAssignmentService;
     private readonly Lazy<IProgressService> progressService;
+	private readonly Lazy<ISubmissionService> submissionService;
 
 	public IAuthService AuthService => authService.Value;
     public ICourseService CourseService => courseService.Value;
@@ -26,7 +27,9 @@ public class ServiceManager : IServiceManager
     public IStudentAssignmentService StudentAssignmentService => studentAssignmentService.Value;
     public IProgressService ProgressService => progressService.Value;
 
-    public ServiceManager(
+	public ISubmissionService SubmissionService => submissionService.Value;
+
+	public ServiceManager(
         Lazy<IAuthService> authService,
         Lazy<ICourseService> courseService,
         Lazy<IUserManagementService> userManagementService,
@@ -36,7 +39,9 @@ public class ServiceManager : IServiceManager
         Lazy<IActivityService> activityService,
         Lazy<IDocumentService> documentService,
         Lazy<IStudentAssignmentService> studentAssignmentService,
-        Lazy<IProgressService> progressService)
+        Lazy<IProgressService> progressService,
+
+	    Lazy<ISubmissionService> submissionService)
     {
         this.authService = authService;
         this.courseService = courseService;
@@ -48,5 +53,6 @@ public class ServiceManager : IServiceManager
         this._documentService = documentService;
         this.studentAssignmentService = studentAssignmentService;
         this.progressService = progressService;
+        this.submissionService = submissionService;
     }
 }
