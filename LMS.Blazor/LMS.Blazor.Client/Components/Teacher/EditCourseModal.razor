@@ -1,5 +1,6 @@
 ﻿@using LMS.Shared.DTOs.Course
 @using Microsoft.AspNetCore.Components.Forms
+@inject IApiService ApiService
 
 @if (Show)
 {
@@ -40,6 +41,19 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label fw-semibold">Lärare</label>
+                            <select class="form-select" @bind="FormModel.TeacherId">
+                                <option value="">-- Ingen lärare --</option>
+
+                                @foreach (var t in Teachers)
+                                {
+                                    <option value="@t.Id">@t.FullName</option>
+                                }
+                            </select>
+                        </div>
+
+
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">Startdatum</label>
                             <InputDate class="form-control" @bind-Value="FormModel.StartDate" />
                             <ValidationMessage For="() => FormModel.StartDate" class="text-danger small" />
@@ -72,6 +86,7 @@
 }
 
 @code {
+    private List<TeacherItem> Teachers = new();
     [Parameter] public bool Show { get; set; }
     [Parameter] public CourseUpdateDto FormModel { get; set; } = new();
     [Parameter] public EventCallback OnClose { get; set; }
@@ -79,6 +94,12 @@
 
     [Parameter] public bool IsSaving { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Teachers = await ApiService.GetAsync<List<TeacherItem>>("api/course/teachers")
+                   ?? new List<TeacherItem>();
+    }
 
     private async Task Save()
     {
@@ -88,5 +109,11 @@
     private async Task Close()
     {
         await OnClose.InvokeAsync();
+    }
+
+    public class TeacherItem
+    {
+        public string? Id { get; set; }
+        public string FullName { get; set; } = "";
     }
 }

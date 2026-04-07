@@ -42,12 +42,17 @@ namespace LMS.Services
             foreach (var course in courses)
             {
                 int studentCount = 0;
+                ApplicationUser? teacher = null;
 
                 foreach (var user in course.Users)
                 {
                     var roles = await _userManager.GetRolesAsync(user);
+
                     if (roles.Contains("Student"))
                         studentCount++;
+
+                    if (roles.Contains("Teacher"))
+                        teacher = user;
                 }
 
                 result.Add(new CourseListDto
@@ -58,9 +63,11 @@ namespace LMS.Services
                     StartDate = course.StartDate,
                     EndDate = course.EndDate,
                     StudentCount = studentCount,
-                    ModuleCount = course.Modules.Count
+                    ModuleCount = course.Modules.Count,
+                    TeacherId = teacher?.Id
                 });
             }
+
 
             return result;
         }
@@ -230,9 +237,9 @@ namespace LMS.Services
 
 		public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
 		{
-			var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseUpdateDto.Id);
+            var course = await _unitOfWork.CourseRepository.GetCourseById(courseUpdateDto.Id);
 
-			if (course == null)
+            if (course == null)
 				throw new Exception("Kursen kunde inte hittas.");
 
             if (string.IsNullOrWhiteSpace(courseUpdateDto.Name))
@@ -244,12 +251,17 @@ namespace LMS.Services
             if (courseUpdateDto.StartDate > courseUpdateDto.EndDate)
                 throw new Exception("Startdatum får inte vara senare än slutdatum.");
 
-            if (course.Modules.Count != 0)
+
+            if (course.Modules.Count != 0 &&
+                (courseUpdateDto.StartDate != course.StartDate ||
+                 courseUpdateDto.EndDate != course.EndDate))
             {
+                throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
+            }
+          
                 // Tillåt inte ändring av kursdatum om kursen innehåller moduler, för moduldatumen kan då
                 // hamna utanför kursdatumen.
-                throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
-
+               
                 /*
                 // Alternativt: Validera varje modul individuellt.
                 foreach (var module in course.Modules)
@@ -259,14 +271,44 @@ namespace LMS.Services
                         throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
                 }
                 */
-            }
 
             course.Name = courseUpdateDto.Name.Trim();
 			course.Description = courseUpdateDto.Description.Trim();
 			course.StartDate = courseUpdateDto.StartDate;
 			course.EndDate = courseUpdateDto.EndDate;
 
-			_unitOfWork.CourseRepository.Update(course);
+            if (courseUpdateDto.TeacherId != null)
+            {
+                ApplicationUser? oldTeacher = null;
+
+                foreach (var user in course.Users)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    if (roles.Contains("Teacher"))
+                    {
+                        oldTeacher = user;
+                        break;
+                    }
+                }
+
+                var newTeacher = await _userManager.FindByIdAsync(courseUpdateDto.TeacherId);
+
+                if (newTeacher == null)
+                    throw new ArgumentException("Läraren kunde inte hittas.");
+
+                if (!await _userManager.IsInRoleAsync(newTeacher, "Teacher"))
+                    throw new ArgumentException("Vald användare är inte lärare.");
+
+                if (oldTeacher != null)
+                {
+                    oldTeacher.CourseId = null;
+                    await _userManager.UpdateAsync(oldTeacher);
+                }
+                newTeacher.CourseId = course.Id;
+                await _userManager.UpdateAsync(newTeacher);
+            }
+
+            //_unitOfWork.CourseRepository.Update(course);
 			await _unitOfWork.CompleteAsync();
 
 			return CourseMapper.ToBasicCourseDto(course);
