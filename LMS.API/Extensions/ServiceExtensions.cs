@@ -152,6 +152,15 @@ public static class ServiceExtensions
             new Lazy<IStudentAssignmentService>(() => provider.GetRequiredService<IStudentAssignmentService>()));
 
 
-    }
+		services.AddScoped<ISubmissionService, SubmissionService>();
+		services.AddScoped(provider =>
+			new Lazy<ISubmissionService>(() => provider.GetRequiredService<ISubmissionService>()));
+
+
+
+
+
+
+	}
 }
 

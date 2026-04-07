@@ -1,6 +1,7 @@
 @namespace LMS.Blazor.Client.Components.CourseOverview
 @using LMS.Shared.DTOs.Course
 @using LMS.Shared.DTOs.Document
+@using LMS.Shared.DTOs.Submission
 @inject IApiService ApiService
 
 <div class="container py-4">
@@ -49,7 +50,8 @@
         {
             <ModuleItem Module="module"
                         ModuleDocuments="@GetModuleDocuments(module.Id)"
-                        ActivityDocuments="@GetActivityDocumentsForModule(module)" />
+                        ActivityDocuments="@GetActivityDocumentsForModule(module)" 
+                        Submissions="submissions" />
         }
     </div>
 </div>
@@ -65,6 +67,7 @@
     protected override async Task OnParametersSetAsync()
     {
         await LoadDocumentsAsync();
+        await LoadSubmissionsAsync();
     }
 
     private async Task LoadDocumentsAsync()
@@ -108,5 +111,14 @@
             }
         }
         return dict;
+    }
+
+
+    // Submission part
+    private List<SubmissionDto>? submissions;
+
+    private async Task LoadSubmissionsAsync()
+    {
+        submissions = await ApiService.GetAsync<List<SubmissionDto>>($"api/submissions/course/{Course.Id}");
     }
 }
