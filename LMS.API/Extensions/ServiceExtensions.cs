@@ -105,6 +105,10 @@ public static class ServiceExtensions
         services.AddScoped(provider =>
             new Lazy<ISubmissionRepository>(() => provider.GetRequiredService<ISubmissionRepository>()));
 
+        services.AddScoped<IDocumentRepository, DocumentRepository>();
+        services.AddScoped(provider =>
+            new Lazy<IDocumentRepository>(() => provider.GetRequiredService<IDocumentRepository>()));
+
     }
 
     public static void AddServiceLayer(this IServiceCollection services)
