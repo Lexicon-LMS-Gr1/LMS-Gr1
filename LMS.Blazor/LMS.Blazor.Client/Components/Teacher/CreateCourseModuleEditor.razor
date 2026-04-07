@@ -1,0 +1,77 @@
+﻿@using LMS.Shared.DTOs.Module
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="card mb-3 border">
+    <div class="card-body">
+
+        <EditForm EditContext="editContext">
+            <DataAnnotationsValidator />
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h6 mb-0">Modul @(ModuleIndex + 1)</h3>
+
+                <button type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        @onclick="OnRemove">
+                    Ta bort
+                </button>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Modulnamn</label>
+                <InputText class="form-control" @bind-Value="Module.Name" />
+                <ValidationMessage For="() => Module.Name" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Beskrivning</label>
+                <InputTextArea class="form-control" @bind-Value="Module.Description" />
+                <ValidationMessage For="() => Module.Description" />
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Startdatum</label>
+                    <InputDate class="form-control" @bind-Value="Module.StartDate" />
+                    <ValidationMessage For="() => Module.StartDate" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Slutdatum</label>
+                    <InputDate class="form-control" @bind-Value="Module.EndDate" />
+                    <ValidationMessage For="() => Module.EndDate" />
+                </div>
+            </div>
+        </EditForm>
+
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public ModuleCreateDto Module { get; set; } = new();
+
+    [Parameter]
+    public int ModuleIndex { get; set; }
+
+    [Parameter]
+    public EventCallback OnRemove { get; set; }
+
+    private EditContext? editContext;
+
+    protected override void OnParametersSet()
+    {
+        if (editContext is null || editContext.Model != Module)
+        {
+            editContext = new EditContext(Module);
+        }
+    }
+
+    public bool Validate()
+    {
+        if (editContext is null)
+            return false;
+
+        return editContext.Validate();
+    }
+}

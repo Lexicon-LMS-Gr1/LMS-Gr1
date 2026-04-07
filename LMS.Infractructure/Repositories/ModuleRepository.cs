@@ -20,6 +20,8 @@ public class ModuleRepository : RepositoryBase<Module>, IModuleRepository
 	public async Task<Module?> GetModuleByIdAsync(int moduleId, bool trackChanges = false)
 	{
 		return await FindByCondition(m => m.Id == moduleId, trackChanges)
+            .Include(m => m.Course)
+			.ThenInclude(c => c.Modules)
 			.Include(m => m.Activities)
 			.ThenInclude(a => a.ActivityType)
 			.FirstOrDefaultAsync();

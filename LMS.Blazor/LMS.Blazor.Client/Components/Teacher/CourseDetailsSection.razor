@@ -19,7 +19,8 @@
     else 
     {
 
-            <h2>@Course.Name</h2>
+		<h2>@Course.Name </h2>
+		<h5>@Course.DateRange</h5>
             <p class="text-muted">@Course.Description</p>
 
             <!-- Course-level documents -->
@@ -61,12 +62,19 @@
                             @module.EndDate.ToString("yyyy-MM-dd")
                         </p>
                     </div>
-                    <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
-                            @onclick:stopPropagation="true"
-                            @onclick="() => OpenModuleModal(module)">
-                        <i class="bi bi-pencil"></i>
-                        Edit
-                    </button>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => OpenModuleModal(module)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => AskDeleteModule(module.Id)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -91,7 +99,7 @@
                         <h6 class="mb-3 mt-3">Aktiviteter</h6>
 
                         @foreach (var a in module.Activities.OrderBy(a => a.StartTime)) {
-                            <div class="card mb-2">
+                            <div class="card mb-2 @(highlightedActivityId == a.Id ? "bg-success-subtle" : "")">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
@@ -117,7 +125,8 @@
                                             </button>
 
                                             <button class="btn btn-sm btn-outline-danger"
-                                                    @onclick:stopPropagation="true">
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="() => AskDeleteActivity(a.Id)">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
@@ -302,18 +311,33 @@
                          OnClose="CloseUploadModal" />
 }
 
+<ConfirmDialog @ref="confirmDeleteActivity"
+               Title="Ta bort aktivitet"
+               Message="Är du säker på att du vill ta bort denna aktivitet?"
+               OnClose="OnConfirmDeleteActivity" />
+
+<ConfirmDialog @ref="confirmDeleteModule"
+               Title="Ta bort modul"
+               Message="Är du säker på att du vill ta bort denna modul?"
+               OnClose="OnConfirmDeleteModule" />
+
 @code {
     [Parameter] public int CourseId { get; set; }
     [Parameter] public EventCallback OnBack { get; set; }
 
     private CourseDto? Course;
     private int? openModuleId;
+    private ConfirmDialog? confirmDeleteActivity;
+    private ConfirmDialog? confirmDeleteModule;
+    private int activityIdToDelete;
+    private int moduleIdToDelete;
 
     // ACTIVITY EDIT
     private bool showActivityModal;
     private UpdateActivityDto activityForm = new();
     private string? activityError;
     private EditContext? activityEditContext;
+    private int? highlightedActivityId;
 
     // MODULE EDIT
     private bool showModuleModal;
@@ -414,8 +438,14 @@
                 $"api/activity/{activityForm.Id}", activityForm);
 
             if (result != null) {
+                var id = activityForm.Id;
                 showActivityModal = false;
                 await LoadCourseAsync();
+                highlightedActivityId = id;
+                StateHasChanged();
+                await Task.Delay(10000);
+
+                highlightedActivityId = null;
             } else {
                 activityError = "Kunde inte uppdatera aktiviteten.";
             }
@@ -519,5 +549,39 @@
         var result = await ApiService.DeleteAsync($"api/documents/{documentId}");
         if (result.Success)
             await LoadDocumentsAsync();
+    }
+
+    private void AskDeleteActivity(int id)
+    {
+        activityIdToDelete = id;
+        confirmDeleteActivity!.Show();
+    }
+
+    private void AskDeleteModule(int id)
+    {
+        moduleIdToDelete = id;
+        confirmDeleteModule!.Show();
+    }
+
+    private async Task OnConfirmDeleteActivity(bool confirmed)
+    {
+        if (!confirmed)
+            return;
+
+        await ApiService.DeleteAsync($"api/activity/{activityIdToDelete}");
+
+        await LoadCourseAsync();
+        await LoadDocumentsAsync();
+    }
+
+    private async Task OnConfirmDeleteModule(bool confirmed)
+    {
+        if (!confirmed)
+            return;
+
+        await ApiService.DeleteAsync($"api/module/{moduleIdToDelete}");
+
+        await LoadCourseAsync();
+        await LoadDocumentsAsync();
     }
 }

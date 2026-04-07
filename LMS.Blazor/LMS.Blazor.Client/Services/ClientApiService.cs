@@ -37,7 +37,8 @@ public class ClientApiService : IApiService
     {
         var response = await _httpClient.PutAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
 
-        if (HandleUnauthorized(response)) return default;
+        if (HandleUnauthorized(response))
+            return default;
 
         if (response.IsSuccessStatusCode)
         {
@@ -45,14 +46,8 @@ public class ClientApiService : IApiService
                 await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
         }
 
-        var errorMessage = await response.Content.ReadAsStringAsync(ct);
-
-        if (string.IsNullOrWhiteSpace(errorMessage))
-            errorMessage = "Ett fel uppstod.";
-
-        errorMessage = errorMessage.Trim('"');
-
-        throw new Exception(errorMessage);
+        var json = await response.Content.ReadAsStringAsync(ct);
+        throw new Exception(ExtractErrorMessage(json));
     }
 
     public async Task<(bool Success, string? Error)> DeleteAsync(string endpoint, CancellationToken ct = default)
@@ -79,7 +74,11 @@ public class ClientApiService : IApiService
 
         if (HandleUnauthorized(response)) return default;
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var json = await response.Content.ReadAsStringAsync(ct);
+            throw new Exception(ExtractErrorMessage(json));
+        }
 
         return await JsonSerializer.DeserializeAsync<TResponse>(
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
@@ -116,5 +115,32 @@ public class ClientApiService : IApiService
             return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// Tries to extract a human-readable error message from a JSON error response.
+    /// Falls back to the raw string if the response is not valid JSON.
+    /// </summary>
+    private static string ExtractErrorMessage(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+
+            if (doc.RootElement.TryGetProperty("message", out var messageProp))
+                return messageProp.GetString() ?? json;
+
+            if (doc.RootElement.TryGetProperty("detail", out var detailProp))
+                return detailProp.GetString() ?? json;
+
+            if (doc.RootElement.TryGetProperty("title", out var titleProp))
+                return titleProp.GetString() ?? json;
+        }
+        catch (JsonException)
+        {
+            // not valid JSON, fall back to raw text
+        }
+
+        return json;
     }
 }

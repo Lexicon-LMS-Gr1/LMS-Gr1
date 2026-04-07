@@ -67,6 +67,17 @@ public class CourseRepository : RepositoryBase<Course>, ICourseRepository
 			.ToListAsync();
 	}
 
+    public async Task<Course?> GetCourseWithAllDataAsync(int courseId)
+    {
+        return await context.Courses
+            .Include(c => c.Students)
+            .Include(c => c.Modules)
+                .ThenInclude(m => m.Activities)
+                    .ThenInclude(a => a.ActivityType)
+            .FirstOrDefaultAsync(c => c.Id == courseId);
+    }
+
+
     public async Task<IEnumerable<ApplicationUser>> GetParticipantsForUserCourseAsync(string userId)
     {
         var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
