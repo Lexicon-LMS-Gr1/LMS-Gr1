@@ -1,25 +1,28 @@
 using System.ComponentModel.DataAnnotations;
+using LMS.Shared.Validation;
 
 namespace LMS.Shared.DTOs.Course;
 
 public class CourseUpdateDto
 {
-    [Required(ErrorMessage = "Course ID is required")]
+    [Required(ErrorMessage = "Kurs-id måste anges.")]
     public int Id { get; set; }
 
-    [Required(ErrorMessage = "Course name is required")]
-    [StringLength(100, MinimumLength = 3, ErrorMessage = "Course name must be between 3 and 100 characters")]
+    [Required(ErrorMessage = "Kursnamn måste anges.")]
+    [StringLength(100, MinimumLength = 3, ErrorMessage = "Kursnamn måste vara mellan 3 och 100 tecken.")]
     public string Name { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Description is required")]
-    [StringLength(500, MinimumLength = 10, ErrorMessage = "Description must be between 10 and 500 characters")]
+    [Required(ErrorMessage = "Beskrivning måste anges.")]
+    [StringLength(500, MinimumLength = 10, ErrorMessage = "Kursbeskrivning måste vara mellan 10 och 500 tecken.")]
     public string Description { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Start date is required")]
+    [Required(ErrorMessage = "Startdatum måste anges.")]
+    [DateLessThanOrEqualToOtherDate(nameof(EndDate), ErrorMessage = "Startdatum får inte vara senare än slutdatum.")]
     [DataType(DataType.Date)]
     public DateTime StartDate { get; set; }
 
-    [Required(ErrorMessage = "End date is required")]
+    [Required(ErrorMessage = "Slutdatum måste anges.")]
+    [DateGreatherThanOrEqualToOtherDate(nameof(StartDate), ErrorMessage = "Slutdatum får inte vara tidigare än startdatum.")]
     [DataType(DataType.Date)]
     public DateTime EndDate { get; set; }
 

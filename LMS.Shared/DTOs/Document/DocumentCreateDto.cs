@@ -8,11 +8,11 @@ namespace LMS.Shared.DTOs.Document;
 /// </summary>
 public class DocumentCreateDto
 {
-    [Required(ErrorMessage = "Document name is required")]
-    [StringLength(200, MinimumLength = 3, ErrorMessage = "Document name must be between 3 and 200 characters")]
+    [Required(ErrorMessage = "Dokumentnamn måste anges.")]
+    [StringLength(200, MinimumLength = 3, ErrorMessage = "Dokumentnamn måste vara mellan 3 och 200 tecken.")]
     public string Name { get; set; } = string.Empty;
 
-    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    [StringLength(500, ErrorMessage = "Beskrivning får högst vara 500 tecken.")]
     public string? Description { get; set; }
 
     // Parent entity foreign keys - exactly ONE must be provided

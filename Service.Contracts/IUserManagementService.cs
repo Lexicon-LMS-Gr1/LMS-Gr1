@@ -11,4 +11,5 @@ public interface IUserManagementService
     Task<UserDto> CreateUserAsync(UserCreateDto userDto);
     Task<UserDto> UpdateUserAsync(UserUpdateDto userDto);
     Task<bool> DeleteUserAsync(string id);
+    Task DeleteStudentsByCourseAsync(int courseId);
 }

@@ -1,0 +1,14 @@
+﻿@page "/teacher/courses/{Id:int}"
+@using LMS.Blazor.Client.Components.Teacher
+@inject NavigationManager NavigationManager
+
+<CourseDetailsSection CourseId="Id"
+               OnBack="GoBack" />
+
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private void GoBack() => NavigationManager.NavigateTo("/teacher/courses");
+}
+

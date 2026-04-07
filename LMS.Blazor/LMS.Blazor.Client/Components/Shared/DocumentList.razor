@@ -1,0 +1,68 @@
+@namespace LMS.Blazor.Client.Components.Shared
+@using LMS.Shared.DTOs.Document
+@inject NavigationManager NavigationManager
+
+@if (Documents != null && Documents.Any())
+{
+    <div class="mt-3">
+        @foreach (var doc in Documents.OrderByDescending(d => d.UploadTimestamp))
+        {
+            <div class="d-flex align-items-start gap-2 mb-2 p-2 rounded border bg-light">
+                <i class="bi bi-file-earmark-text text-primary fs-5 mt-1"></i>
+
+                <div class="flex-grow-1">
+                    <div>
+                        <a href="@GetDownloadUrl(doc.Id)"
+                           target="_blank"
+                           class="text-decoration-none fw-semibold">
+                            @doc.Name
+                        </a>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(doc.Description))
+                    {
+                        <div class="text-muted small">@doc.Description</div>
+                    }
+
+                    <div class="text-muted small">
+                        @FormatFileSize(doc.FileSizeBytes) &middot;
+                        @doc.UploadTimestamp.ToString("yyyy-MM-dd HH:mm")
+                    </div>
+                </div>
+
+                @if (CanDelete)
+                {
+                    <button class="btn btn-sm btn-outline-danger"
+                            title="Ta bort"
+                            @onclick="() => OnDeleted.InvokeAsync(doc.Id)"
+                            @onclick:stopPropagation="true">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public List<DocumentDto>? Documents { get; set; }
+    [Parameter] public bool CanDelete { get; set; }
+    [Parameter] public EventCallback<int> OnDeleted { get; set; }
+
+    private string GetDownloadUrl(int documentId)
+    {
+        var baseUri = NavigationManager.BaseUri.TrimEnd('/');
+        return $"{baseUri}/api/proxy/api/documents/{documentId}/download";
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024)
+            return $"{bytes} B";
+
+        if (bytes < 1024 * 1024)
+            return $"{bytes / 1024.0:F1} KB";
+
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+}

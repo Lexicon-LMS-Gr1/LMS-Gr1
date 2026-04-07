@@ -1,8 +1,9 @@
-﻿using System;
+﻿using LMS.Shared.DTOs.Activity;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LMS.Shared.DTOs.Course
+namespace LMS.Shared.DTOs.Module
 {
     public class ModuleDto
     {
@@ -11,7 +12,10 @@ namespace LMS.Shared.DTOs.Course
         public string Description { get; set; } = "";
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public string DateRange => $"{StartDate:yyyy-MM-dd} – {EndDate:yyyy-MM-dd}";
 
         public List<ActivityDto> Activities { get; set; } = new();
+
+        public int Progress { get; set; }
     }
 }

@@ -2,37 +2,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LMS.Shared.DTOs.Activity;
 
-public class ActivityUpdateDto
+public class ActivityUpdateDto : ActivityBaseDto
 {
-    [Required(ErrorMessage = "Activity ID is required")]
+    [Required(ErrorMessage = "Aktivitets-id måste anges.")]
     public int Id { get; set; }
 
-    [Required(ErrorMessage = "Activity name is required")]
-    [StringLength(100, MinimumLength = 3, ErrorMessage = "Activity name must be between 3 and 100 characters")]
-    public string Name { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Description is required")]
-    [StringLength(500, MinimumLength = 10, ErrorMessage = "Description must be between 10 and 500 characters")]
-    public string Description { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Start time is required")]
-    [DataType(DataType.DateTime)]
-    public DateTime StartTime { get; set; }
-
-    [Required(ErrorMessage = "End time is required")]
-    [DataType(DataType.DateTime)]
-    public DateTime EndTime { get; set; }
-
-    [DataType(DataType.Date)]
-    public DateTime? DueDate { get; set; }
-
-    [Required(ErrorMessage = "Activity type is required")]
-    [Range(1, int.MaxValue, ErrorMessage = "Activity type ID must be a positive number")]
-    public int ActivityTypeId { get; set; }
-
-    [Required(ErrorMessage = "Module ID is required")]
-    [Range(1, int.MaxValue, ErrorMessage = "Module ID must be a positive number")]
-    public int ModuleId { get; set; }
+    //[Required(ErrorMessage = "Modul-id måste anges.")]
+    //[Range(1, int.MaxValue, ErrorMessage = "Modul-id ska vara ett positivt tal.")]
+    //public int ModuleId { get; set; }
 
     // Business rules validated in service layer:
     // 1. StartTime must be >= Module.StartDate

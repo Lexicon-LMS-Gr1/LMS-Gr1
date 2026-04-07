@@ -1,11 +1,16 @@
+using Domain.Contracts.Queries;
 using Domain.Contracts.Repositories;
+using Domain.Contracts.Services;
 using LMS.Infractructure.Repositories;
+using LMS.Infractructure.Services;
 using LMS.Infrastructure.Data;
+using LMS.Infrastructure.Queries.Dashboard;
+using LMS.Infrastructure.Queries.TeacherDashboard;
+using LMS.Infrastructure.Repositories;
 using LMS.Presentation;
 using LMS.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using Service.Contracts;
 using Swashbuckle.AspNetCore.Filters;
@@ -47,7 +52,6 @@ public static class ServiceExtensions
                        Version = "v1"
                    });
 
-
                    setup.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
                    {
                        In = ParameterLocation.Header,
@@ -85,9 +89,25 @@ public static class ServiceExtensions
     {
 		services.AddScoped<ICourseRepository, CourseRepository>();
 		services.AddScoped(provider =>
-	   new Lazy<ICourseRepository>(() => provider.GetRequiredService<ICourseRepository>()));
+	     new Lazy<ICourseRepository>(() => provider.GetRequiredService<ICourseRepository>()));
+        
+		services.AddScoped<IModuleRepository, ModuleRepository>();
+		services.AddScoped(provider =>
+	     new Lazy<IModuleRepository>(() => provider.GetRequiredService<IModuleRepository>()));
 
-		services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IActivityRepository, ActivityRepository>();
+        services.AddScoped(provider =>
+          new Lazy<IActivityRepository>(() => provider.GetRequiredService<IActivityRepository>()));
+
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        services.AddScoped<ISubmissionRepository, SubmissionRepository>();
+        services.AddScoped(provider =>
+            new Lazy<ISubmissionRepository>(() => provider.GetRequiredService<ISubmissionRepository>()));
+
+        services.AddScoped<IDocumentRepository, DocumentRepository>();
+        services.AddScoped(provider =>
+            new Lazy<IDocumentRepository>(() => provider.GetRequiredService<IDocumentRepository>()));
 
     }
 
@@ -98,15 +118,40 @@ public static class ServiceExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped(provider => new Lazy<IAuthService>(() => provider.GetRequiredService<IAuthService>()));
 
+        services.AddScoped<IDashboardQuery, DashboardQuery>();
+        services.AddScoped<ITeacherDashboardQuery, TeacherDashboardQuery>();
+
+		services.AddScoped<IProgressService, ProgressService>();
+		services.AddScoped(provider => new Lazy<IProgressService>(() => provider.GetRequiredService<IProgressService>()));
+
 
 		services.AddScoped<ICourseService, CourseService>();
 		services.AddScoped(provider => new Lazy<ICourseService>(() => provider.GetRequiredService<ICourseService>()));
+
+        services.AddScoped<IModuleService, ModuleService>();
+        services.AddScoped(provider => new Lazy<IModuleService>(() => provider.GetRequiredService<IModuleService>()));
 
 		services.AddScoped<IUserManagementService, UserManagementService>();
 		services.AddScoped(provider => new Lazy<IUserManagementService>(() => provider.GetRequiredService<IUserManagementService>()));
 
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped(provider => new Lazy<IDashboardService>(() => provider.GetRequiredService<IDashboardService>()));
+
+        services.AddScoped<ITeacherDashboardService, TeacherDashboardService>();
+        services.AddScoped(provider => new Lazy<ITeacherDashboardService>(() => provider.GetRequiredService<ITeacherDashboardService>()));
+        services.AddScoped<IActivityService, ActivityService>();
+        services.AddScoped(provider => new Lazy<IActivityService>(() => provider.GetRequiredService<IActivityService>()));
+
+        services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+
+        services.AddScoped<IDocumentService, DocumentService>();
+        services.AddScoped(provider => new Lazy<IDocumentService>(() => provider.GetRequiredService<IDocumentService>()));
+
+        services.AddScoped<IStudentAssignmentService, StudentAssignmentService>();
+        services.AddScoped(provider =>
+            new Lazy<IStudentAssignmentService>(() => provider.GetRequiredService<IStudentAssignmentService>()));
+
+
     }
 }
 

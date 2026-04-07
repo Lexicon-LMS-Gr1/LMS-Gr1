@@ -1,0 +1,633 @@
+@using LMS.Shared.DTOs.Course
+@using LMS.Shared.DTOs.Module
+@using LMS.Shared.DTOs.Activity
+@using LMS.Shared.DTOs.Document
+@inject IApiService ApiService
+
+<div class="container py-4">
+
+    @if (OnBack.HasDelegate) {
+        <button class="btn btn-outline-secondary mb-3"
+                @onclick="() => OnBack.InvokeAsync()">
+            <i class="bi bi-arrow-left"></i> Tillbaka
+        </button>
+    }
+
+    @if (Course == null) {
+        <p>Laddar...</p>
+    } 
+    else 
+    {
+
+		<h2>@Course.Name </h2>
+		<h5>@Course.DateRange</h5>
+            <p class="text-muted">@Course.Description</p>
+
+            <!-- Course-level documents -->
+            <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+                <h6 class="mb-0 text-secondary">Kursdokument</h6>
+                <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                        @onclick="() => OpenUploadModal(courseId: CourseId)">
+                    <i class="bi bi-upload"></i> Ladda upp
+                </button>
+            </div>
+            <DocumentList Documents="@courseDocuments" CanDelete="true" OnDeleted="HandleDeleteDocument" />
+            @if (courseDocuments?.Any() != true)
+            {
+                <p class="text-muted small">Inga dokument.</p>
+            }
+
+            <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+                <h4 class="mb-0">Moduler</h4>
+
+                <!-- Öppna skapa modul i modalt fönster, med CourseId som argument -->
+                <button class="btn btn-primary d-flex align-items-center"
+                        @onclick="OpenCreateModuleModal">
+
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Skapa ny modul
+                </button>
+            </div>
+
+        @foreach (var module in Course.Modules) {
+            <div class="card mb-3"
+                 style="cursor:pointer;"
+                 @onclick="() => ToggleModule(module.Id)">
+                <div class="card-body d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1">@module.Name</h5>
+                        <p class="text-muted mb-1">@module.Description</p>
+                        <p class="small text-secondary mb-0">
+                            @module.StartDate.ToString("yyyy-MM-dd") -
+                            @module.EndDate.ToString("yyyy-MM-dd")
+                        </p>
+                    </div>
+                   
+                    <div class="d-flex flex-column align-items-end gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => OpenModuleModal(module)">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+
+                            <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => AskDeleteModule(module.Id)">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+
+                        <button class="btn btn-sm btn-primary d-flex align-items-center gap-1"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => OpenCreateActivityModal(module)">
+                            <i class="bi bi-plus-circle"></i>
+                            Skapa ny aktivitet
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            @if (openModuleId == module.Id) {
+                <div class="ms-4 mb-3">
+                    <!-- Module-level documents -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0 text-secondary">Moduldokument</h6>
+                        <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => OpenUploadModal(moduleId: module.Id)">
+                            <i class="bi bi-upload"></i> Ladda upp
+                        </button>
+                    </div>
+                    <DocumentList Documents="@GetModuleDocuments(module.Id)" CanDelete="true" OnDeleted="HandleDeleteDocument" />
+                    @if (GetModuleDocuments(module.Id)?.Any() != true)
+                    {
+                        <p class="text-muted small">Inga dokument.</p>
+                    }
+
+                    @if (module.Activities?.Any() == true) {
+                        <h6 class="mb-3 mt-3">Aktiviteter</h6>
+
+                        @foreach (var a in module.Activities.OrderBy(a => a.StartTime)) {
+                            <div class="card mb-2 @(highlightedActivityId == a.Id ? "bg-success-subtle" : "")">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-primary">@a.ActivityTypeName</span>
+                                                <strong>@a.Name</strong>
+                                            </div>
+
+                                            <div class="text-muted small mt-2">
+                                                @if (a.StartTime.Date == a.EndTime.Date) {
+                                                    @a.StartTime.ToString("yyyy-MM-dd")
+                                                } else {
+                                                    @($"{a.StartTime:yyyy-MM-dd} - {a.EndTime:yyyy-MM-dd}")
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex align-items-center gap-2">
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="() => OpenActivityModal(a)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="() => AskDeleteActivity(a.Id)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(a.Description)) {
+                                        <div class="mt-2 small text-muted">
+                                            @a.Description
+                                        </div>
+                                    }
+
+                                    @if (a.DueDate.HasValue) {
+                                        <div class="mt-1 small">
+                                            <strong>Deadline:</strong>
+                                            @a.DueDate.Value.ToString("yyyy-MM-dd")
+                                        </div>
+                                    }
+
+                                    <!-- Activity-level documents -->
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <span class="small text-secondary fw-semibold">Dokument</span>
+                                        <button class="btn btn-sm btn-outline-primary py-0 px-1"
+                                                @onclick:stopPropagation="true"
+                                                @onclick="() => OpenUploadModal(activityId: a.Id)">
+                                            <i class="bi bi-upload"></i>
+                                        </button>
+                                    </div>
+                                    <DocumentList Documents="@GetActivityDocuments(a.Id)" CanDelete="true" OnDeleted="HandleDeleteDocument" />
+                                </div>
+                            </div>
+                        }
+                    } else {
+                        <p class="text-muted small">Inga aktiviteter.</p>
+                    }
+                </div>
+            }
+        }
+    }
+</div>
+<!-- SKAPA NY MODUL I MODALT FÖNSTER-->
+@if (showCreateModuleModal && Course != null)
+{
+    <CreateModuleModal CourseId="@CourseId"
+                       CourseStartDate="@Course?.StartDate"
+                       CourseEndDate="@Course?.EndDate"
+                       ExistingModules="@Course?.Modules"
+                       OnCreated="HandleModuleCreated"
+                       OnClose="CloseCreateModuleModal" />
+}
+
+<!-- SKAPA NY AKTIVITET I MODALT FÖNSTER-->
+@if (showCreateActivityModal && selectedModuleForNewActivity != null)
+{
+    <CreateActivityModal ModuleId="@selectedModuleForNewActivity.Id"
+                         ModuleStartDate="@selectedModuleForNewActivity.StartDate"
+                         ModuleEndDate="@selectedModuleForNewActivity.EndDate"
+                         ExistingActivities="@selectedModuleForNewActivity.Activities"
+                         OnCreated="HandleActivityCreated"
+                         OnClose="CloseCreateActivityModal" />
+}
+
+
+<!-- EDIT ACTIVITY MODAL -->
+@if (showActivityModal) {
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit activity</h5>
+                    <button type="button" class="btn-close" @onclick="CloseActivityModal"></button>
+                </div>
+
+                <EditForm EditContext="activityEditContext" OnValidSubmit="SaveActivity">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="modal-body">
+
+                        @if (!string.IsNullOrEmpty(activityError)) {
+                            <div class="alert alert-danger">@activityError</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Namn</label>
+                            <InputText class="form-control" @bind-Value="activityForm.Name" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Beskrivning</label>
+                            <InputTextArea class="form-control" @bind-Value="activityForm.Description" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Start</label>
+                            <InputDate class="form-control" @bind-Value="activityForm.StartTime" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Slut</label>
+                            <InputDate class="form-control" @bind-Value="activityForm.EndTime" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Deadline</label>
+
+                            <div class="d-flex gap-2">
+                                <InputDate class="form-control"
+                                           @bind-Value="activityForm.DueDate" />
+
+                                <button type="button"
+                                        class="btn btn-outline-danger"
+                                        title="Ta bort deadline"
+                                        @onclick="ClearDeadline">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseActivityModal">Stäng</button>
+                        <button type="submit" class="btn btn-primary">Spara</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- EDIT MODULE MODAL -->
+@if (showModuleModal) {
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit module</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModuleModal"></button>
+                </div>
+
+                <EditForm EditContext="moduleEditContext" OnValidSubmit="SaveModule">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+
+                        @if (!string.IsNullOrEmpty(moduleError)) {
+                            <div class="alert alert-danger">@moduleError</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Namn</label>
+                            <InputText class="form-control" @bind-Value="moduleForm.Name" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Beskrivning</label>
+                            <InputTextArea class="form-control" @bind-Value="moduleForm.Description" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Startdatum</label>
+                            <InputDate class="form-control" @bind-Value="moduleForm.StartDate" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Slutdatum</label>
+                            <InputDate class="form-control" @bind-Value="moduleForm.EndDate" />
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="CloseModuleModal">Stäng</button>
+                        <button type="submit" class="btn btn-primary">Spara</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- DOCUMENT UPLOAD MODAL -->
+@if (showUploadModal)
+{
+    <DocumentUploadModal CourseId="@uploadCourseId"
+                         ModuleId="@uploadModuleId"
+                         ActivityId="@uploadActivityId"
+                         OnUploaded="HandleDocumentUploaded"
+                         OnClose="CloseUploadModal" />
+}
+
+<ConfirmDialog @ref="confirmDeleteActivity"
+               Title="Ta bort aktivitet"
+               Message="Är du säker på att du vill ta bort denna aktivitet?"
+               OnClose="OnConfirmDeleteActivity" />
+
+<ConfirmDialog @ref="confirmDeleteModule"
+               Title="Ta bort modul"
+               Message="Är du säker på att du vill ta bort denna modul?"
+               OnClose="OnConfirmDeleteModule" />
+
+@code {
+    [Parameter] public int CourseId { get; set; }
+    [Parameter] public EventCallback OnBack { get; set; }
+
+    private CourseDto? Course;
+    private int? openModuleId;
+    private ConfirmDialog? confirmDeleteActivity;
+    private ConfirmDialog? confirmDeleteModule;
+    private int activityIdToDelete;
+    private int moduleIdToDelete;
+
+    // ACTIVITY EDIT
+    private bool showActivityModal;
+    private UpdateActivityDto activityForm = new();
+    private string? activityError;
+    private EditContext? activityEditContext;
+    private int? highlightedActivityId;
+
+    // MODULE EDIT
+    private bool showModuleModal;
+    private ModuleUpdateDto moduleForm = new();
+    private string? moduleError;
+    private EditContext? moduleEditContext;
+
+    // SKAPA NY MODUL
+    private bool showCreateModuleModal;
+
+    // SKAPA NY AKTIVITET
+    private bool showCreateActivityModal;
+    private ModuleDto? selectedModuleForNewActivity;
+    // DOCUMENTS
+    private List<DocumentDto>? courseDocuments;
+    private List<DocumentDto>? allModuleDocuments;
+    private List<DocumentDto>? allActivityDocuments;
+    private bool showUploadModal;
+    private int? uploadCourseId;
+    private int? uploadModuleId;
+    private int? uploadActivityId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadCourseAsync();
+        await LoadDocumentsAsync();
+    }
+
+    private void OpenActivityModal(ActivityDto activity)
+    {
+        activityForm = new UpdateActivityDto {
+            Id = activity.Id,
+            Name = activity.Name,
+            Description = activity.Description,
+            StartTime = activity.StartTime,
+            EndTime = activity.EndTime,
+            DueDate = activity.DueDate
+        };
+
+        activityEditContext = new EditContext(activityForm);
+        activityError = null;
+        showActivityModal = true;
+    }
+
+    private void CloseActivityModal()
+    {
+        showActivityModal = false;
+        activityError = null;
+    }
+
+    private void OpenModuleModal(ModuleDto module)
+    {
+        moduleForm = new ModuleUpdateDto {
+            Id = module.Id,
+            Name = module.Name,
+            Description = module.Description,
+            StartDate = module.StartDate,
+            EndDate = module.EndDate,
+            CourseId = CourseId
+        };
+
+        moduleEditContext = new EditContext(moduleForm);
+
+        moduleError = null;
+        showModuleModal = true;
+    }
+
+    private void CloseModuleModal()
+    {
+        showModuleModal = false;
+        moduleError = null;
+    }
+
+    // UPPDATERA REDIGERAD MODUL
+    private async Task SaveModule()
+    {
+        moduleError = null;
+
+        try {
+            var result = await ApiService.PutAsync<ModuleUpdateDto, ModuleDto>(
+                $"api/module/{moduleForm.Id}", moduleForm);
+
+            if (result != null) {
+                showModuleModal = false;
+                await LoadCourseAsync();
+            } else {
+                moduleError = "Kunde inte uppdatera modulen.";
+            }
+        } catch (Exception ex) {
+            moduleError = ex.Message;
+        }
+    }
+
+    // UPPDATERA REDIGERAD AKTIVITET -->
+    private async Task SaveActivity()
+    {
+        activityError = null;
+
+        try {
+            var result = await ApiService.PutAsync<UpdateActivityDto, ActivityDto>(
+                $"api/activity/{activityForm.Id}", activityForm);
+
+            if (result != null) {
+                var id = activityForm.Id;
+                showActivityModal = false;
+                await LoadCourseAsync();
+                highlightedActivityId = id;
+                StateHasChanged();
+                await Task.Delay(10000);
+
+                highlightedActivityId = null;
+            } else {
+                activityError = "Kunde inte uppdatera aktiviteten.";
+            }
+        } catch (Exception ex) {
+            activityError = ex.Message;
+        }
+
+    }
+
+
+    private async Task LoadCourseAsync()
+    {
+        Course = await ApiService.GetAsync<CourseDto>($"api/course/{CourseId}");
+    }
+
+    // HANTERA MODALT FÖNSTER FÖR SKAPA NY MODUL 
+    private void OpenCreateModuleModal()
+    {
+        showCreateModuleModal = true;
+    }
+
+    private Task CloseCreateModuleModal()
+    {
+        showCreateModuleModal = false;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleModuleCreated()
+    {
+        showCreateModuleModal = false;
+        await LoadCourseAsync();
+    }
+
+
+    private void ToggleModule(int moduleId)
+    {
+        openModuleId = openModuleId == moduleId ? null : moduleId;
+    }
+
+    private void ClearDeadline()
+    {
+        activityForm.DueDate = null;
+    }
+
+    // DOCUMENT METHODS
+    private async Task LoadDocumentsAsync()
+    {
+        courseDocuments = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?courseId={CourseId}");
+
+        allModuleDocuments = new List<DocumentDto>();
+        allActivityDocuments = new List<DocumentDto>();
+
+        if (Course?.Modules != null)
+        {
+            foreach (var module in Course.Modules)
+            {
+                var moduleDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?moduleId={module.Id}");
+                if (moduleDocs != null)
+                    allModuleDocuments.AddRange(moduleDocs);
+
+                if (module.Activities != null)
+                {
+                    foreach (var activity in module.Activities)
+                    {
+                        var actDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?activityId={activity.Id}");
+                        if (actDocs != null)
+                            allActivityDocuments.AddRange(actDocs);
+                    }
+                }
+            }
+        }
+    }
+
+    private List<DocumentDto>? GetModuleDocuments(int moduleId)
+        => allModuleDocuments?.Where(d => d.ModuleId == moduleId).ToList();
+
+    private List<DocumentDto>? GetActivityDocuments(int activityId)
+        => allActivityDocuments?.Where(d => d.ActivityId == activityId).ToList();
+
+    private void OpenUploadModal(int? courseId = null, int? moduleId = null, int? activityId = null)
+    {
+        uploadCourseId = courseId;
+        uploadModuleId = moduleId;
+        uploadActivityId = activityId;
+        showUploadModal = true;
+    }
+
+    private async Task HandleDocumentUploaded(DocumentDto doc)
+    {
+        showUploadModal = false;
+        await LoadDocumentsAsync();
+    }
+
+    private void CloseUploadModal()
+    {
+        showUploadModal = false;
+    }
+
+    private async Task HandleDeleteDocument(int documentId)
+    {
+        var result = await ApiService.DeleteAsync($"api/documents/{documentId}");
+        if (result.Success)
+            await LoadDocumentsAsync();
+    }
+
+    private void AskDeleteActivity(int id)
+    {
+        activityIdToDelete = id;
+        confirmDeleteActivity!.Show();
+    }
+
+    private void AskDeleteModule(int id)
+    {
+        moduleIdToDelete = id;
+        confirmDeleteModule!.Show();
+    }
+
+    private async Task OnConfirmDeleteActivity(bool confirmed)
+    {
+        if (!confirmed)
+            return;
+
+        await ApiService.DeleteAsync($"api/activity/{activityIdToDelete}");
+
+        await LoadCourseAsync();
+        await LoadDocumentsAsync();
+    }
+
+    private async Task OnConfirmDeleteModule(bool confirmed)
+    {
+        if (!confirmed)
+            return;
+
+        await ApiService.DeleteAsync($"api/module/{moduleIdToDelete}");
+
+        await LoadCourseAsync();
+        await LoadDocumentsAsync();
+    }
+
+    private void OpenCreateActivityModal(ModuleDto module)
+    {
+        selectedModuleForNewActivity = module;
+        showCreateActivityModal = true;
+    }
+
+    private Task CloseCreateActivityModal()
+    {
+        showCreateActivityModal = false;
+        selectedModuleForNewActivity = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleActivityCreated()
+    {
+        showCreateActivityModal = false;
+        selectedModuleForNewActivity = null;
+        await LoadCourseAsync();
+    }
+
+}

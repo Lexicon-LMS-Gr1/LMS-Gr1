@@ -7,11 +7,12 @@ namespace Domain.Contracts.Repositories;
 
 public interface ICourseRepository: IRepositoryBase<Course>
 {
-	  Task<IEnumerable<Course>> GetAllAsync(bool trackChanges = false);
+    Task<Course?> GetByIdAsync(int id, bool trackChanges = false);
+
+    Task<IEnumerable<Course>> GetAllAsync(bool trackChanges = false);
     Task<Course?> GetCourseForUserAsync(string userId);
     Task<IEnumerable<ApplicationUser>> GetParticipantsForUserCourseAsync(string userId);
-	  Task<IEnumerable<Course>> GetCoursesForListAsync(bool trackChanges = false);
-
-
-	Task<Course?> GetCourseAsync(int courseId);
+	Task<IEnumerable<Course>> GetCoursesForListAsync(bool trackChanges = false);
+    Task<Course?> GetCourseById(int courseId);
+    Task<Course?> GetCourseWithAllDataAsync(int courseId);
 }

@@ -21,11 +21,11 @@ public class AuthController : ControllerBase
 
     [HttpPost]
     [SwaggerOperation(
-        Summary = "Register a new user",
-        Description = "Creates a new user account with the provided registration details."
+        Summary = "Registrera en ny användare.",
+        Description = "Skapar ett nytt användarkonto med de angivna registreringsdetaljerna."
     )]
-    [SwaggerResponse(StatusCodes.Status201Created, "User successfully registered")]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid input or registration failed")]
+    [SwaggerResponse(StatusCodes.Status201Created, "Användaren har framgångsrikt registrerats.")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Ogiltiga värden eller registreringen misslyckades.")]
     public async Task<IActionResult> RegisterUser(UserRegistrationDto userRegistrationDto)
     {
         IdentityResult result = await serviceManager.AuthService.RegisterUserAsync(userRegistrationDto);
@@ -35,11 +35,11 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     [AllowAnonymous]
     [SwaggerOperation(
-        Summary = "Authenticate user",
-        Description = "Validates user credentials and returns a JWT token for authorization."
+        Summary = "Autentisera användare.",
+        Description = "Validerar användaruppgifter och returnerar en JWT-token för auktorisering."
     )]
-    [SwaggerResponse(StatusCodes.Status200OK, "Authentication successful", typeof(TokenDto))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Invalid username or password")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Autentiseringen lyckades.", typeof(TokenDto))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Felaktigt användarnamn eller lösenord.")]
     public async Task<IActionResult> Authenticate(UserAuthDto user)
     {
         if (!await serviceManager.AuthService.ValidateUserAsync(user))
