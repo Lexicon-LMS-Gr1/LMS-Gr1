@@ -1,5 +1,7 @@
-﻿@namespace LMS.Blazor.Client.Components.CourseOverview
+@namespace LMS.Blazor.Client.Components.CourseOverview
 @using LMS.Shared.DTOs.Course
+@using LMS.Shared.DTOs.Document
+@inject IApiService ApiService
 
 <div class="container py-4">
     <div class="mb-4">
@@ -28,12 +30,26 @@
         </div>
     </div>
 
+    <!-- Course-level documents for students -->
+    @if (courseDocuments?.Any() == true)
+    {
+        <div class="mb-4">
+            <h3 class="h5 fw-semibold mb-2">
+                <i class="bi bi-folder2-open text-primary me-1"></i>
+                Kursdokument
+            </h3>
+            <DocumentList Documents="@courseDocuments" CanDelete="false" />
+        </div>
+    }
+
     <h2 class="h3 fw-semibold mb-3">Moduler</h2>
 
     <div class="list-group">
         @foreach (var module in Course.Modules)
         {
-            <ModuleItem Module="module" />
+            <ModuleItem Module="module"
+                        ModuleDocuments="@GetModuleDocuments(module.Id)"
+                        ActivityDocuments="@GetActivityDocumentsForModule(module)" />
         }
     </div>
 </div>
@@ -42,4 +58,55 @@
     [Parameter, EditorRequired]
     public CourseDto Course { get; set; } = new();
 
+    private List<DocumentDto>? courseDocuments;
+    private List<DocumentDto>? allModuleDocuments;
+    private List<DocumentDto>? allActivityDocuments;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadDocumentsAsync();
+    }
+
+    private async Task LoadDocumentsAsync()
+    {
+        courseDocuments = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?courseId={Course.Id}");
+
+        allModuleDocuments = new List<DocumentDto>();
+        allActivityDocuments = new List<DocumentDto>();
+
+        foreach (var module in Course.Modules)
+        {
+            var moduleDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?moduleId={module.Id}");
+            if (moduleDocs != null)
+                allModuleDocuments.AddRange(moduleDocs);
+
+            if (module.Activities != null)
+            {
+                foreach (var activity in module.Activities)
+                {
+                    var actDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?activityId={activity.Id}");
+                    if (actDocs != null)
+                        allActivityDocuments.AddRange(actDocs);
+                }
+            }
+        }
+    }
+
+    private List<DocumentDto>? GetModuleDocuments(int moduleId)
+        => allModuleDocuments?.Where(d => d.ModuleId == moduleId).ToList();
+
+    private Dictionary<int, List<DocumentDto>> GetActivityDocumentsForModule(LMS.Shared.DTOs.Module.ModuleDto module)
+    {
+        var dict = new Dictionary<int, List<DocumentDto>>();
+        if (module.Activities != null && allActivityDocuments != null)
+        {
+            foreach (var activity in module.Activities)
+            {
+                var docs = allActivityDocuments.Where(d => d.ActivityId == activity.Id).ToList();
+                if (docs.Any())
+                    dict[activity.Id] = docs;
+            }
+        }
+        return dict;
+    }
 }
