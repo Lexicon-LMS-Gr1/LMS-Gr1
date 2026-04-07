@@ -36,7 +36,7 @@
             <div class="mb-3">
                 <label class="form-label">Lärare</label>
                 <select class="form-select" @bind="model.TeacherId">
-                    <option value="">-- Välj lärare --</option>
+                    <option value="">-- Välj lärare (valfritt) --</option>
 
                     @foreach (var t in teachers)
                     {
@@ -216,7 +216,7 @@
 
     public class TeacherItem
     {
-        public string Id { get; set; } = "";
+        public string? Id { get; set; }
         public string FullName { get; set; } = "";
     }
 }
