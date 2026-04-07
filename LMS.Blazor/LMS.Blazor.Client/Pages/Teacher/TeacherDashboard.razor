@@ -72,7 +72,9 @@
     {
         @if (activeTab == "overview")
         {
-            <OverviewSection Dashboard="dashboard" />
+            <OverviewSection Dashboard="dashboard"
+                             OnOpenCourse="GoToCourse" />
+
         }
         else if (activeTab == "courses")
         {
