@@ -1,7 +1,9 @@
-﻿@using LMS.Shared.DTOs.TeacherDashboard
+﻿@using LMS.Shared.DTOs.Course
+@using LMS.Shared.DTOs.TeacherDashboard
 
 @code {
     [Parameter] public TeacherDashboardDto Dashboard { get; set; } = null!;
+
     [Parameter] public EventCallback<int> OnOpenCourse { get; set; }
     [Parameter] public EventCallback<CourseListDto> OnEditCourse { get; set; }
     [Parameter] public EventCallback<int> OnDeleteCourse { get; set; }
@@ -51,7 +53,7 @@
 
                             <button class="btn btn-sm btn-outline-primary"
                                     @onclick="() => OnEditCourse.InvokeAsync(c)">
-                                <i class="bi bi-pencil-fill"></i>
+                                <span class="bi bi-pencil-fill me-1"></span>
                             </button>
 
                             <button class="btn btn-sm btn-outline-danger"
@@ -132,6 +134,10 @@
 
 </div>
 
+<ConfirmDialog @ref="confirmDeleteCourse"
+               Title="Ta bort kurs"
+               Message="Är du säker på att du vill ta bort hela kursen och allt innehåll?"
+               OnClose="OnConfirmDeleteCourse" />
 @code {
     private string GetBadgeColor(string type)
     {
