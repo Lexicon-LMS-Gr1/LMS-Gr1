@@ -31,14 +31,29 @@ public class ModuleController : ControllerBase
     public async Task<IActionResult> UpdateModule(int moduleId, [FromBody] ModuleUpdateDto dto)
     {
         if (moduleId != dto.Id)
-            return BadRequest("Id mismatch");
+            return BadRequest("Modul-id stämmer inte.");
 
-        var updated = await _serviceManager.ModuleService.UpdateModuleAsync(dto);
+        try
+        {
+            var updated = await _serviceManager.ModuleService.UpdateModuleAsync(dto);
 
-        if (updated == null)
-            return NotFound();
+            if (updated == null)
+                return NotFound();
 
-        return Ok(updated);
+            return Ok(updated);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av modul." });
+        }
     }
 
     [HttpDelete("{id}")]
@@ -51,6 +66,4 @@ public class ModuleController : ControllerBase
 
         return NoContent();
     }
-
-
 }

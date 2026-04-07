@@ -48,7 +48,8 @@ public class AuthService : IAuthService
             user.RefreshTokenExpireTime = DateTime.UtcNow.AddDays(3);
 
         var res = await userManager.UpdateAsync(user);
-        if (!res.Succeeded) throw new Exception(string.Join("/n", res.Errors));
+        if (!res.Succeeded)
+            throw new Exception(string.Join("/n", res.Errors));
 
         var jwt = new JwtSecurityTokenHandler().WriteToken(token);
         return new TokenDto(jwt, user.RefreshToken!);
@@ -114,13 +115,14 @@ public class AuthService : IAuthService
         {
             var roleExists = await roleManager.RoleExistsAsync(userRegistrationDto.Role!);
             if (!roleExists)
-                return IdentityResult.Failed(new IdentityError { Description = "Role does not exist" });
+                return IdentityResult.Failed(new IdentityError { Description = "Rollen finns inte." });
         }
 
         var user = mapper.Map<ApplicationUser>(userRegistrationDto);
         var result = await userManager.CreateAsync(user, userRegistrationDto.Password);
 
-        if (!result.Succeeded) return result;
+        if (!result.Succeeded)
+            return result;
 
         if (isRoleValid)
             result = await userManager.AddToRoleAsync(user, userRegistrationDto.Role!);
@@ -170,7 +172,7 @@ public class AuthService : IAuthService
 
         if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
         {
-            throw new SecurityTokenException("Invalid token");
+            throw new SecurityTokenException("Ogiltig token.");
         }
 
         return principal;

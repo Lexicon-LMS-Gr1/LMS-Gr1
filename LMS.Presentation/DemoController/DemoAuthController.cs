@@ -13,10 +13,10 @@ public class DemoAuthController : ControllerBase
     [HttpGet]
     [Authorize]
     [SwaggerOperation(
-        Summary =     "Get demo authenticated data",
-        Description = "Returns a list of demo users. Requires a valid JWT token.")]
-    [SwaggerResponse(StatusCodes.Status200OK, "List of demo users", typeof(IEnumerable<DemoAuthDto>))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized - JWT token missing or invalid")]
+        Summary =     "Hämta autentiserade demoanvändare.",
+        Description = "Returnerar en lista med demoanvändare. Kräver en giltig JWT-token.")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Lista med demoanvändare", typeof(IEnumerable<DemoAuthDto>))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Obehörig - JWT-token saknas eller är ogiltig.")]
     public IActionResult GetDemoAuth()
     {
         return Ok(new[]{new DemoAuthDto(1, "Kalle"),

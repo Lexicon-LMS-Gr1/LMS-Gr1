@@ -12,12 +12,12 @@ public class TokenController(IAuthService authenticationService) : ControllerBas
 {
     [HttpPost("refresh")]
     [SwaggerOperation(
-        Summary = "Refresh JWT token",
-        Description = "Takes an existing access token and refresh token, validates them, and issues a new token pair."
+        Summary = "Uppdatera JWT-token.",
+        Description = "Tar en existerande access token och refresh token, validerar dem, och utfärdar ett nytt token-par."
     )]
-    [SwaggerResponse(StatusCodes.Status200OK, "Token successfully refreshed", typeof(TokenDto))]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid token data or refresh token expired")]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Token could not be refreshed due to authentication failure")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Token framgångsrikt uppdaterad.", typeof(TokenDto))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Ogiltig token-data eller refresh token utgången.")]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Token kunde inte uppdateras p.g.a. autentiseringsfel.")]
     public async Task<ActionResult<TokenDto>> RefreshToken(TokenDto token) =>
          Ok(await authenticationService.RefreshTokenAsync(token));
 }

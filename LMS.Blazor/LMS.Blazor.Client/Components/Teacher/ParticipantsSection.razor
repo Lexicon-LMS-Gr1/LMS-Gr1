@@ -126,5 +126,7 @@
                 (string.IsNullOrWhiteSpace(courseFilter) ||
                  s.CourseName == courseFilter)
             )
-            .OrderBy(s => s.FullName);
+            .OrderBy(s => s.LastName)
+            .ThenBy(s => s.FirstName)
+            .ThenBy(s => s.Id);
 }

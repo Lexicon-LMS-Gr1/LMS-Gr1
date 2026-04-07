@@ -1,5 +1,3 @@
-using LMS.Shared.DTOs.Course;
-using LMS.Shared.DTOs.StudentDashboard;
 using Microsoft.AspNetCore.Components;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -34,46 +32,25 @@ public class ClientApiService : IApiService
         return await JsonSerializer.DeserializeAsync<T>(
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
     }
-    /*
 
     public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
     {
         var response = await _httpClient.PutAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
 
-        if (HandleUnauthorized(response)) return default;
+        if (HandleUnauthorized(response))
+            return default;
 
-        response.EnsureSuccessStatusCode();
+        if (response.IsSuccessStatusCode)
+        {
+            return await JsonSerializer.DeserializeAsync<TResponse>(
+                await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+        }
 
-        return await JsonSerializer.DeserializeAsync<TResponse>(
-            await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+        var json = await response.Content.ReadAsStringAsync(ct);
+        throw new Exception(ExtractErrorMessage(json));
     }
-    */
 
-	public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
-	{
-		var response = await _httpClient.PutAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
-
-		if (HandleUnauthorized(response)) return default;
-
-		if (response.IsSuccessStatusCode) {
-			return await JsonSerializer.DeserializeAsync<TResponse>(
-				await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
-		}
-		var errorMessage = await response.Content.ReadAsStringAsync(ct);
-
-		if (string.IsNullOrWhiteSpace(errorMessage))
-			errorMessage = "Ett fel uppstod.";
-
-		errorMessage = errorMessage.Trim('"');
-
-		throw new Exception(errorMessage);
-	}
-
-
-
-
-
-	public async Task<(bool Success, string? Error)> DeleteAsync(string endpoint, CancellationToken ct = default)
+    public async Task<(bool Success, string? Error)> DeleteAsync(string endpoint, CancellationToken ct = default)
     {
         var response = await _httpClient.DeleteAsync($"api/proxy/{endpoint}", ct);
 
@@ -86,10 +63,47 @@ public class ClientApiService : IApiService
         if (response.IsSuccessStatusCode)
             return (true, null);
 
-        // Read the error message returned by the API
         var errorBody = await response.Content.ReadAsStringAsync(ct);
-        var errorMessage = errorBody.Trim('"'); // strip JSON string quotes if any
+        var errorMessage = errorBody.Trim('"');
         return (false, string.IsNullOrWhiteSpace(errorMessage) ? null : errorMessage);
+    }
+
+    public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
+
+        if (HandleUnauthorized(response)) return default;
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var json = await response.Content.ReadAsStringAsync(ct);
+            throw new Exception(ExtractErrorMessage(json));
+        }
+
+        return await JsonSerializer.DeserializeAsync<TResponse>(
+            await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+    }
+
+    public async Task<TResponse?> PostMultipartAsync<TResponse>(string endpoint, MultipartFormDataContent content, CancellationToken ct = default)
+    {
+        // Calls the dedicated Blazor-server upload controller directly (NOT through the generic
+        // api/proxy/... path), because UseAntiforgery() middleware consumes the multipart body
+        // before the generic proxy can forward it.
+        var response = await _httpClient.PostAsync(endpoint, content, ct);
+
+        if (HandleUnauthorized(response)) return default;
+
+        if (response.IsSuccessStatusCode)
+        {
+            return await JsonSerializer.DeserializeAsync<TResponse>(
+                await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+        }
+
+        var errorMessage = await response.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(errorMessage))
+            errorMessage = "Ett fel uppstod vid uppladdning.";
+
+        throw new Exception(errorMessage.Trim('"'));
     }
 
     private bool HandleUnauthorized(HttpResponseMessage response)
@@ -103,40 +117,30 @@ public class ClientApiService : IApiService
         return false;
     }
 
-
-    public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
+    /// <summary>
+    /// Tries to extract a human-readable error message from a JSON error response.
+    /// Falls back to the raw string if the response is not valid JSON.
+    /// </summary>
+    private static string ExtractErrorMessage(string json)
     {
-        var response = await _httpClient.PostAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
-
-        if (HandleUnauthorized(response)) return default;
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var json = await response.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(json);
 
-            try
-            {
-                using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("message", out var messageProp))
+                return messageProp.GetString() ?? json;
 
-                if (doc.RootElement.TryGetProperty("message", out var messageProp))
-                    throw new Exception(messageProp.GetString());
+            if (doc.RootElement.TryGetProperty("detail", out var detailProp))
+                return detailProp.GetString() ?? json;
 
-                if (doc.RootElement.TryGetProperty("detail", out var detailProp))
-                    throw new Exception(detailProp.GetString());
-
-                if (doc.RootElement.TryGetProperty("title", out var titleProp))
-                    throw new Exception(titleProp.GetString());
-            }
-            catch (JsonException)
-            {
-                // inte giltig JSON, fall tillbaka till rå text
-            }
-
-            throw new Exception(json);
+            if (doc.RootElement.TryGetProperty("title", out var titleProp))
+                return titleProp.GetString() ?? json;
+        }
+        catch (JsonException)
+        {
+            // not valid JSON, fall back to raw text
         }
 
-        return await JsonSerializer.DeserializeAsync<TResponse>(
-            await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
+        return json;
     }
-
 }

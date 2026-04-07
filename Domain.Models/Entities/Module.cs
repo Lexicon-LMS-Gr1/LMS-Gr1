@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -23,4 +23,7 @@ public class Module
 
 	// Navigation Property that represents the relationship between Module and Activity
 	public ICollection<Activity> Activities { get; set; } = new List<Activity>();
+
+	// Navigation Property that represents the relationship between Module and Document
+	public ICollection<Document> Documents { get; set; } = new List<Document>();
 }

@@ -1,6 +1,7 @@
-﻿@namespace LMS.Blazor.Client.Components.CourseOverview
+@namespace LMS.Blazor.Client.Components.CourseOverview
 @using LMS.Shared.DTOs.Module
 @using LMS.Shared.DTOs.Activity
+@using LMS.Shared.DTOs.Document
 
 <div class="list-group-item py-3">
     <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
@@ -13,11 +14,28 @@
                 <i class="bi bi-calendar"></i>
                 @Activity.DateRange
             </p>
+
+            @if (!string.IsNullOrWhiteSpace(Activity.Description))
+            {
+                <p class="text-muted small mt-1 mb-0">@Activity.Description</p>
+            }
         </div>
 
     </div>
+
+    <!-- Activity-level documents for students -->
+    @if (Documents?.Any() == true)
+    {
+        <div class="mt-2">
+            <span class="small text-secondary fw-semibold">
+                <i class="bi bi-paperclip me-1"></i>Dokument
+            </span>
+            <DocumentList Documents="@Documents" CanDelete="false" />
+        </div>
+    }
 </div>
 
 @code {
     [Parameter] public ActivityDto Activity { get; set; }
+    [Parameter] public List<DocumentDto>? Documents { get; set; }
 }

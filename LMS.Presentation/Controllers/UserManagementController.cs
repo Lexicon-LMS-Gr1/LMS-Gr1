@@ -31,7 +31,7 @@ public class UserManagementController : ControllerBase
         var user = await _serviceManager.UserManagementService.GetUserByIdAsync(id);
 
         if (user == null)
-            return NotFound($"User with ID '{id}' not found.");
+            return NotFound($"Användare med id \"{id}\" kunde inte hittas.");
 
         return Ok(user);
     }
@@ -69,6 +69,10 @@ public class UserManagementController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid skapande av användare." });
+        }
     }
 
     [HttpPut("{id}")]
@@ -78,7 +82,7 @@ public class UserManagementController : ControllerBase
             return BadRequest(ModelState);
 
         if (id != dto.Id)
-            return BadRequest("ID in URL does not match ID in request body.");
+            return BadRequest("Id i URL:en matchar inte id i request body.");
 
         try
         {
@@ -97,6 +101,10 @@ public class UserManagementController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av användare." });
+        }
     }
 
     [HttpDelete("{id}")]
@@ -112,13 +120,17 @@ public class UserManagementController : ControllerBase
             var result = await _serviceManager.UserManagementService.DeleteUserAsync(id);
 
             if (!result)
-                return NotFound($"User with ID '{id}' not found.");
+                return NotFound($"Användare med id \"{id}\" kunde inte hittas.");
 
             return NoContent();
         }
         catch (InvalidOperationException ex)
         {
             return BadRequest(ex.Message);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid borttagning av användare." });
         }
     }
 }
