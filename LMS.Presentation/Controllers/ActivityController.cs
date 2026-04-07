@@ -27,7 +27,7 @@ public class ActivityController : ControllerBase
 
         try
         {
-            var result = await _serviceManager.ActivityService.UpdateActivityAsync2(dto);
+            var result = await _serviceManager.ActivityService.UpdateActivityAsync(dto);
             return Ok(result);
         }
         catch (ArgumentException ex)
