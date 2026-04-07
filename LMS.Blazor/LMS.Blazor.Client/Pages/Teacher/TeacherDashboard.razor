@@ -74,7 +74,7 @@
         {
             <OverviewSection Dashboard="dashboard"
                              OnOpenCourse="GoToCourse"
-                             OnEditCourse="OpenEditCourseFromOverview"
+                             OnEditCourse="OpenEditCourse"
                              OnDeleteCourse="AskDeleteCourse" />
 
 
@@ -321,6 +321,7 @@
             {
                 showEditCourseModal = false;
                 allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+                await LoadDashboard();
             }
             else
             {
@@ -473,6 +474,7 @@
             .ToList();
     }
 
+    /* -------- OPEN COURSE DETAILS -------- */
     private void GoToCourse(int id)
         {
             selectedCourseId = id;
@@ -523,22 +525,7 @@
             .ToList();
     }
 
-    private void OpenEditCourseFromOverview(CourseListDto course)
-    {
-        courseForm = new CourseUpdateDto
-        {
-            Id = course.Id,
-            Name = course.Name,
-            Description = course.Description,
-            StartDate = course.StartDate,
-            EndDate = course.EndDate
-        };
-
-        courseError = null;
-        showEditCourseModal = true;
-    }
-
-
+    /* -------- DELETE COURSE -------- */
     private void AskDeleteCourse(int id)
     {
         courseIdToDelete = id;
