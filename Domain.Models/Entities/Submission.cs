@@ -12,4 +12,12 @@ public class Submission
 
     public Activity Activity { get; set; }
     public ApplicationUser Student { get; set; }
+
+
+
+	public string? Feedback { get; set; }
+    public DateTime? FeedbackGivenAt { get; set; }
+
+	public string? FeedbackGivenByTeacherId { get; set; }
+	public ApplicationUser? FeedbackGivenByTeacher { get; set; }
 }

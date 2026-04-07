@@ -2,13 +2,15 @@
 @using LMS.Shared.DTOs.Module
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Document
+@using LMS.Shared.DTOs.Submission
 
 <div class="list-group-item py-3">
     <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
 
         <div>
-            <span class="fw-semibold ms-1">@Activity.Name</span>
             <span class="badge rounded-pill bg-primary bg-opacity-75">@Activity.ActivityTypeName</span>
+
+            <span class="mb-3 h5">@Activity.Name</span>
 
             <p class="text-muted mb-0">
                 <i class="bi bi-calendar"></i>
@@ -19,7 +21,39 @@
             {
                 <p class="text-muted small mt-1 mb-0">@Activity.Description</p>
             }
+            @if (Activity.ActivityTypeName == "Assignment") {
+                <div class="mt-1">
+                    @if (Submission != null) {
+                        <span class="badge bg-success">Inlämnad</span>
+
+                        @if (!string.IsNullOrWhiteSpace(Submission.Feedback)) {
+                            <div class="mt-2 p-2 border rounded bg-success-subtle">
+                                Feedback:
+                                <p class="mb-0 small">@Submission.Feedback</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mt-2 p-2 border rounded bg-info-subtle">
+                                <p class="mb-0 small">Väntar på rättning.</p>
+                            </div>
+                        }
+                    } else {
+                        <span class="badge bg-warning text-dark">Ej inlämnad</span>
+                    }
+                </div>
+            }
         </div>
+
+
+        @if (IsComplete)
+        {
+          <div class="d-flex align-items-center justify-content-end gap-2">
+                <i class="bi bi-check-circle fs-4"></i>
+                <span>Genomförd</span>
+            </div>
+            
+        }
 
     </div>
 
@@ -38,4 +72,24 @@
 @code {
     [Parameter] public ActivityDto Activity { get; set; }
     [Parameter] public List<DocumentDto>? Documents { get; set; }
+    [Parameter] public SubmissionDto? Submission { get; set; }
+
+    private bool IsComplete = false;
+
+    protected override void OnParametersSet()
+    {
+
+        if (Activity.ActivityTypeName == "Assignment")
+        {
+            if (Submission != null)
+                IsComplete = true;
+        } else
+        {
+            if (DateTime.Now > Activity.EndTime) {
+                IsComplete = true;
+            }
+        }
+
+    }
+
 }
