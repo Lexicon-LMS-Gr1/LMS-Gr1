@@ -46,6 +46,23 @@ namespace LMS.Infractructure.Repositories
 
             return await query.ToListAsync();
         }
+
+        public async Task<IEnumerable<Submission>> GetByActivityIdAsync(int activityId, bool trackChanges = false)
+        {
+            var query = _context.Submissions
+                .Include(s => s.Student)
+                .Include(s => s.Activity)
+                    .ThenInclude(a => a.Module)
+                        .ThenInclude(m => m.Course)
+                .Where(s => s.ActivityId == activityId)
+                .AsQueryable();
+
+            if (!trackChanges)
+                query = query.AsNoTracking();
+
+            return await query.ToListAsync();
+        }
+
     }
 
 }

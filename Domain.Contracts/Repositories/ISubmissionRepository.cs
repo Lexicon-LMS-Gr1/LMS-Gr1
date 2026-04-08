@@ -10,6 +10,8 @@ namespace Domain.Contracts.Repositories
 		Task<Submission?> GetByIdAsync(int id);
 
 		Task<IEnumerable<Submission>> GetByCourseIdAsync(int courseId, bool trackChanges = false);
-	}
+        Task<IEnumerable<Submission>> GetByActivityIdAsync(int activityId, bool trackChanges = false);
+
+    }
 
 }

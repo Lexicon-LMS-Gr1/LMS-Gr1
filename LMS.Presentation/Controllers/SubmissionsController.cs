@@ -56,5 +56,22 @@ public class SubmissionsController : ControllerBase
 		return Ok(result);
 	}
 
+    [HttpGet("activity/{activityId:int}")]
+    [Authorize(Roles = "Teacher")]
+    public async Task<ActionResult<List<SubmissionListItemDto>>> GetSubmissionsForActivity(int activityId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        var isTeacher = User.IsInRole("Teacher");
+        if (!isTeacher)
+            return Forbid();
+
+        var result = await _serviceManager.SubmissionService
+            .GetSubmissionsForActivityAsync(activityId, userId, isTeacher);
+
+        return Ok(result.ToList());
+    }
 
 }
