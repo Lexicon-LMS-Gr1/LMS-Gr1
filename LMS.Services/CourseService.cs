@@ -289,7 +289,32 @@ namespace LMS.Services
 			course.StartDate = courseUpdateDto.StartDate;
 			course.EndDate = courseUpdateDto.EndDate;
 
-            if (courseUpdateDto.TeacherId != null)
+            // TeacherId = null eller "" betyder: ta bort läraren
+            if (string.IsNullOrWhiteSpace(courseUpdateDto.TeacherId))
+            {
+                ApplicationUser? oldTeacher = null;
+
+                foreach (var user in course.Users)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    if (roles.Contains("Teacher"))
+                    {
+                        oldTeacher = user;
+                        break;
+                    }
+                }
+
+                if (oldTeacher != null)
+                {
+                    oldTeacher.CourseId = null;
+                    await _userManager.UpdateAsync(oldTeacher);
+                }
+
+                await _unitOfWork.CompleteAsync();
+                return CourseMapper.ToBasicCourseDto(course);
+            }
+
+            // Annars: sätt ny lärare
             {
                 ApplicationUser? oldTeacher = null;
 
@@ -316,12 +341,13 @@ namespace LMS.Services
                     oldTeacher.CourseId = null;
                     await _userManager.UpdateAsync(oldTeacher);
                 }
+
                 newTeacher.CourseId = course.Id;
                 await _userManager.UpdateAsync(newTeacher);
             }
 
             //_unitOfWork.CourseRepository.Update(course);
-			await _unitOfWork.CompleteAsync();
+            await _unitOfWork.CompleteAsync();
 
 			return CourseMapper.ToBasicCourseDto(course);
 		}
