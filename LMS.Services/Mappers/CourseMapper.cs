@@ -27,7 +27,7 @@ public static class CourseMapper
 			Name = course.Name,
 			Description = course.Description,
 			StartDate = course.StartDate,
-			EndDate = course.EndDate,
+			EndDate = course.EndDate
 		};
 	}
 

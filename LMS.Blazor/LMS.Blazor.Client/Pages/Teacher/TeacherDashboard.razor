@@ -253,6 +253,7 @@
     private TeacherDashboardDto? dashboard;
     private List<CourseListDto> allCourses = new();
     private List<StudentListDto> allStudents = new();
+    private List<UserDto> allTeachers = new();
     private string activeTab = "overview";
     private int? selectedCourseId;
     private bool showCreateCourse = false;
@@ -288,12 +289,14 @@
     /* ---------------- COURSE EDIT ---------------- */
     private void OpenEditCourse(CourseListDto course)
     {
+        var teacher = allTeachers.FirstOrDefault(t => t.CourseId == course.Id);
+
         courseForm = new CourseUpdateDto
         {
             Id = course.Id,
             Name = course.Name,
             Description = course.Description,
-            TeacherId = course.TeacherId,
+            TeacherId = teacher?.Id,
             StartDate = course.StartDate,
             EndDate = course.EndDate
         };
@@ -301,6 +304,9 @@
         courseError = null;
         showEditCourseModal = true;
     }
+
+
+
 
     private void CloseEditCourse()
     {
@@ -523,6 +529,10 @@
                 CourseId = u.CourseId,
                 CourseName = u.CourseName ?? ""
             })
+            .ToList();
+
+        allTeachers = allUsers
+            .Where(u => u.Role == "Teacher")
             .ToList();
     }
 
