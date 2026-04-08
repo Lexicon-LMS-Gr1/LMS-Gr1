@@ -15,6 +15,7 @@ namespace LMS.Shared.DTOs.TeacherDashboard
     {
         public int Id { get; set; }
         public string Name { get; set; } = null!;
+        public string Description { get; set; } = string.Empty;
         public int StudentCount { get; set; }
         public int ModuleCount { get; set; }
         public DateTime StartDate { get; set; }

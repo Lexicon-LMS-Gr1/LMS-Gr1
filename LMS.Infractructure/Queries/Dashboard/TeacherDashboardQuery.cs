@@ -50,6 +50,7 @@ public class TeacherDashboardQuery : ITeacherDashboardQuery
                 {
                     Id = c.Id,
                     Name = c.Name,
+                    Description = c.Description,
                     StartDate = c.StartDate,
                     EndDate = c.EndDate,
                     ModuleCount = c.Modules.Count,
