@@ -8,8 +8,7 @@
 <div class="card shadow-sm border-0">
     <div class="card-body p-4">
 
-        <h1 class="h3 fw-bold mb-3">Skapa ny kurs</h1>
-        <p class="text-muted mb-4">Fyll i uppgifterna för kursen och lägg till moduler (valfritt).</p>
+        <h1 class="h3 fw-bold mb-3">Skapa ny kurs</h1>       
 
         @if (!string.IsNullOrWhiteSpace(errorMessage))
         {
@@ -63,7 +62,7 @@
             <hr class="my-4" />
 
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="h5 mb-0">Moduler</h2>
+                <h2 class="h5 mb-0">Moduler (valfritt)</h2>
                 <button type="button" class="btn btn-outline-primary btn-sm" @onclick="AddModule">
                     Lägg till modul
                 </button>
@@ -71,7 +70,7 @@
 
             @if (moduleItems.Count == 0)
             {
-                <p class="text-muted">Inga moduler tillagda ännu.</p>
+                <p class="text-muted">Inga moduler tillagda.</p>
             }
 
             @for (int i = 0; i < moduleItems.Count; i++)
