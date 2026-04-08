@@ -1,0 +1,75 @@
+﻿@using LMS.Shared.DTOs.Submission
+@inject IApiService ApiService
+
+@if (Show && Submission != null)
+{
+    <div class="modal-backdrop fade show"></div>
+
+    <div class="modal d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Feedback till @Submission.StudentName</h5>
+                    <button type="button" class="btn-close" @onclick="OnClose"></button>
+                </div>
+
+                <div class="modal-body">
+                    <textarea class="form-control"
+                              rows="5"
+                              @bind="feedbackText"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="OnClose">Avbryt</button>
+
+                    <button class="btn btn-primary"
+                            @onclick="SaveFeedback"
+                            disabled="@isSaving">
+                        @(isSaving ? "Sparar..." : "Spara")
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public SubmissionListItemDto? Submission { get; set; }
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private string feedbackText = "";
+    private bool isSaving = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Submission != null)
+        {
+            var full = await ApiService.GetAsync<SubmissionDto>(
+                $"api/submissions/{Submission.SubmissionId}");
+
+            feedbackText = full?.Feedback ?? "";
+        }
+    }
+
+    private async Task SaveFeedback()
+    {
+        if (Submission == null)
+            return;
+
+        isSaving = true;
+
+        await ApiService.PutAsync<object, object>(
+            $"/api/submissions/{Submission.SubmissionId}/feedback",
+            new { Feedback = feedbackText });
+
+        isSaving = false;
+
+        await OnSaved.InvokeAsync();
+    }
+
+
+}
