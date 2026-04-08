@@ -200,6 +200,21 @@ public class UserManagementService : IUserManagementService
         }
     }
 
+    public async Task<IEnumerable<UserDto>> GetTeachersAsync()
+    {
+        var teachers = await _userManager.GetUsersInRoleAsync("Teacher");
+
+        var result = new List<UserDto>();
+
+        foreach (var teacher in teachers)
+        {
+            result.Add(MapToDto(teacher, "Teacher"));
+        }
+
+        return result;
+    }
+
+
 
     private static UserDto MapToDto(ApplicationUser user, string role)
     {
