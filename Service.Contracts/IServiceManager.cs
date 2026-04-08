@@ -12,4 +12,6 @@ public interface IServiceManager
     IDocumentService DocumentService { get; }
     IStudentAssignmentService StudentAssignmentService { get; }
     IProgressService ProgressService { get; }
+
+	ISubmissionService SubmissionService { get; }
 }

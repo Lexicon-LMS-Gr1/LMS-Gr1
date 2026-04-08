@@ -2,6 +2,7 @@
 @using LMS.Shared.DTOs.Activity
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Module
+@using LMS.Shared.DTOs.Submission
 
 <div class="list-group-item list-group-item">
     <div class="d-flex justify-content-between align-items-start @GetHeaderSpacingClass()"
@@ -48,7 +49,9 @@
         <div class="list-group list-group-flush border rounded">
             @foreach (var activity in Module.Activities)
             {
+                var submission = Submissions?.FirstOrDefault(s => s.ActivityId == activity.Id);
                 <ActivityItem Activity="activity"
+                              Submission="submission"
                               Documents="@GetActivityDocs(activity.Id)" />
             }
 
@@ -66,6 +69,7 @@
     [Parameter] public ModuleDto Module { get; set; }
     [Parameter] public List<DocumentDto>? ModuleDocuments { get; set; }
     [Parameter] public Dictionary<int, List<DocumentDto>>? ActivityDocuments { get; set; }
+    [Parameter] public List<SubmissionDto>? Submissions { get; set; }
 
     private bool isExpanded;
 

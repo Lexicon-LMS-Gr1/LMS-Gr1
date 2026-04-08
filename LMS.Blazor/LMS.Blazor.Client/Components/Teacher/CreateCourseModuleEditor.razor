@@ -32,13 +32,13 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Startdatum</label>
-                    <InputDate class="form-control" @bind-Value="Module.StartDate" />
+                    <InputDate class="form-control" @bind-Value="Module.StartDate" ParsingErrorMessage="Startdatum måste vara ett giltigt datum." />
                     <ValidationMessage For="() => Module.StartDate" />
                 </div>
 
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Slutdatum</label>
-                    <InputDate class="form-control" @bind-Value="Module.EndDate" />
+                    <InputDate class="form-control" @bind-Value="Module.EndDate" ParsingErrorMessage="Slutdatum måste vara ett giltigt datum." />
                     <ValidationMessage For="() => Module.EndDate" />
                 </div>
             </div>

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using LMS.Shared.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace LMS.Shared.DTOs.Activity;
 
@@ -14,10 +15,13 @@ public class UpdateActivityDto
 	public string Description { get; set; } = string.Empty;
 
 	[Required(ErrorMessage = "Starttid saknas.")]
-	public DateTime StartTime { get; set; }
+    [DateLessThanOrEqualToOtherDate(nameof(EndTime), ErrorMessage = "Starttidpunkt får inte vara senare än sluttidpunkt.")]
+    public DateTime StartTime { get; set; }
 
 	[Required(ErrorMessage = "Sluttid saknas.")]
-	public DateTime EndTime { get; set; }
+    [DateGreatherThanOrEqualToOtherDate(nameof(StartTime), ErrorMessage = "Sluttidpunkt får inte vara tidigare än starttidpunkt.")]
+    public DateTime EndTime { get; set; }
+
 	public DateTime? DueDate { get; set; }
 }
 
