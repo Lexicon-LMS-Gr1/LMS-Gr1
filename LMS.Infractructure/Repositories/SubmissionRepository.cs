@@ -16,7 +16,17 @@ namespace LMS.Infractructure.Repositories
             _context = context;
         }
 
-		public async Task<Submission?> GetByIdAsync(int id)
+        public async Task<IEnumerable<Submission>> GetAllAsync()
+        {
+            return await _context.Submissions
+                .Include(s => s.Student)
+                .Include(s => s.Activity)
+                    .ThenInclude(a => a.Module)
+                        .ThenInclude(m => m.Course)
+                .ToListAsync();
+        }
+
+        public async Task<Submission?> GetByIdAsync(int id)
 		{
 			return await _context.Submissions.Include(s => s.FeedbackGivenByTeacher).FirstOrDefaultAsync(s => s.Id == id);
 		}

@@ -55,8 +55,10 @@ public class DataSeedHostingService : IHostedService
 			var activityTypes = await SeedActivityTypesAsync(context);
 			var courses = await SeedCoursesAsync(context);
 			await SeedUsersModulesAndActivitiesAsync(context, courses, activityTypes);
+            await SeedSubmissionsAsync(context);
 
-			logger.LogInformation("Seed complete");
+
+            logger.LogInformation("Seed complete");
 		} catch (Exception ex) {
 			logger.LogError(ex, "Data seed failed");
 			throw;
@@ -393,4 +395,51 @@ public class DataSeedHostingService : IHostedService
 
         return activities;
     }
+
+    private async Task SeedSubmissionsAsync(ApplicationDbContext context)
+    {
+        if (await context.Submissions.AnyAsync())
+            return;
+
+        var faker = new Faker("sv");
+
+        var assignments = await context.Activities
+            .Where(a => a.ActivityType.Name == "Assignment")
+            .Include(a => a.Module)
+                .ThenInclude(m => m.Course)
+            .ToListAsync();
+
+        var students = await context.Users
+            .Where(u => u.CourseId != null && u.Email.Contains("student"))
+            .ToListAsync();
+
+        var submissions = new List<Submission>();
+
+        foreach (var activity in assignments)
+        {
+            int count = faker.Random.Int(1, 3);
+
+            for (int i = 0; i < count; i++)
+            {
+                var student = faker.PickRandom(students);
+
+                submissions.Add(new Submission
+                {
+                    ActivityId = activity.Id,
+                    StudentId = student.Id,
+                    FilePath = "uploads/test.pdf",
+                    FileName = "test.pdf",
+                    Comment = faker.Lorem.Sentence(),
+                    SubmittedAt = DateTime.UtcNow.AddDays(-faker.Random.Int(1, 10)),
+                    Feedback = null,
+                    FeedbackGivenAt = null,
+                    FeedbackGivenByTeacherId = null
+                });
+            }
+        }
+
+        context.Submissions.AddRange(submissions);
+        await context.SaveChangesAsync();
+    }
+
 }

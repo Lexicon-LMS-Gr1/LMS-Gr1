@@ -1,0 +1,116 @@
+﻿@page "/teacher/submissions"
+@using LMS.Blazor.Client.Components.Teacher
+@using LMS.Shared.DTOs.Submission
+@inject IApiService ApiService
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0">
+            <i class="bi bi-inboxes text-primary me-2"></i>
+            Alla inlämningar
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        @if (isLoading)
+        {
+            <p class="p-3">Laddar...</p>
+        }
+        else if (items == null || !items.Any())
+        {
+            <div class="alert alert-info m-3">Inga inlämningar hittades.</div>
+        }
+        else
+        {
+            <table class="table table-hover align-middle mb-0 table-lg">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Student</th>
+                        <th>Kurs</th>
+                        <th>Modul</th>
+                        <th>Aktivitet</th>
+                        <th>Inlämnad</th>
+                        <th class="text-end pe-4">Feedback</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var s in items)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <strong>@s.StudentName</strong><br />
+                                <span class="text-muted small">@s.StudentEmail</span>
+                            </td>
+
+                            <td>@s.CourseName</td>
+                            <td>@s.ModuleName</td>
+                            <td>@s.ActivityName</td>
+
+                            <td>@s.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</td>
+
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        @onclick="() => OpenFeedbackModal(s)">
+                                    @if (s.HasFeedback)
+                                    {
+                                        <i class="bi bi-chat-dots-fill fs-5"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-chat-dots fs-5"></i>
+                                    }
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<FeedbackModal Submission="selectedSubmission"
+               Show="showFeedbackModal"
+               OnClose="CloseFeedbackModal"
+               OnSaved="OnFeedbackSaved" />
+
+@code {
+    private bool isLoading = true;
+    private List<SubmissionListItemDto>? items;
+
+    private SubmissionListItemDto? selectedSubmission;
+    private bool showFeedbackModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+
+        items = await ApiService.GetAsync<List<SubmissionListItemDto>>("api/submissions");
+
+        isLoading = false;
+    }
+
+    private void OpenFeedbackModal(SubmissionListItemDto submission)
+    {
+        selectedSubmission = submission;
+        showFeedbackModal = true;
+    }
+
+    private void CloseFeedbackModal()
+    {
+        showFeedbackModal = false;
+        selectedSubmission = null;
+    }
+
+    private void OnFeedbackSaved()
+    {
+        if (selectedSubmission != null)
+        {
+            selectedSubmission.HasFeedback = true;
+            selectedSubmission.FeedbackGivenAt = DateTime.UtcNow;
+        }
+
+        showFeedbackModal = false;
+    }
+}

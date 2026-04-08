@@ -15,6 +15,7 @@ namespace LMS.Shared.DTOs.Submission
         public string CourseName { get; set; } = null!;
         public string ModuleName { get; set; } = null!;
         public string ActivityName { get; set; } = null!;
+        public int ActivityId { get; set; }
 
         public DateTime SubmittedAt { get; set; }
 

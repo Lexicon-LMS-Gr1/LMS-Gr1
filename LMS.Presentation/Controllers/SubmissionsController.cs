@@ -1,4 +1,5 @@
-﻿using LMS.Shared.DTOs.Submission;
+﻿using LMS.Shared.DTOs.Feedback;
+using LMS.Shared.DTOs.Submission;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
@@ -72,6 +73,29 @@ public class SubmissionsController : ControllerBase
             .GetSubmissionsForActivityAsync(activityId, userId, isTeacher);
 
         return Ok(result.ToList());
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Teacher")]
+    public async Task<ActionResult<List<SubmissionListItemDto>>> GetAllSubmissions()
+    {
+        var result = await _serviceManager.SubmissionService.GetAllSubmissionsAsync();
+        return Ok(result.ToList());
+    }
+
+    [HttpPut("{id:int}/feedback")]
+    [Authorize(Roles = "Teacher")]
+    public async Task<IActionResult> GiveFeedback(int id, [FromBody] FeedbackDto dto)
+    {
+        var teacherId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(teacherId))
+            return Unauthorized();
+
+        await _serviceManager.SubmissionService
+            .GiveFeedbackAsync(id, dto.Feedback, teacherId);
+
+        return Ok(new { success = true });
+
     }
 
 }
