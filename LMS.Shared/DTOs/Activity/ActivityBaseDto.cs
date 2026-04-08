@@ -31,7 +31,7 @@ namespace LMS.Shared.DTOs.Activity
         public DateTime? DueDate { get; set; }
 
         [Required(ErrorMessage = "Aktivitetstyp måste anges.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Aktivitets-id måste vara ett positivt tal.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Aktivitetstyp måste väljas.")] // (Inte bra meddelande: "Aktivitets-id måste vara ett positivt tal.")
         public int ActivityTypeId { get; set; }
     }
 }

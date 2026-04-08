@@ -207,7 +207,7 @@
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit activity</h5>
+                    <h5 class="modal-title">Redigera aktivitet</h5>
                     <button type="button" class="btn-close" @onclick="CloseActivityModal"></button>
                 </div>
 
@@ -224,21 +224,25 @@
                         <div class="mb-3">
                             <label class="form-label">Namn</label>
                             <InputText class="form-control" @bind-Value="activityForm.Name" />
+                            <ValidationMessage For="() => activityForm.Name" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Beskrivning</label>
                             <InputTextArea class="form-control" @bind-Value="activityForm.Description" />
+                            <ValidationMessage For="() => activityForm.Description" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Start</label>
-                            <InputDate class="form-control" @bind-Value="activityForm.StartTime" />
+                            <InputDate class="form-control" @bind-Value="activityForm.StartTime" ParsingErrorMessage="Start måste vara ett giltigt datum." />
+                            <ValidationMessage For="() => activityForm.StartTime" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Slut</label>
-                            <InputDate class="form-control" @bind-Value="activityForm.EndTime" />
+                            <InputDate class="form-control" @bind-Value="activityForm.EndTime" ParsingErrorMessage="Slut måste vara ett giltigt datum." />
+                            <ValidationMessage For="() => activityForm.EndTime" />
                         </div>
 
                         <div class="mb-3">
@@ -277,7 +281,7 @@
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit module</h5>
+                    <h5 class="modal-title">Redigera modul</h5>
                     <button type="button" class="btn-close" @onclick="CloseModuleModal"></button>
                 </div>
 
@@ -293,21 +297,25 @@
                         <div class="mb-3">
                             <label class="form-label">Namn</label>
                             <InputText class="form-control" @bind-Value="moduleForm.Name" />
+                            <ValidationMessage For="() => moduleForm.Name" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Beskrivning</label>
                             <InputTextArea class="form-control" @bind-Value="moduleForm.Description" />
+                            <ValidationMessage For="() => moduleForm.Description" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Startdatum</label>
-                            <InputDate class="form-control" @bind-Value="moduleForm.StartDate" />
+                            <InputDate class="form-control" @bind-Value="moduleForm.StartDate" ParsingErrorMessage="Startdatum måste vara ett giltigt datum." />
+                            <ValidationMessage For="() => moduleForm.StartDate" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Slutdatum</label>
-                            <InputDate class="form-control" @bind-Value="moduleForm.EndDate" />
+                            <InputDate class="form-control" @bind-Value="moduleForm.EndDate" ParsingErrorMessage="Slutdatum måste vara ett giltigt datum." />
+                            <ValidationMessage For="() => moduleForm.EndDate" />
                         </div>
                     </div>
 
