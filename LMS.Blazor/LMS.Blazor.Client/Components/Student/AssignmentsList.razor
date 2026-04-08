@@ -25,7 +25,8 @@
                         <th class="ps-4">Namn</th>
                         <th>Deadline</th>
                         <th>Status</th>
-                        <th class="text-end pe-4">Åtgärder</th>
+                        <th class="text-center">Åtgärder</th>
+                        <th class="text-center">Feedback</th>
                     </tr>
                 </thead>
 
@@ -54,20 +55,37 @@
                                 }
                             </td>
 
-                            <td class="text-end pe-4">
+                            <td class="text-center">
                                 @if (!a.IsSubmitted)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary">
+                                    <button class="btn btn-sm btn-outline-primary" style="width:130px;">
                                         <span class="bi bi-upload me-1"></span>
                                         Lämna in
                                     </button>
                                 }
                                 else
                                 {
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>
+                                    <button class="btn btn-sm btn-outline-secondary" style="width:130px;" disabled>
                                         <span class="bi bi-check2-circle me-1"></span>
                                         Redan inlämnad
                                     </button>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (a.HasFeedback)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            @onclick="() => OpenFeedbackModal(a)">
+                                        <i class="bi bi-chat-dots-fill fs-5"></i>
+                                    </button>
+                                }
+                                else if (a.IsSubmitted)
+                                {
+                                    <span class="text-muted small">Ingen feedback</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">—</span>
                                 }
                             </td>
                         </tr>
@@ -75,11 +93,26 @@
                 </tbody>
             </table>
         }
+        <StudentFeedbackModal Assignment="selectedAssignment" Show="showFeedbackModal" OnClose="CloseFeedbackModal" />
     </div>
 </div>
 
 @code {
     private List<StudentAssignmentDto>? assignments;
+    private StudentAssignmentDto? selectedAssignment;
+    private bool showFeedbackModal = false;
+
+    private void OpenFeedbackModal(StudentAssignmentDto assignment)
+    {
+        selectedAssignment = assignment;
+        showFeedbackModal = true;
+    }
+
+    private void CloseFeedbackModal()
+    {
+        showFeedbackModal = false;
+        selectedAssignment = null;
+    }
 
     protected override async Task OnInitializedAsync()
     {
