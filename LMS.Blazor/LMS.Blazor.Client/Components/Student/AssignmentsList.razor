@@ -24,7 +24,7 @@
                     <tr>
                         <th class="ps-4">Namn</th>
                         <th>Deadline</th>
-                        <th>Status</th>
+                        <th class="text-center">Status</th>
                         <th class="text-center">Åtgärder</th>
                         <th class="text-center">Feedback</th>
                     </tr>
@@ -40,7 +40,7 @@
                                 @(a.DueDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")
                             </td>
 
-                            <td>
+                            <td class="text-center">
                                 @if (a.IsSubmitted)
                                 {
                                     <span class="badge bg-success">Inlämnad</span>
