@@ -19,49 +19,99 @@ namespace LMS.Services
 		private readonly IUnitOfWork _unitOfWork;
 		private readonly IProgressService _progressService;
         private readonly IUserManagementService _userManagementService;
+        private readonly UserManager<ApplicationUser> _userManager;
+
         public CourseService(
 			IUnitOfWork unitOfWork,
 			IProgressService progressService,
-			IUserManagementService userManagementService)
+			IUserManagementService userManagementService,
+            UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _progressService = progressService;
             _userManagementService = userManagementService;
+			_userManager = userManager;
         }
 
         public async Task<IEnumerable<CourseListDto>> GetAllCoursesListAsync()
-		{
-			var courses = await _unitOfWork.CourseRepository.GetCoursesForListAsync();
+        {
+            var courses = await _unitOfWork.CourseRepository.GetCoursesForListAsync();
 
-			return courses.Select(CourseMapper.ToCourseListDto);
-		}
+            var result = new List<CourseListDto>();
 
-		public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
+            foreach (var course in courses)
+            {
+                int studentCount = 0;
+                ApplicationUser? teacher = null;
+
+                foreach (var user in course.Users)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+
+                    if (roles.Contains("Student"))
+                        studentCount++;
+
+                    if (roles.Contains("Teacher"))
+                        teacher = user;
+                }
+
+                result.Add(new CourseListDto
+                {
+                    Id = course.Id,
+                    Name = course.Name,
+                    Description = course.Description,
+                    StartDate = course.StartDate,
+                    EndDate = course.EndDate,
+                    StudentCount = studentCount,
+                    ModuleCount = course.Modules.Count,
+                    TeacherId = teacher?.Id
+                });
+            }
+
+
+            return result;
+        }
+
+
+
+        public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
 		{
 			var courses = await _unitOfWork.CourseRepository.GetAllAsync();
 
 			return courses.Select(CourseMapper.ToBasicCourseDto);
 		}
 
-		public async Task<CourseDto?> GetCourseForUserAsync(string userId)
-		{
-			var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(userId);
+        public async Task<CourseDto?> GetCourseForUserAsync(string userId)
+        {
+            var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(userId);
 
-			if (course == null)
-				return null;
+            if (course == null)
+                return null;
 
-			var dto = CourseMapper.ToDetailedCourseDto(course);
+            var dto = CourseMapper.ToDetailedCourseDto(course);
 
-			dto.Progress = await _progressService.GetCourseProgressAsync(userId, course.Id);
-			foreach (var module in dto.Modules)
-			{
-				module.Progress = await _progressService.GetModuleProgressAsync(userId, module.Id);
-			}
+            // Lägg till läraren
+            foreach (var user in course.Users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("Teacher"))
+                {
+                    dto.TeacherName = $"{user.FirstName} {user.LastName}";
+                    break;
+                }
+            }
 
-			return dto;
-		}
+            dto.Progress = await _progressService.GetCourseProgressAsync(userId, course.Id);
+            foreach (var module in dto.Modules)
+            {
+                module.Progress = await _progressService.GetModuleProgressAsync(userId, module.Id);
+            }
 
-		public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
+            return dto;
+        }
+
+
+        public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
 		{
 			// DTOn får ej vara null + Grundläggande validering av kursens egna fält
 			if (courseCreateDto is null)
@@ -156,15 +206,34 @@ namespace LMS.Services
 			_unitOfWork.CourseRepository.Create(course);
 
 			await _unitOfWork.CompleteAsync();
+            string teacherName = "";
+            if (!string.IsNullOrWhiteSpace(courseCreateDto.TeacherId))
+            {
+                var teacher = await _userManager.FindByIdAsync(courseCreateDto.TeacherId);
 
-			// Returnera DTO med ev. moduler - mappning från entitet till DTO
-			return new CourseDto
+                if (teacher == null)
+                    throw new ArgumentException("Läraren kunde inte hittas.");
+
+                if (!await _userManager.IsInRoleAsync(teacher, "Teacher"))
+                    throw new ArgumentException("Vald användare är inte lärare.");
+
+
+                teacher.CourseId = course.Id;
+
+                await _userManager.UpdateAsync(teacher);
+                teacherName = $"{teacher.FirstName} {teacher.LastName}";
+
+            }
+
+
+            // Returnera DTO med ev. moduler - mappning från entitet till DTO
+            return new CourseDto
 			{
 				Id = course.Id,
 				Name = course.Name,
 				Description = course.Description,
-				StartDate = course.StartDate,
-				EndDate = course.EndDate,
+                TeacherName = teacherName,
+                StartDate = course.StartDate,
 
 				// TODO: Om listan blir stor i framtiden: pagination / lazy loading
 				Modules = course.Modules.Select(m => new ModuleDto
@@ -180,9 +249,9 @@ namespace LMS.Services
 
 		public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
 		{
-			var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseUpdateDto.Id);
+            var course = await _unitOfWork.CourseRepository.GetCourseById(courseUpdateDto.Id);
 
-			if (course == null)
+            if (course == null)
 				throw new Exception("Kursen kunde inte hittas.");
 
             if (string.IsNullOrWhiteSpace(courseUpdateDto.Name))
@@ -194,12 +263,17 @@ namespace LMS.Services
             if (courseUpdateDto.StartDate > courseUpdateDto.EndDate)
                 throw new Exception("Startdatum får inte vara senare än slutdatum.");
 
-            if (course.Modules.Count != 0)
+
+            if (course.Modules.Count != 0 &&
+                (courseUpdateDto.StartDate != course.StartDate ||
+                 courseUpdateDto.EndDate != course.EndDate))
             {
+                throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
+            }
+          
                 // Tillåt inte ändring av kursdatum om kursen innehåller moduler, för moduldatumen kan då
                 // hamna utanför kursdatumen.
-                throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
-
+               
                 /*
                 // Alternativt: Validera varje modul individuellt.
                 foreach (var module in course.Modules)
@@ -209,15 +283,71 @@ namespace LMS.Services
                         throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
                 }
                 */
-            }
 
             course.Name = courseUpdateDto.Name.Trim();
 			course.Description = courseUpdateDto.Description.Trim();
 			course.StartDate = courseUpdateDto.StartDate;
 			course.EndDate = courseUpdateDto.EndDate;
 
-			_unitOfWork.CourseRepository.Update(course);
-			await _unitOfWork.CompleteAsync();
+            // TeacherId = null eller "" betyder: ta bort läraren
+            if (string.IsNullOrWhiteSpace(courseUpdateDto.TeacherId))
+            {
+                ApplicationUser? oldTeacher = null;
+
+                foreach (var user in course.Users)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    if (roles.Contains("Teacher"))
+                    {
+                        oldTeacher = user;
+                        break;
+                    }
+                }
+
+                if (oldTeacher != null)
+                {
+                    oldTeacher.CourseId = null;
+                    await _userManager.UpdateAsync(oldTeacher);
+                }
+
+                await _unitOfWork.CompleteAsync();
+                return CourseMapper.ToBasicCourseDto(course);
+            }
+
+            // Annars: sätt ny lärare
+            {
+                ApplicationUser? oldTeacher = null;
+
+                foreach (var user in course.Users)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    if (roles.Contains("Teacher"))
+                    {
+                        oldTeacher = user;
+                        break;
+                    }
+                }
+
+                var newTeacher = await _userManager.FindByIdAsync(courseUpdateDto.TeacherId);
+
+                if (newTeacher == null)
+                    throw new ArgumentException("Läraren kunde inte hittas.");
+
+                if (!await _userManager.IsInRoleAsync(newTeacher, "Teacher"))
+                    throw new ArgumentException("Vald användare är inte lärare.");
+
+                if (oldTeacher != null)
+                {
+                    oldTeacher.CourseId = null;
+                    await _userManager.UpdateAsync(oldTeacher);
+                }
+
+                newTeacher.CourseId = course.Id;
+                await _userManager.UpdateAsync(newTeacher);
+            }
+
+            //_unitOfWork.CourseRepository.Update(course);
+            await _unitOfWork.CompleteAsync();
 
 			return CourseMapper.ToBasicCourseDto(course);
 		}
@@ -262,12 +392,27 @@ namespace LMS.Services
 			});
 		}
 
-		public async Task<CourseDto?> GetCourseByIdAsync(int courseId)
-		{
-			var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
-			if (course == null)
-				return null;
-			return CourseMapper.ToDetailedCourseDto(course);
-		}
-	}
+        public async Task<CourseDto?> GetCourseByIdAsync(int courseId)
+        {
+            var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
+            if (course == null)
+                return null;
+
+            var dto = CourseMapper.ToDetailedCourseDto(course);
+
+            foreach (var user in course.Users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("Teacher"))
+                {
+                    dto.TeacherName = $"{user.FirstName} {user.LastName}";
+                    break;
+                }
+            }
+
+            return dto;
+        }
+
+
+    }
 }
