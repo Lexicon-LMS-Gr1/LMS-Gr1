@@ -36,7 +36,15 @@ namespace LMS.Services
                     Name = a.Name,
                     DueDate = a.DueDate,
                     IsSubmitted = submission != null,
-                    IsLate = submission == null && now > a.DueDate
+                    IsLate = submission == null && now > a.DueDate,
+
+                    SubmissionId = submission?.Id,
+                    HasFeedback = !string.IsNullOrWhiteSpace(submission?.Feedback),
+                    Feedback = submission?.Feedback,
+                    FeedbackGivenAt = submission?.FeedbackGivenAt,
+                    FeedbackGivenByTeacherName = submission?.FeedbackGivenByTeacher != null
+            ? $"{submission.FeedbackGivenByTeacher.FirstName} {submission.FeedbackGivenByTeacher.LastName}"
+            : null
                 };
             }).ToList();
         }

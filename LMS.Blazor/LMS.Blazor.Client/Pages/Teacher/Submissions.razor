@@ -102,8 +102,9 @@
     protected override async Task OnInitializedAsync()
     {
         isLoading = true;
-
-        items = await ApiService.GetAsync<List<SubmissionListItemDto>>("api/submissions");
+        
+        items = await ApiService.GetAsync<List<SubmissionListItemDto>>("api/submissions")
+            ?? new List<SubmissionListItemDto>();
 
         // Extract unique course names
         courseNames = items

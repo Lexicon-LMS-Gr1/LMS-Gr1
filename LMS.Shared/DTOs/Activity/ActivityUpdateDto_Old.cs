@@ -1,10 +1,8 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace LMS.Shared.DTOs.Activity;
 
-public class ActivityUpdateDto : ActivityBaseDto
+public class ActivityUpdateDto_Old : ActivityBaseDto
 {
-    [Required(ErrorMessage = "Aktivitets-id måste anges.")]
+    //[Required(ErrorMessage = "Aktivitets-id måste anges.")]
     public int Id { get; set; }
 
     //[Required(ErrorMessage = "Modul-id måste anges.")]

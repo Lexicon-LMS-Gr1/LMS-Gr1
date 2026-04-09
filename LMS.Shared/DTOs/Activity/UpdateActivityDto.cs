@@ -1,27 +1,18 @@
-﻿using LMS.Shared.Validation;
-using System.ComponentModel.DataAnnotations;
+﻿namespace LMS.Shared.DTOs.Activity;
 
-namespace LMS.Shared.DTOs.Activity;
-
-public class UpdateActivityDto
+public class UpdateActivityDto : ActivityBaseDto
 {
-	public int Id { get; set; }
-	[Required(ErrorMessage = "Namn saknas.")]
-	[StringLength(100, ErrorMessage = "Namnet får vara max 100 tecken.")]
-	public string Name { get; set; } = string.Empty;
+    public int Id { get; set; }
 
-	[Required(ErrorMessage = "Beskrivning saknas")]
-	[StringLength(1000, ErrorMessage = "Beskrivningen får vara max 1000 tecken.")]
-	public string Description { get; set; } = string.Empty;
+    //[Required(ErrorMessage = "Modul-id måste anges.")]
+    //[Range(1, int.MaxValue, ErrorMessage = "Modul-id ska vara ett positivt tal.")]
+    //public int ModuleId { get; set; }
 
-	[Required(ErrorMessage = "Starttid saknas.")]
-    [DateLessThanOrEqualToOtherDate(nameof(EndTime), ErrorMessage = "Starttidpunkt får inte vara senare än sluttidpunkt.")]
-    public DateTime StartTime { get; set; }
-
-	[Required(ErrorMessage = "Sluttid saknas.")]
-    [DateGreatherThanOrEqualToOtherDate(nameof(StartTime), ErrorMessage = "Sluttidpunkt får inte vara tidigare än starttidpunkt.")]
-    public DateTime EndTime { get; set; }
-
-	public DateTime? DueDate { get; set; }
+    // Business rules validated in service layer:
+    // 1. StartTime must be >= Module.StartDate
+    // 2. EndTime must be <= Module.EndDate
+    // 3. EndTime must be > StartTime
+    // 4. Activity times must NOT overlap with other activities in the same module (excluding itself)
+    // 5. DueDate (if provided) should be <= EndTime
+    // 6. ActivityTypeId must exist in ActivityType table
 }
-

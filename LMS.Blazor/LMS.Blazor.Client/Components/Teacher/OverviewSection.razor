@@ -47,17 +47,17 @@
                         <!-- Right side -->
                         <div class="d-flex align-items-center gap-2">
 
-                            <button class="btn btn-sm btn-outline-secondary"
+                            <button class="btn btn-sm btn-outline-secondary me-2"
                                     @onclick="() => OnOpenCourse.InvokeAsync(course.Id)">
                                 <i class="bi bi-eye"></i>
                             </button>
 
-                            <button class="btn btn-sm btn-outline-primary"
+                            <button class="btn btn-sm btn-outline-primary me-2"
                                     @onclick="() => OnEditCourse.InvokeAsync(course)">
                                 <i class="bi bi-pencil-fill"></i>
                             </button>
 
-                            <button class="btn btn-sm btn-outline-danger"
+                            <button class="btn btn-sm btn-outline-danger me-2"
                                     @onclick="() => OnDeleteCourse.InvokeAsync(course.Id)">
                                 <i class="bi bi-trash"></i>
                             </button>
@@ -85,7 +85,7 @@
                 {
                     <div class="list-group-item">
                         <div class="d-flex align-items-center gap-2 mb-1">
-                            <span class="badge @GetBadgeColor(a.Type)">
+                            <span class="badge @BadgeHelper.GetBadgeColor(a.Type)">
                                 @a.Type
                             </span>
                             <span class="fw-semibold">@a.Description</span>
@@ -116,7 +116,7 @@
                 {
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         <div>
-                            <span class="badge @GetBadgeColor(u.Type) me-2">@u.Type</span>
+                            <span class="badge @BadgeHelper.GetBadgeColor(u.Type) me-2">@u.Type</span>
 
                             <strong>@u.Name</strong><br />
                             <span class="text-muted small">@u.CourseName</span>
@@ -133,18 +133,3 @@
     </div>
 
 </div>
-
-@code {
-    private string GetBadgeColor(string type)
-    {
-        return type switch
-        {
-            "Lecture" => "bg-primary",
-            "Workshop" => "bg-warning text-dark",
-            "Assignment" => "bg-info text-dark",
-            "Exam" => "bg-danger",
-            "Seminar" => "bg-success",
-            _ => "bg-secondary"
-        };
-    }
-}
