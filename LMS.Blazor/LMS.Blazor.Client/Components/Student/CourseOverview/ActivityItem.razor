@@ -8,7 +8,9 @@
     <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
 
         <div>
-            <span class="badge rounded-pill bg-primary bg-opacity-75">@Activity.ActivityTypeName</span>
+            <span class="badge rounded-pill @BadgeHelper.GetBadgeColor(Activity.ActivityTypeName)">
+                @Activity.ActivityTypeName
+            </span>
 
             <span class="mb-3 h5">@Activity.Name</span>
 
