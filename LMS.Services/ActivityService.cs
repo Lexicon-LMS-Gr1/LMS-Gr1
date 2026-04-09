@@ -105,7 +105,7 @@ public class ActivityService : IActivityService
         return MapToDto(savedActivity);
     }
 	/*
-    public async Task<ActivityDto> UpdateActivityAsync(ActivityUpdateDto activityDto)
+    public async Task<ActivityDto> UpdateActivityAsync(ActivityUpdateDto_Old activityDto)
     {
         if (activityDto is null)
             throw new ArgumentNullException(nameof(activityDto));

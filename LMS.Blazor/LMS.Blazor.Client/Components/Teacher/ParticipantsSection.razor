@@ -22,7 +22,7 @@
             <div class="col-auto">
                 <select class="form-select" @bind="courseFilter">
                     <option value="">Alla kurser</option>
-                    @foreach (var c in Students.Select(s => s.CourseName).Distinct())
+                    @foreach (var c in Students.Select(s => s.CourseName).Distinct().OrderBy(cn => cn))
                     {
                         <option value="@c">@c</option>
                     }

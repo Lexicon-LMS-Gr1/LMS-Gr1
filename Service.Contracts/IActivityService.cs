@@ -8,7 +8,7 @@ public interface IActivityService
     Task<IEnumerable<ActivityDto>> GetActivitiesByModuleIdAsync(int moduleId);
     Task<ActivityDto?> GetActivityByIdAsync(int id);
     Task<ActivityDto> CreateActivityAsync(int moduleId, ActivityCreateDto activityDto);
-    //Task<ActivityDto> UpdateActivityAsync(ActivityUpdateDto activityDto);
+    //Task<ActivityDto> UpdateActivityAsync(ActivityUpdateDto_Old activityDto);
     Task<bool> DeleteActivityAsync(int id);
     Task<IEnumerable<ActivityTypeDto>> GetAllActivityTypesAsync();
 	Task<ActivityDto> UpdateActivityAsync(UpdateActivityDto dto);
