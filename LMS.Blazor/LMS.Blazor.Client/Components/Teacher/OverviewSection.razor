@@ -47,17 +47,17 @@
                         <!-- Right side -->
                         <div class="d-flex align-items-center gap-2">
 
-                            <button class="btn btn-sm btn-outline-secondary"
+                            <button class="btn btn-sm btn-outline-secondary me-2"
                                     @onclick="() => OnOpenCourse.InvokeAsync(course.Id)">
                                 <i class="bi bi-eye"></i>
                             </button>
 
-                            <button class="btn btn-sm btn-outline-primary"
+                            <button class="btn btn-sm btn-outline-primary me-2"
                                     @onclick="() => OnEditCourse.InvokeAsync(course)">
                                 <i class="bi bi-pencil-fill"></i>
                             </button>
 
-                            <button class="btn btn-sm btn-outline-danger"
+                            <button class="btn btn-sm btn-outline-danger me-2"
                                     @onclick="() => OnDeleteCourse.InvokeAsync(course.Id)">
                                 <i class="bi bi-trash"></i>
                             </button>
