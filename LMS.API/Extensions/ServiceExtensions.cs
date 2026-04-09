@@ -156,11 +156,13 @@ public static class ServiceExtensions
 		services.AddScoped(provider =>
 			new Lazy<ISubmissionService>(() => provider.GetRequiredService<ISubmissionService>()));
 
+        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped(provider => new Lazy<IEmailService>(() => provider.GetRequiredService<IEmailService>()));
 
 
 
 
 
-	}
+    }
 }
 

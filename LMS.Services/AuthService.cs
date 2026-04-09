@@ -5,10 +5,12 @@ using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.AuthDtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Service.Contracts;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -21,18 +23,24 @@ public class AuthService : IAuthService
     private readonly RoleManager<IdentityRole> roleManager;
     private readonly JwtSettings jwtSettings;
     private ApplicationUser? user;
+    private readonly IConfiguration config;
+    private readonly IEmailService emailService;
 
     public AuthService(
         IMapper mapper,
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
-        IOptions<JwtSettings> jwtSettings
+        IOptions<JwtSettings> jwtSettings,
+        IConfiguration config,
+        IEmailService emailService
         )
     {
         this.mapper = mapper;
         this.userManager = userManager;
         this.roleManager = roleManager;
         this.jwtSettings = jwtSettings.Value;
+        this.config = config;
+        this.emailService = emailService;
     }
 
     public async Task<TokenDto> CreateTokenAsync(bool addTime)
@@ -177,4 +185,37 @@ public class AuthService : IAuthService
 
         return principal;
     }
+
+    public async Task RequestPasswordResetAsync(string email)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+
+        if (user == null)
+            return;
+
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+        var encodedToken = WebUtility.UrlEncode(token);
+
+        var frontendUrl = config["Frontend:BaseUrl"];
+        var resetUrl = $"{frontendUrl}/reset-password?email={email}&token={encodedToken}";
+
+        var html = $@"
+        <h2>Återställ ditt lösenord</h2>
+        <p>Klicka på länken nedan för att skapa ett nytt lösenord:</p>
+        <p><a href='{resetUrl}'>Återställ lösenord</a></p>
+        <p>Om du inte begärt detta kan du ignorera detta meddelande.</p>
+    ";
+
+        await emailService.SendEmailAsync(email, "Återställ lösenord", html);
+    }
+
+    public async Task<IdentityResult> ResetPasswordAsync(ResetPasswordDto dto)
+    {
+        var user = await userManager.FindByEmailAsync(dto.Email);
+        if (user == null)
+            return IdentityResult.Failed(new IdentityError { Description = "Ogiltig begäran." });
+
+        return await userManager.ResetPasswordAsync(user, dto.Token, dto.NewPassword);
+    }
+
 }

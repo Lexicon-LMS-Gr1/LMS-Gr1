@@ -48,4 +48,34 @@ public class AuthController : ControllerBase
         var tokenDto = await serviceManager.AuthService.CreateTokenAsync(addTime: true);
         return Ok(tokenDto);
     }
+
+    [HttpPost("request-password-reset")]
+    [AllowAnonymous]
+    [SwaggerOperation(
+    Summary = "Begär återställning av lösenord.",
+    Description = "Skickar en återställningslänk till användarens e‑post."
+)]
+    public async Task<IActionResult> RequestPasswordReset(RequestPasswordResetDto dto)
+    {
+        await serviceManager.AuthService.RequestPasswordResetAsync(dto.Email);
+
+        return Ok(new { Message = "Om ett konto med den e‑postadressen finns har en länk skickats." });
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [SwaggerOperation(
+    Summary = "Återställ lösenord.",
+    Description = "Återställer användarens lösenord med hjälp av en giltig token."
+)]
+    public async Task<IActionResult> ResetPassword(ResetPasswordDto dto)
+    {
+        var result = await serviceManager.AuthService.ResetPasswordAsync(dto);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+
+        return Ok(new { Message = "Lösenordet har uppdaterats." });
+    }
+
 }

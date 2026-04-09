@@ -8,4 +8,6 @@ public interface IAuthService
     Task<TokenDto> RefreshTokenAsync(TokenDto token);
     Task<IdentityResult> RegisterUserAsync(UserRegistrationDto userRegistrationDto);
     Task<bool> ValidateUserAsync(UserAuthDto user);
+    Task RequestPasswordResetAsync(string email);
+    Task<IdentityResult> ResetPasswordAsync(ResetPasswordDto dto);
 }
