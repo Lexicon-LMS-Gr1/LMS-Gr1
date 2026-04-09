@@ -368,6 +368,13 @@ public class DataSeedHostingService : IHostedService
 		var m4Assignment1 = CreateActivity("Assignment 1: REST-endpoints", "Implementera CRUD-endpoints i ett Web API.", Dt(2026, 5, 6), Dt(2026, 5, 6, 17), assignment, module4, Dt(2026, 5, 6, 17));
 		var m4Assignment2 = CreateActivity("Assignment 2: API-dokumentation", "Dokumentera och kvalitetssäkra API med Swagger.", Dt(2026, 5, 12), Dt(2026, 5, 12, 17), assignment, module4, Dt(2026, 5, 12, 17));
 
+
+
+
+		var m2Assignment1_2 = CreateActivity("Assignment: Middleware", "Bygg och konfigurera middleware i pipeline.", Dt(2026, 4, 6), Dt(2026, 4, 6, 17), assignment, module2, Dt(2026, 4, 6, 17));
+
+
+
 		context.Activities.AddRange(
 			CreateActivity("Lecture: Introduktion till .NET", "Översikt av plattformen och kursupplägget.", Dt(2026, 3, 15), Dt(2026, 3, 16, 17), lecture, module1),
 			CreateActivity("Workshop: C# syntax", "Praktiska övningar i syntax och kontrollflöden.", Dt(2026, 3, 17), Dt(2026, 3, 18, 17), workshop, module1),
@@ -381,8 +388,10 @@ public class DataSeedHostingService : IHostedService
 			CreateActivity("Workshop: Routing och controllers", "Bygg controllers och arbeta med routes.", Dt(2026, 3, 30), Dt(2026, 4, 1, 17), workshop, module2),
 			m2Assignment1,
 			CreateActivity("Lecture: Dependency Injection", "Hur DI fungerar i ASP.NET Core.", Dt(2026, 4, 4), Dt(2026, 4, 5, 17), lecture, module2),
-			CreateActivity("Workshop: Middleware", "Bygg och konfigurera middleware i pipeline.", Dt(2026, 4, 6), Dt(2026, 4, 7, 17), workshop, module2),
-			CreateActivity("Lecture: Repetition ASP.NET Core", "Sammanfattning och förberedelse inför inlämning.", Dt(2026, 4, 8), Dt(2026, 4, 8, 17), lecture, module2),
+
+				//CreateActivity("Workshop: Middleware", "Bygg och konfigurera middleware i pipeline.", Dt(2026, 4, 6), Dt(2026, 4, 7, 17), workshop, module2),
+				m2Assignment1_2,
+			CreateActivity("Lecture: Repetition ASP.NET Core", "Sammanfattning och förberedelse inför inlämning.", Dt(2026, 4, 7), Dt(2026, 4, 8, 17), lecture, module2),
 			m2Assignment2,
 
 			CreateActivity("Lecture: EF Core intro", "DbContext, entities och migrations.", Dt(2026, 4, 10), Dt(2026, 4, 11, 17), lecture, module3),
@@ -481,8 +490,19 @@ public class DataSeedHostingService : IHostedService
 				"submissions/bob/dotnet-m3-assignment2.pdf",
 				"dotnet-m3-assignment2.pdf",
 				"Queries och persistens med EF Core.",
-				Dt(2026, 4, 14, 15))
+				Dt(2026, 4, 14, 15)),
+
+				CreateSubmission(
+				m2Assignment1_2.Id,
+				seededStudents["bob"].Id,
+				"submissions/bob/dotnet-middleware.cs",
+				"dotnet-m3-assignment2.cs",
+				"Min middleware i pipeline.",
+				Dt(2026, 4, 5))
 		);
+
+
+
 
 		await context.SaveChangesAsync();
 	}
