@@ -13,28 +13,6 @@
     return;
 }
 
-@if (showCreateCourseModal)
-{
-    <div class="modal fade show d-block" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-
-                <div class="modal-header">
-                    <button type="button" class="btn-close" @onclick="CloseCreateCourse"></button>
-                </div>
-
-                <div class="modal-body">
-                    <CreateCourseSection OnCreated="RefreshCourses"
-                                         OnCancel="CloseCreateCourse" />
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-backdrop fade show"></div>
-}
-
 <div class="container py-4">
     <h1 class="h3 mb-4">Dashboard</h1>
 
@@ -46,9 +24,13 @@
                     <h5 class="mb-0">Snabbåtgärder</h5>
 
                     <button class="btn btn-primary d-flex align-items-center"
+                            style="padding-top: .5rem; padding-bottom: .3rem;"
                             @onclick="OpenCreateCourseModal">
-                        <i class="bi bi-plus-circle me-2"></i>
-                        Skapa ny kurs
+                        <span class="position-relative me-2" style="top: 0px;">
+                            <i class="bi bi-book fs-5"></i>
+                            <i class="bi bi-plus-circle position-absolute top-0 start-100 fs-6" style="transform: translate(-40%, -37%);"></i>
+                        </span>
+                        <span style="position: relative; top: 0px;">Skapa ny kurs</span>
                     </button>
                 </div>
             </div>
@@ -108,6 +90,35 @@
         }
     }
 </div>
+
+<!-- ===================== CREATE COURSE MODAL ===================== -->
+@if (showCreateCourseModal)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="position-relative me-3">
+                            <i class="bi bi-book fs-5"></i>
+                            <i class="bi bi-plus-circle position-absolute top-0 start-100 translate-middle fs-6 bg-white rounded-circle"></i>
+                        </span>
+                        Skapa kurs
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseCreateCourse"></button>
+                </div>
+
+                <div class="modal-body mt-0">
+                    <CreateCourseSection OnCreated="RefreshCourses"
+                                         OnCancel="CloseCreateCourse" IsModal="true" />
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
 
 <!-- ===================== EDIT COURSE MODAL ===================== -->
 <EditCourseModal Show="showEditCourseModal"
@@ -506,6 +517,9 @@
         {
             selectedCourseId = null;
         }
+
+
+    /* ------ CREATE COURSE MODAL ------------*/
 
     private void OpenCreateCourseModal()
     {

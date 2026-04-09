@@ -6,34 +6,43 @@
 @inject IApiService ApiService
 
 <div class="card shadow-sm border-0">
-    <div class="card-body p-4">
-
-        <h1 class="h3 fw-bold mb-3">Skapa ny kurs</h1>       
+    <div class="card-body @(IsModal ? "p-2 pt-0" : "p-4")">
 
         @if (!string.IsNullOrWhiteSpace(errorMessage))
         {
             <div class="alert alert-danger">@errorMessage</div>
         }
+        
+         @if (!IsModal) // Egen heading om komponenten visas i eget fönster
+          {
+            <h5 class="modal-title">
+                <span class="position-relative me-3">
+                    <i class="bi bi-book fs-5"></i>
+                    <i class="bi bi-plus-circle position-absolute top-0 start-100 translate-middle fs-6 bg-white rounded-circle"></i>
+                </span>
+                Skapa kurs
+            </h5>
+          }        
 
         <EditForm EditContext="courseEditContext" OnSubmit="HandleSubmit">
             <DataAnnotationsValidator />
 
-            <h2 class="h5 mb-3">Kurs</h2>
+            @* <h2 class="h5 mb-3">Kurs</h2> *@
 
-            <div class="mb-3">
-                <label class="form-label">Kursnamn</label>
+            <div class="mb-3 mt-3">
+                <label class="form-label fw-semibold">Kursnamn</label>
                 <InputText class="form-control" @bind-Value="model.Name" />
                 <ValidationMessage For="() => model.Name" />
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Beskrivning</label>
+                <label class="form-label fw-semibold">Beskrivning</label>
                 <InputTextArea class="form-control" @bind-Value="model.Description" />
                 <ValidationMessage For="() => model.Description" />
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Lärare</label>
+                <label class="form-label fw-semibold">Lärare</label>
                 <select class="form-select" @bind="model.TeacherId">
                     <option value="">-- Välj lärare (valfritt) --</option>
 
@@ -47,13 +56,13 @@
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Startdatum</label>
+                    <label class="form-label fw-semibold">Startdatum</label>
                     <InputDate class="form-control" @bind-Value="model.StartDate" ParsingErrorMessage="Startdatum måste vara ett giltigt datum." />
                     <ValidationMessage For="() => model.StartDate" />
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Slutdatum</label>
+                    <label class="form-label fw-semibold">Slutdatum</label>
                     <InputDate class="form-control" @bind-Value="model.EndDate" ParsingErrorMessage="Slutdatum måste vara ett giltigt datum." />
                     <ValidationMessage For="() => model.EndDate" />
                 </div>
@@ -63,9 +72,7 @@
 
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h2 class="h5 mb-0">Moduler (valfritt)</h2>
-                <button type="button" class="btn btn-outline-primary btn-sm" @onclick="AddModule">
-                    Lägg till modul
-                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" @onclick="AddModule"><i class="bi bi-plus-circle me-2"></i>Lägg till modul</button>
             </div>
 
             @if (moduleItems.Count == 0)
@@ -90,9 +97,12 @@
                     @(isSubmitting ? "Sparar..." : "Skapa kurs")
                 </button>
 
-                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">
-                    Avbryt
-                </button>
+                @if (IsModal) // Ska bara visas om komponenten visas i modalt fönster
+                {
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">
+                        Avbryt
+                    </button>
+                }
             </div>
         </EditForm>
     </div>
@@ -101,6 +111,7 @@
 @code {
     [Parameter] public EventCallback<CourseDto> OnCreated { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public bool IsModal { get; set; } = false;
 
     private CourseCreateDto model = new()
     {

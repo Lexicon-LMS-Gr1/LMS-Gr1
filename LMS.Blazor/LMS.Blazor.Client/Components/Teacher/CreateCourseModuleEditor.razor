@@ -11,33 +11,33 @@
                 <h3 class="h6 mb-0">Modul @(ModuleIndex + 1)</h3>
 
                 <button type="button"
-                        class="btn btn-outline-danger btn-sm"
+                        class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
                         @onclick="OnRemove">
-                    Ta bort
+                    <i class="bi bi-trash"></i>                    
                 </button>
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Modulnamn</label>
+                <label class="form-label fw-semibold">Modulnamn</label>
                 <InputText class="form-control" @bind-Value="Module.Name" />
                 <ValidationMessage For="() => Module.Name" />
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Beskrivning</label>
+                <label class="form-label fw-semibold">Beskrivning</label>
                 <InputTextArea class="form-control" @bind-Value="Module.Description" />
                 <ValidationMessage For="() => Module.Description" />
             </div>
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Startdatum</label>
+                    <label class="form-label fw-semibold">Startdatum</label>
                     <InputDate class="form-control" @bind-Value="Module.StartDate" ParsingErrorMessage="Startdatum måste vara ett giltigt datum." />
                     <ValidationMessage For="() => Module.StartDate" />
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Slutdatum</label>
+                    <label class="form-label fw-semibold">Slutdatum</label>
                     <InputDate class="form-control" @bind-Value="Module.EndDate" ParsingErrorMessage="Slutdatum måste vara ett giltigt datum." />
                     <ValidationMessage For="() => Module.EndDate" />
                 </div>
