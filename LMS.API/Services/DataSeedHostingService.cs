@@ -237,95 +237,95 @@ public class DataSeedHostingService : IHostedService
 		if (!annaUpdateResult.Succeeded)
 			throw new Exception(string.Join("\n", annaUpdateResult.Errors.Select(e => e.Description)));
 
-		context.Submissions.AddRange(
-			CreateSubmissionWithFeedback(
-				m1Assignment1.Id,
-				seededStudents["alice"].Id,
-				"submissions/alice/databases-m1-assignment1.pdf",
-				"databases-m1-assignment1.pdf",
-				"Min lösning på tabeller och nycklar.",
-				Dt(2026, 1, 20, 14),
-				"Bra struktur och korrekt användning av primärnycklar.",
-				Dt(2026, 1, 21, 9),
-				seededTeachers["anna"].Id),
+		//context.Submissions.AddRange(
+		//	CreateSubmissionWithFeedback(
+		//		m1Assignment1.Id,
+		//		seededStudents["alice"].Id,
+		//		"submissions/alice/databases-m1-assignment1.pdf",
+		//		"databases-m1-assignment1.pdf",
+		//		"Min lösning på tabeller och nycklar.",
+		//		Dt(2026, 1, 20, 14),
+		//		"Bra struktur och korrekt användning av primärnycklar.",
+		//		Dt(2026, 1, 21, 9),
+		//		seededTeachers["anna"].Id),
 
-			CreateSubmissionWithFeedback(
-				m1Assignment2.Id,
-				seededStudents["alice"].Id,
-				"submissions/alice/databases-m1-assignment2.pdf",
-				"databases-m1-assignment2.pdf",
-				"Min lösning på grundläggande SQL.",
-				Dt(2026, 1, 28, 15),
-				"Bra SQL-frågor. Tänk på konsekvent formattering.",
-				Dt(2026, 1, 29, 10),
-				seededTeachers["anna"].Id),
+		//	CreateSubmissionWithFeedback(
+		//		m1Assignment2.Id,
+		//		seededStudents["alice"].Id,
+		//		"submissions/alice/databases-m1-assignment2.pdf",
+		//		"databases-m1-assignment2.pdf",
+		//		"Min lösning på grundläggande SQL.",
+		//		Dt(2026, 1, 28, 15),
+		//		"Bra SQL-frågor. Tänk på konsekvent formattering.",
+		//		Dt(2026, 1, 29, 10),
+		//		seededTeachers["anna"].Id),
 
-			CreateSubmissionWithFeedback(
-				m2Assignment1.Id,
-				seededStudents["alice"].Id,
-				"submissions/alice/databases-m2-assignment1.pdf",
-				"databases-m2-assignment1.pdf",
-				"JOIN och filtrering för rapportdelen.",
-				Dt(2026, 2, 3, 14),
-				"Väl fungerande joins och tydlig filtrering.",
-				Dt(2026, 2, 4, 9),
-				seededTeachers["anna"].Id),
+		//	CreateSubmissionWithFeedback(
+		//		m2Assignment1.Id,
+		//		seededStudents["alice"].Id,
+		//		"submissions/alice/databases-m2-assignment1.pdf",
+		//		"databases-m2-assignment1.pdf",
+		//		"JOIN och filtrering för rapportdelen.",
+		//		Dt(2026, 2, 3, 14),
+		//		"Väl fungerande joins och tydlig filtrering.",
+		//		Dt(2026, 2, 4, 9),
+		//		seededTeachers["anna"].Id),
 
-			CreateSubmissionWithFeedback(
-				m2Assignment2.Id,
-				seededStudents["alice"].Id,
-				"submissions/alice/databases-m2-assignment2.pdf",
-				"databases-m2-assignment2.pdf",
-				"Aggregat och gruppering enligt uppgiften.",
-				Dt(2026, 2, 11, 14),
-				"Bra användning av GROUP BY och HAVING.",
-				Dt(2026, 2, 12, 10),
-				seededTeachers["anna"].Id),
+		//	CreateSubmissionWithFeedback(
+		//		m2Assignment2.Id,
+		//		seededStudents["alice"].Id,
+		//		"submissions/alice/databases-m2-assignment2.pdf",
+		//		"databases-m2-assignment2.pdf",
+		//		"Aggregat och gruppering enligt uppgiften.",
+		//		Dt(2026, 2, 11, 14),
+		//		"Bra användning av GROUP BY och HAVING.",
+		//		Dt(2026, 2, 12, 10),
+		//		seededTeachers["anna"].Id),
 
-			CreateSubmissionWithFeedback(
-				m3Assignment1.Id,
-				seededStudents["alice"].Id,
-				"submissions/alice/databases-m3-assignment1.pdf",
-				"databases-m3-assignment1.pdf",
-				"ER-diagram för bokningssystem.",
-				Dt(2026, 2, 17, 13),
-				"Tydligt diagram och korrekta relationer.",
-				Dt(2026, 2, 18, 9),
-				seededTeachers["anna"].Id),
+		//	CreateSubmissionWithFeedback(
+		//		m3Assignment1.Id,
+		//		seededStudents["alice"].Id,
+		//		"submissions/alice/databases-m3-assignment1.pdf",
+		//		"databases-m3-assignment1.pdf",
+		//		"ER-diagram för bokningssystem.",
+		//		Dt(2026, 2, 17, 13),
+		//		"Tydligt diagram och korrekta relationer.",
+		//		Dt(2026, 2, 18, 9),
+		//		seededTeachers["anna"].Id),
 
-			CreateSubmissionWithFeedback(
-				m3Assignment2.Id,
-				seededStudents["alice"].Id,
-				"submissions/alice/databases-m3-assignment2.pdf",
-				"databases-m3-assignment2.pdf",
-				"Normalisering till tredje normalformen.",
-				Dt(2026, 2, 25, 15),
-				"Bra resonemang och korrekt normalisering.",
-				Dt(2026, 2, 26, 10),
-				seededTeachers["anna"].Id),
+		//	CreateSubmissionWithFeedback(
+		//		m3Assignment2.Id,
+		//		seededStudents["alice"].Id,
+		//		"submissions/alice/databases-m3-assignment2.pdf",
+		//		"databases-m3-assignment2.pdf",
+		//		"Normalisering till tredje normalformen.",
+		//		Dt(2026, 2, 25, 15),
+		//		"Bra resonemang och korrekt normalisering.",
+		//		Dt(2026, 2, 26, 10),
+		//		seededTeachers["anna"].Id),
 
-			CreateSubmissionWithFeedback(
-				m4Assignment1.Id,
-				seededStudents["alice"].Id,
-				"submissions/alice/databases-m4-assignment1.pdf",
-				"databases-m4-assignment1.pdf",
-				"Vyer och subqueries för analysfrågor.",
-				Dt(2026, 3, 4, 14),
-				"Bra lösning. Subqueries används korrekt.",
-				Dt(2026, 3, 5, 9),
-				seededTeachers["anna"].Id),
+		//	CreateSubmissionWithFeedback(
+		//		m4Assignment1.Id,
+		//		seededStudents["alice"].Id,
+		//		"submissions/alice/databases-m4-assignment1.pdf",
+		//		"databases-m4-assignment1.pdf",
+		//		"Vyer och subqueries för analysfrågor.",
+		//		Dt(2026, 3, 4, 14),
+		//		"Bra lösning. Subqueries används korrekt.",
+		//		Dt(2026, 3, 5, 9),
+		//		seededTeachers["anna"].Id),
 
-			CreateSubmissionWithFeedback(
-				m4Assignment2.Id,
-				seededStudents["alice"].Id,
-				"submissions/alice/databases-m4-assignment2.pdf",
-				"databases-m4-assignment2.pdf",
-				"Förslag på SQL-optimering och index.",
-				Dt(2026, 3, 12, 15),
-				"Väl motiverade förbättringar och bra analys.",
-				Dt(2026, 3, 13, 10),
-				seededTeachers["anna"].Id)
-		);
+		//	CreateSubmissionWithFeedback(
+		//		m4Assignment2.Id,
+		//		seededStudents["alice"].Id,
+		//		"submissions/alice/databases-m4-assignment2.pdf",
+		//		"databases-m4-assignment2.pdf",
+		//		"Förslag på SQL-optimering och index.",
+		//		Dt(2026, 3, 12, 15),
+		//		"Väl motiverade förbättringar och bra analys.",
+		//		Dt(2026, 3, 13, 10),
+		//		seededTeachers["anna"].Id)
+		//);
 
 		await context.SaveChangesAsync();
 	}
@@ -428,78 +428,78 @@ public class DataSeedHostingService : IHostedService
 		if (!erikUpdateResult.Succeeded)
 			throw new Exception(string.Join("\n", erikUpdateResult.Errors.Select(e => e.Description)));
 
-		context.Submissions.AddRange(
-			CreateSubmissionWithFeedback(
-				m1Assignment1.Id,
-				seededStudents["bob"].Id,
-				"submissions/bob/dotnet-m1-assignment1.pdf",
-				"dotnet-m1-assignment1.pdf",
-				"Min lösning på C# grunder.",
-				Dt(2026, 3, 19, 14),
-				"Bra jobbat. Tydlig struktur och korrekt användning av klasser.",
-				Dt(2026, 3, 20, 10),
-				seededTeachers["erik"].Id),
+		//context.Submissions.AddRange(
+		//	CreateSubmissionWithFeedback(
+		//		m1Assignment1.Id,
+		//		seededStudents["bob"].Id,
+		//		"submissions/bob/dotnet-m1-assignment1.pdf",
+		//		"dotnet-m1-assignment1.pdf",
+		//		"Min lösning på C# grunder.",
+		//		Dt(2026, 3, 19, 14),
+		//		"Bra jobbat. Tydlig struktur och korrekt användning av klasser.",
+		//		Dt(2026, 3, 20, 10),
+		//		seededTeachers["erik"].Id),
 
-			CreateSubmissionWithFeedback(
-				m1Assignment2.Id,
-				seededStudents["bob"].Id,
-				"submissions/bob/dotnet-m1-assignment2.pdf",
-				"dotnet-m1-assignment2.pdf",
-				"Min objektorienterade modell.",
-				Dt(2026, 3, 27, 15),
-				"Bra uppdelning i klasser. Tänk på namngivning av properties.",
-				Dt(2026, 3, 28, 9),
-				seededTeachers["erik"].Id),
+		//	CreateSubmissionWithFeedback(
+		//		m1Assignment2.Id,
+		//		seededStudents["bob"].Id,
+		//		"submissions/bob/dotnet-m1-assignment2.pdf",
+		//		"dotnet-m1-assignment2.pdf",
+		//		"Min objektorienterade modell.",
+		//		Dt(2026, 3, 27, 15),
+		//		"Bra uppdelning i klasser. Tänk på namngivning av properties.",
+		//		Dt(2026, 3, 28, 9),
+		//		seededTeachers["erik"].Id),
 
-			CreateSubmissionWithFeedback(
-				m2Assignment1.Id,
-				seededStudents["bob"].Id,
-				"submissions/bob/dotnet-m2-assignment1.pdf",
-				"dotnet-m2-assignment1.pdf",
-				"Mitt första MVC/API-projekt.",
-				Dt(2026, 4, 2, 16),
-				"Routing fungerar bra. Lägg till bättre felhantering.",
-				Dt(2026, 4, 3, 11),
-				seededTeachers["erik"].Id),
-			/*
-			CreateSubmissionWithFeedback(
-				m2Assignment2.Id,
-				seededStudents["bob"].Id,
-				"submissions/bob/dotnet-m2-assignment2.pdf",
-				"dotnet-m2-assignment2.pdf",
-				"ASP.NET Core-applikation med middleware.",
-				Dt(2026, 4, 9, 13),
-				"Bra helhet. Dependency injection används korrekt.",
-				Dt(2026, 4, 10, 10),
-				seededTeachers["erik"].Id),
-			*/
-			CreateSubmissionWithFeedback(
-				m3Assignment1.Id,
-				seededStudents["bob"].Id,
-				"submissions/bob/dotnet-m3-assignment1.pdf",
-				"dotnet-m3-assignment1.pdf",
-				"Datamodell och migrationer i EF Core.",
-				Dt(2026, 4, 12, 14),
-				"Relationerna är korrekta. Snygg lösning.",
-				Dt(2026, 4, 13, 9),
-				seededTeachers["erik"].Id),
+		//	CreateSubmissionWithFeedback(
+		//		m2Assignment1.Id,
+		//		seededStudents["bob"].Id,
+		//		"submissions/bob/dotnet-m2-assignment1.pdf",
+		//		"dotnet-m2-assignment1.pdf",
+		//		"Mitt första MVC/API-projekt.",
+		//		Dt(2026, 4, 2, 16),
+		//		"Routing fungerar bra. Lägg till bättre felhantering.",
+		//		Dt(2026, 4, 3, 11),
+		//		seededTeachers["erik"].Id),
+		//	/*
+		//	CreateSubmissionWithFeedback(
+		//		m2Assignment2.Id,
+		//		seededStudents["bob"].Id,
+		//		"submissions/bob/dotnet-m2-assignment2.pdf",
+		//		"dotnet-m2-assignment2.pdf",
+		//		"ASP.NET Core-applikation med middleware.",
+		//		Dt(2026, 4, 9, 13),
+		//		"Bra helhet. Dependency injection används korrekt.",
+		//		Dt(2026, 4, 10, 10),
+		//		seededTeachers["erik"].Id),
+		//	*/
+		//	CreateSubmissionWithFeedback(
+		//		m3Assignment1.Id,
+		//		seededStudents["bob"].Id,
+		//		"submissions/bob/dotnet-m3-assignment1.pdf",
+		//		"dotnet-m3-assignment1.pdf",
+		//		"Datamodell och migrationer i EF Core.",
+		//		Dt(2026, 4, 12, 14),
+		//		"Relationerna är korrekta. Snygg lösning.",
+		//		Dt(2026, 4, 13, 9),
+		//		seededTeachers["erik"].Id),
 
-			CreateSubmission(
-				m3Assignment2.Id,
-				seededStudents["bob"].Id,
-				"submissions/bob/dotnet-m3-assignment2.pdf",
-				"dotnet-m3-assignment2.pdf",
-				"Queries och persistens med EF Core.",
-				Dt(2026, 4, 14, 15)),
+		//	CreateSubmission(
+		//		m3Assignment2.Id,
+		//		seededStudents["bob"].Id,
+		//		"submissions/bob/dotnet-m3-assignment2.pdf",
+		//		"dotnet-m3-assignment2.pdf",
+		//		"Queries och persistens med EF Core.",
+		//		Dt(2026, 4, 14, 15)),
 
-				CreateSubmission(
-				m2Assignment1_2.Id,
-				seededStudents["bob"].Id,
-				"submissions/bob/dotnet-middleware.cs",
-				"dotnet-m3-assignment2.cs",
-				"Min middleware i pipeline.",
-				Dt(2026, 4, 5))
-		);
+		//		CreateSubmission(
+		//		m2Assignment1_2.Id,
+		//		seededStudents["bob"].Id,
+		//		"submissions/bob/dotnet-middleware.cs",
+		//		"dotnet-m3-assignment2.cs",
+		//		"Min middleware i pipeline.",
+		//		Dt(2026, 4, 5))
+		//);
 
 
 

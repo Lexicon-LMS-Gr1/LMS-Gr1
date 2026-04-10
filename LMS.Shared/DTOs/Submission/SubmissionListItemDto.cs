@@ -18,6 +18,7 @@ namespace LMS.Shared.DTOs.Submission
         public int ActivityId { get; set; }
 
         public DateTime SubmittedAt { get; set; }
+        public string FileName { get; set; }
 
         public bool HasFeedback { get; set; }
         public DateTime? FeedbackGivenAt { get; set; }
