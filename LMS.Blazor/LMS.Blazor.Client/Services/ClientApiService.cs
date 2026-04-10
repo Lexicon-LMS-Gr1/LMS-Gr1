@@ -70,7 +70,13 @@ public class ClientApiService : IApiService
 
     public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
+        // Auth endpoints must bypass proxy
+        string url = endpoint.StartsWith("api/auth", StringComparison.OrdinalIgnoreCase)
+        ? $"/{endpoint}"
+        : $"/api/proxy/{endpoint}";
+
+
+        var response = await _httpClient.PostAsJsonAsync(url, data, _jsonOptions, ct);
 
         if (HandleUnauthorized(response)) return default;
 
@@ -83,6 +89,7 @@ public class ClientApiService : IApiService
         return await JsonSerializer.DeserializeAsync<TResponse>(
             await response.Content.ReadAsStreamAsync(ct), _jsonOptions, ct);
     }
+
 
     public async Task<TResponse?> PostMultipartAsync<TResponse>(string endpoint, MultipartFormDataContent content, CancellationToken ct = default)
     {
