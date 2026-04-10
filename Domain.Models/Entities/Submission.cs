@@ -1,4 +1,4 @@
-﻿using Domain.Models.Entities;
+using Domain.Models.Entities;
 
 public class Submission
 {
@@ -9,6 +9,7 @@ public class Submission
     public string FileName { get; set; }
     public string Comment { get; set; }
     public DateTime SubmittedAt { get; set; }
+    public bool IsLate { get; set; }
 
     public Activity Activity { get; set; }
     public ApplicationUser Student { get; set; }

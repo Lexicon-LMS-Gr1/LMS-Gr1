@@ -1,4 +1,6 @@
-﻿using LMS.Shared.DTOs.Feedback;
+using Domain.Contracts.Services;
+using LMS.Presentation.Models;
+using LMS.Shared.DTOs.Feedback;
 using LMS.Shared.DTOs.Submission;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,10 +19,12 @@ namespace LMS.Presentation.Controllers;
 public class SubmissionsController : ControllerBase
 {
 	private readonly IServiceManager _serviceManager;
+	private readonly IFileStorageService _fileStorage;
 
-	public SubmissionsController(IServiceManager serviceManager)
+	public SubmissionsController(IServiceManager serviceManager, IFileStorageService fileStorage)
 	{
 		_serviceManager = serviceManager;
+		_fileStorage = fileStorage;
 	}
 
 	[HttpGet("{id:int}")]
@@ -96,6 +100,49 @@ public class SubmissionsController : ControllerBase
 
         return Ok(new { success = true });
 
+    }
+
+    [HttpPost("{activityId:int}")]
+    [Authorize(Roles = "Student")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<SubmissionDto>> Submit(
+        int activityId,
+        [FromForm] SubmissionUploadForm form)
+    {
+        var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(studentId))
+            return Unauthorized();
+
+        if (form.File == null || form.File.Length == 0)
+            return BadRequest("Ingen fil vald.");
+
+        // Store in organized path: submissions/{studentId}/{activityId}/{guid}_{originalName}
+        var storageName = $"submissions/{studentId}/{activityId}/{Guid.NewGuid()}_{form.File.FileName}";
+
+        using var stream = form.File.OpenReadStream();
+        var filePath = await _fileStorage.SaveFileAsync(stream, storageName);
+
+        var result = await _serviceManager.SubmissionService
+            .SubmitAsync(activityId, studentId, filePath, form.File.FileName, form.Comment);
+
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}/download")]
+    [Authorize]
+    public async Task<IActionResult> DownloadFile(int id)
+    {
+        var fileInfo = await _serviceManager.SubmissionService
+            .GetSubmissionFileInfoAsync(id);
+
+        if (fileInfo == null)
+            return NotFound();
+
+        var stream = _fileStorage.OpenReadStream(fileInfo.Value.FilePath);
+        if (stream == null)
+            return NotFound("Filen hittades inte.");
+
+        return File(stream, "application/octet-stream", fileInfo.Value.FileName);
     }
 
 }

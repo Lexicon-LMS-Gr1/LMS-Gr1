@@ -1,0 +1,173 @@
+@using LMS.Shared.DTOs.Submission
+@inject IApiService ApiService
+
+@if (Show)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-upload me-2"></i>Lämna in uppgift
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="Close"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    @if (submitted)
+                    {
+                        <div class="alert alert-success d-flex align-items-center">
+                            <i class="bi bi-check-circle-fill me-2 fs-4"></i>
+                            <div>
+                                <strong>Inlämningen har skickats!</strong>
+                                @if (isLateWarning)
+                                {
+                                    <div class="text-warning mt-1">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Inlämningen markerades som <strong>sen</strong> (efter deadline).
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (DueDate.HasValue && DateTime.UtcNow > DueDate.Value)
+                        {
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Deadline har passerat (@DueDate.Value.ToString("yyyy-MM-dd HH:mm")).
+                                Din inlämning kommer markeras som <strong>sen</strong>.
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger">@errorMessage</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Välj fil</label>
+                            <InputFile OnChange="HandleFileSelected" class="form-control" />
+                            @if (selectedFile != null)
+                            {
+                                <div class="mt-1 small text-muted">
+                                    @selectedFile.Name (@FormatFileSize(selectedFile.Size))
+                                </div>
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Kommentar (valfritt)</label>
+                            <textarea class="form-control" rows="3" @bind="comment"
+                                      placeholder="Skriv en kommentar till läraren..."></textarea>
+                        </div>
+                    }
+
+                </div>
+
+                <div class="modal-footer">
+                    @if (submitted)
+                    {
+                        <button class="btn btn-primary" @onclick="Close">Stäng</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-secondary" @onclick="Close" disabled="@uploading">Avbryt</button>
+                        <button class="btn btn-primary" @onclick="SubmitFile"
+                                disabled="@(selectedFile == null || uploading)">
+                            @if (uploading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                                <span>Laddar upp...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-upload me-1"></i>
+                                <span>Lämna in</span>
+                            }
+                        </button>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public int ActivityId { get; set; }
+    [Parameter] public DateTime? DueDate { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<SubmissionDto> OnSubmitted { get; set; }
+
+    private IBrowserFile? selectedFile;
+    private string? comment;
+    private string? errorMessage;
+    private bool uploading;
+    private bool submitted;
+    private bool isLateWarning;
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        errorMessage = null;
+    }
+
+    private async Task SubmitFile()
+    {
+        if (selectedFile == null) return;
+
+        uploading = true;
+        errorMessage = null;
+
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var stream = selectedFile.OpenReadStream(maxAllowedSize: 50 * 1024 * 1024);
+            var streamContent = new StreamContent(stream);
+            content.Add(streamContent, "file", selectedFile.Name);
+
+            if (!string.IsNullOrWhiteSpace(comment))
+                content.Add(new StringContent(comment), "comment");
+
+            var result = await ApiService.PostMultipartAsync<SubmissionDto>(
+                $"api/upload/submission/{ActivityId}", content);
+
+            if (result != null)
+            {
+                submitted = true;
+                isLateWarning = result.IsLate;
+                await OnSubmitted.InvokeAsync(result);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            uploading = false;
+        }
+    }
+
+    private void Close()
+    {
+        submitted = false;
+        selectedFile = null;
+        comment = null;
+        errorMessage = null;
+        OnClose.InvokeAsync();
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+}

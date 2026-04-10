@@ -1,4 +1,4 @@
-﻿using Domain.Contracts.Repositories;
+using Domain.Contracts.Repositories;
 using LMS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -71,6 +71,11 @@ namespace LMS.Infractructure.Repositories
                 query = query.AsNoTracking();
 
             return await query.ToListAsync();
+        }
+
+        public void Add(Submission submission)
+        {
+            _context.Submissions.Add(submission);
         }
 
     }

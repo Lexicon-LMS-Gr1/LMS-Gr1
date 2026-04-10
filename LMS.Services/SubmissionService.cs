@@ -1,6 +1,5 @@
-﻿using Domain.Contracts.Repositories;
+using Domain.Contracts.Repositories;
 using LMS.Shared.DTOs.Submission;
-using LMS.Shared.DTOs.TeacherDashboard;
 using Service.Contracts;
 using System;
 using System.Collections.Generic;
@@ -58,6 +57,7 @@ public class SubmissionService : ISubmissionService
 			FileName = submission.FileName,
 			Comment = submission.Comment,
 			SubmittedAt = submission.SubmittedAt,
+			IsLate = submission.IsLate,
 			Feedback = submission.Feedback,
 			FeedbackGivenAt = submission.FeedbackGivenAt,
 			FeedbackGivenByTeacherId = submission.FeedbackGivenByTeacherId
@@ -73,6 +73,57 @@ public class SubmissionService : ISubmissionService
 
 		return dto;
 	}
+
+    public async Task<SubmissionDto> SubmitAsync(int activityId, string studentId, string filePath, string fileName, string? comment)
+    {
+        var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(activityId);
+        if (activity == null)
+            throw new Exception("Aktiviteten hittades inte.");
+
+        bool isLate = activity.DueDate.HasValue && DateTime.UtcNow > activity.DueDate.Value;
+
+        var submission = new Submission
+        {
+            ActivityId = activityId,
+            StudentId = studentId,
+            FilePath = filePath,
+            FileName = fileName,
+            Comment = comment ?? "",
+            SubmittedAt = DateTime.UtcNow,
+            IsLate = isLate
+        };
+
+        _unitOfWork.SubmissionRepository.Add(submission);
+        await _unitOfWork.CompleteAsync();
+
+        return ToSubmissionDto(submission);
+    }
+
+    public async Task<(string FilePath, string FileName)?> GetSubmissionFileInfoAsync(int submissionId)
+    {
+        var submission = await _unitOfWork.SubmissionRepository.GetByIdAsync(submissionId);
+        if (submission == null)
+            return null;
+
+        return (submission.FilePath, submission.FileName);
+    }
+
+    public async Task GiveFeedbackAsync(int submissionId, string feedback, string teacherId)
+    {
+        var submission = await _unitOfWork.SubmissionRepository.GetByIdAsync(submissionId);
+
+        if (submission == null)
+            throw new Exception("Submission not found");
+
+        submission.Feedback = feedback;
+        submission.FeedbackGivenAt = DateTime.UtcNow;
+        submission.FeedbackGivenByTeacherId = teacherId;
+
+        await _unitOfWork.CompleteAsync();
+    }
+
+
+
 
     public async Task<IEnumerable<SubmissionListItemDto>> GetSubmissionsForActivityAsync(
     int activityId,
@@ -123,20 +174,5 @@ public class SubmissionService : ISubmissionService
             FeedbackGivenAt = s.FeedbackGivenAt
         });
     }
-
-    public async Task GiveFeedbackAsync(int submissionId, string feedback, string teacherId)
-    {
-        var submission = await _unitOfWork.SubmissionRepository.GetByIdAsync(submissionId);
-
-        if (submission == null)
-            throw new Exception("Submission not found");
-
-        submission.Feedback = feedback;
-        submission.FeedbackGivenAt = DateTime.UtcNow;
-        submission.FeedbackGivenByTeacherId = teacherId;
-
-        await _unitOfWork.CompleteAsync();
-    }
-
 
 }
