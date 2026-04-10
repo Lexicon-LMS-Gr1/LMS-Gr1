@@ -1,4 +1,4 @@
-﻿namespace LMS.Shared.DTOs.Submission;
+namespace LMS.Shared.DTOs.Submission;
 
 public class SubmissionDto
 {
@@ -8,6 +8,7 @@ public class SubmissionDto
 	public string FileName { get; set; }
 	public string Comment { get; set; }
 	public DateTime SubmittedAt { get; set; }
+	public bool IsLate { get; set; }
 
 
 

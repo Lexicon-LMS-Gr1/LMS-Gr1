@@ -1,4 +1,4 @@
-﻿using LMS.Shared.DTOs.Submission;
+using LMS.Shared.DTOs.Submission;
 namespace Service.Contracts;
 
 public interface ISubmissionService
@@ -8,4 +8,6 @@ public interface ISubmissionService
     Task<IEnumerable<SubmissionListItemDto>> GetSubmissionsForActivityAsync(int activityId, string currentUserId, bool isTeacher);
     Task<IEnumerable<SubmissionListItemDto>> GetAllSubmissionsAsync();
     Task GiveFeedbackAsync(int submissionId, string feedback, string teacherId);
+    Task<SubmissionDto> SubmitAsync(int activityId, string studentId, string filePath, string fileName, string? comment);
+    Task<(string FilePath, string FileName)?> GetSubmissionFileInfoAsync(int submissionId);
 }

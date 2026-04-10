@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LMS.Infractructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260408121218_Initial")]
-    partial class Initial
+    [Migration("20260410074214_AddFeedbackAndIsLateToSubmission")]
+    partial class AddFeedbackAndIsLateToSubmission
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -451,6 +451,9 @@ namespace LMS.Infractructure.Migrations
                     b.Property<string>("FilePath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsLate")
+                        .HasColumnType("bit");
 
                     b.Property<string>("StudentId")
                         .IsRequired()
