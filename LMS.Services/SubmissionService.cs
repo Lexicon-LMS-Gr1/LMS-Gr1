@@ -147,6 +147,7 @@ public class SubmissionService : ISubmissionService
             ActivityName = s.Activity.Name,
 
             SubmittedAt = s.SubmittedAt,
+            FileName = s.FileName,
 
             HasFeedback = !string.IsNullOrWhiteSpace(s.Feedback),
             FeedbackGivenAt = s.FeedbackGivenAt

@@ -198,4 +198,38 @@ public class ApiProxyController : ControllerBase
 
         return skipHeaders.Contains(headerName, StringComparer.OrdinalIgnoreCase);
     }
+
+    [HttpGet("submissions/{id}/download")]
+    public async Task<IActionResult> ProxySubmissionDownload(int id, CancellationToken ct)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+            return Unauthorized("User ID not found");
+
+        var accessToken = await _tokenStorage.GetAccessTokenAsync(userId);
+        if (string.IsNullOrWhiteSpace(accessToken))
+            return Unauthorized("Unable to obtain valid access token");
+
+        var client = _httpClientFactory.CreateClient("LmsApiClient");
+
+        var apiUrl = $"api/submissions/{id}/download";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+
+        if (!response.IsSuccessStatusCode)
+            return StatusCode((int)response.StatusCode);
+
+        var bytes = await response.Content.ReadAsByteArrayAsync(ct);
+        var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+                       ?? "fil.pdf";
+
+        var contentType = response.Content.Headers.ContentType?.ToString()
+                          ?? "application/octet-stream";
+
+        return File(bytes, contentType, fileName);
+    }
+
 }

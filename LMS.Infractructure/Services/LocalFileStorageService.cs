@@ -24,16 +24,17 @@ public class LocalFileStorageService : IFileStorageService
         Directory.CreateDirectory(_basePath);
     }
 
-    public async Task<string> SaveFileAsync(Stream stream, string fileName, CancellationToken ct = default)
+    public async Task<string> SaveFileAsync(Stream stream, string relativePath, CancellationToken ct = default)
     {
-        var extension = Path.GetExtension(fileName);
-        var storedFileName = $"{Guid.NewGuid()}{extension}";
-        var fullPath = Path.Combine(_basePath, storedFileName);
+        var fullPath = Path.Combine(_basePath, relativePath);
+
+        var directory = Path.GetDirectoryName(fullPath);
+        Directory.CreateDirectory(directory);
 
         using var outputStream = new FileStream(fullPath, FileMode.Create);
         await stream.CopyToAsync(outputStream, ct);
 
-        return $"uploads/{storedFileName}";
+        return relativePath;
     }
 
     public Stream OpenReadStream(string relativePath)
@@ -57,7 +58,6 @@ public class LocalFileStorageService : IFileStorageService
 
     private string ResolveFullPath(string relativePath)
     {
-        var fileName = Path.GetFileName(relativePath);
-        return Path.Combine(_basePath, fileName);
+        return Path.Combine(_basePath, relativePath);
     }
 }

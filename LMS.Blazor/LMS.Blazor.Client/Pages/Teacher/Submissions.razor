@@ -43,6 +43,7 @@
                         <th>Modul</th>
                         <th>Aktivitet</th>
                         <th>Inlämnad</th>
+                        <th>Fil</th>
                         <th class="text-end pe-4">Feedback</th>
                     </tr>
                 </thead>
@@ -61,6 +62,12 @@
                             <td>@s.ActivityName</td>
 
                             <td>@s.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary"
+                                       href="@($"/api/proxy/submissions/{s.SubmissionId}/download")"                                       target="_blank">
+                                    Hämta fil
+                                </a>
+                            </td>
 
                             <td class="text-end pe-4">
                                 <button class="btn btn-sm btn-outline-primary"
