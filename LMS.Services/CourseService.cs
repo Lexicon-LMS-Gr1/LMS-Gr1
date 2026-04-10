@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
+using Domain.Models.Exceptions;
 using LMS.Infrastructure.Data;
 using LMS.Services.Mappers;
 using LMS.Shared.DTOs.Activity;
@@ -115,17 +116,17 @@ namespace LMS.Services
 		{
 			// DTOn får ej vara null + Grundläggande validering av kursens egna fält
 			if (courseCreateDto is null)
-				throw new ArgumentNullException(nameof(courseCreateDto));
+				throw new BadRequestException(nameof(courseCreateDto));
 
 			if (string.IsNullOrWhiteSpace(courseCreateDto.Name))
-				throw new ArgumentException("Kursnamn saknas.");
+				throw new BadRequestException("Kursnamn saknas.");
 
 			if (string.IsNullOrWhiteSpace(courseCreateDto.Description))
-				throw new ArgumentException("Kursbeskrivning saknas.");
+				throw new BadRequestException("Kursbeskrivning saknas.");
 
 			// Kursens startdatum måste vara <= slutdatum
 			if (courseCreateDto.StartDate > courseCreateDto.EndDate)
-				throw new ArgumentException("Startdatum får inte vara senare än slutdatum.");
+				throw new BadRequestException("Startdatum får inte vara senare än slutdatum.");
 
 			// Modules är en lista (initierad till tom lista i DTOn)
 			var modules = courseCreateDto.Modules;
@@ -136,18 +137,18 @@ namespace LMS.Services
 				// TODO: Delvis duplicering av DataAnnotations-validerigen. Ev centralisera denna validering senare.
 
 				if (string.IsNullOrWhiteSpace(module.Name))
-					throw new ArgumentException("En modul saknar namn.");
+					throw new BadRequestException("En modul saknar namn.");
 
 				if (string.IsNullOrWhiteSpace(module.Description))
-					throw new ArgumentException($"Modul \"{module.Name}\" saknar beskrivning.");
+					throw new BadRequestException($"Modul \"{module.Name}\" saknar beskrivning.");
 
 				// Modulens startdatum <= slutdatum
 				if (module.StartDate > module.EndDate)
-					throw new ArgumentException($"Modul \"{module.Name}\" har ett startdatum som ligger efter slutdatum.");
+					throw new BadRequestException($"Modul \"{module.Name}\" har ett startdatum som ligger efter slutdatum.");
 
 				// Modul måste ligga inom kursens datumintervall
 				if (module.StartDate < courseCreateDto.StartDate || module.EndDate > courseCreateDto.EndDate)
-					throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
+					throw new BadRequestException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
 			}
 
 			// Kontrollera att moduler inte överlappar varandra (inom samma request)
@@ -163,7 +164,7 @@ namespace LMS.Services
 
 					if (overlaps)
 					{
-						throw new ArgumentException(
+						throw new BadRequestException(
 							$"Modulerna \"{a.Name}\" och \"{b.Name}\" överlappar varandra.");
 					}
 				}
@@ -212,10 +213,10 @@ namespace LMS.Services
                 var teacher = await _userManager.FindByIdAsync(courseCreateDto.TeacherId);
 
                 if (teacher == null)
-                    throw new ArgumentException("Läraren kunde inte hittas.");
+                    throw new NotFoundException("Läraren kunde inte hittas.");
 
                 if (!await _userManager.IsInRoleAsync(teacher, "Teacher"))
-                    throw new ArgumentException("Vald användare är inte lärare.");
+                    throw new BadRequestException("Vald användare är inte lärare.");
 
 
                 teacher.CourseId = course.Id;
@@ -252,23 +253,23 @@ namespace LMS.Services
             var course = await _unitOfWork.CourseRepository.GetCourseById(courseUpdateDto.Id);
 
             if (course == null)
-				throw new Exception("Kursen kunde inte hittas.");
+				throw new NotFoundException("Kursen kunde inte hittas.");
 
             if (string.IsNullOrWhiteSpace(courseUpdateDto.Name))
-                throw new ArgumentException("Kursnamn saknas.");
+                throw new BadRequestException("Kursnamn saknas.");
 
             if (string.IsNullOrWhiteSpace(courseUpdateDto.Description))
-                throw new ArgumentException("Kursbeskrivning saknas.");
+                throw new BadRequestException("Kursbeskrivning saknas.");
 
             if (courseUpdateDto.StartDate > courseUpdateDto.EndDate)
-                throw new Exception("Startdatum får inte vara senare än slutdatum.");
+                throw new BadRequestException("Startdatum får inte vara senare än slutdatum.");
 
 
             if (course.Modules.Count != 0 &&
                 (courseUpdateDto.StartDate != course.StartDate ||
                  courseUpdateDto.EndDate != course.EndDate))
             {
-                throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
+                throw new BadRequestException("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
             }
           
                 // Tillåt inte ändring av kursdatum om kursen innehåller moduler, för moduldatumen kan då
@@ -331,10 +332,10 @@ namespace LMS.Services
                 var newTeacher = await _userManager.FindByIdAsync(courseUpdateDto.TeacherId);
 
                 if (newTeacher == null)
-                    throw new ArgumentException("Läraren kunde inte hittas.");
+                    throw new NotFoundException("Läraren kunde inte hittas.");
 
                 if (!await _userManager.IsInRoleAsync(newTeacher, "Teacher"))
-                    throw new ArgumentException("Vald användare är inte lärare.");
+                    throw new BadRequestException("Vald användare är inte lärare.");
 
                 if (oldTeacher != null)
                 {
@@ -352,14 +353,14 @@ namespace LMS.Services
 			return CourseMapper.ToBasicCourseDto(course);
 		}
 
-        public async Task<bool> DeleteCourseAsync(int courseId)
+        public async Task DeleteCourseAsync(int courseId)
         {
             var course = await _unitOfWork.CourseRepository.GetCourseWithAllDataAsync(courseId);
 
-            if (course == null)
-                return false;
+			if (course == null)
+				throw new NotFoundException("Kursen kunde inte hittas.");
 
-            await _userManagementService.DeleteStudentsByCourseAsync(courseId);
+			await _userManagementService.DeleteStudentsByCourseAsync(courseId);
 
             foreach (var module in course.Modules.ToList())
             {
@@ -375,7 +376,6 @@ namespace LMS.Services
 
             await _unitOfWork.CompleteAsync();
 
-            return true;
         }
 
 
