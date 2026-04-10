@@ -59,15 +59,23 @@ public class ActivityService : IActivityService
         if (module is null)
             throw new KeyNotFoundException($"Modul med id \"{moduleId}\" hittades inte.");
 
-        // Modulens StartDate/EndDate används som datumgränser
+        // Aktiviteten måste ligga inom modulens datumintervall
         if (normalizedStart.Date < module.StartDate.Date || normalizedEnd.Date > module.EndDate.Date)
             throw new ArgumentException("Aktiviteten ligger utanför modulens datumintervall.");
 
         if (!await _unitOfWork.ActivityRepository.ActivityTypeExistsAsync(activityDto.ActivityTypeId))
             throw new ArgumentException("Angiven aktivitetstyp finns inte.");
 
-        if (activityDto.DueDate.HasValue && activityDto.DueDate.Value > normalizedEnd)
-            throw new ArgumentException("Förfallodatum kan inte ligga efter aktivitetens sluttidpunkt.");
+        DateTime? normalizedDueDate = null;
+
+        // Om man valt ett duedate (deadline) så måste det ligga inom aktivitetens datumintervall, sätts till kl 17.00 den dagen
+        if (activityDto.DueDate.HasValue)
+        {
+            normalizedDueDate = activityDto.DueDate.Value.Date.AddHours(17);
+
+            if (normalizedDueDate < normalizedStart || normalizedDueDate > normalizedEnd)
+                throw new ArgumentException("Deadline måste ligga inom aktivitetens datumintervall.");
+        }
 
         // Regeln är "en aktivitet per dag och modul" och en aktivitet kan sträcka sig över flera dagar,
         // Då räcker det med en vanlig intervallöverlapp för att stoppa alla krockar.
@@ -87,7 +95,7 @@ public class ActivityService : IActivityService
             Description = activityDto.Description.Trim(),
             StartTime = normalizedStart,
             EndTime = normalizedEnd,
-            DueDate = activityDto.DueDate,
+            DueDate = normalizedDueDate,
             ActivityTypeId = activityDto.ActivityTypeId,
             ModuleId = moduleId,
             Module = null!,
@@ -104,6 +112,8 @@ public class ActivityService : IActivityService
 
         return MapToDto(savedActivity);
     }
+
+   
 	/*
     public async Task<ActivityDto> UpdateActivityAsync(ActivityUpdateDto_Old activityDto)
     {
