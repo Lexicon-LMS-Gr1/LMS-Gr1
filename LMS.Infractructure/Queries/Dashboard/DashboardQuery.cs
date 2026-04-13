@@ -35,7 +35,7 @@ public class DashboardQuery : IDashboardQuery
             .Select(a => new WeeklyActivityDto
             {
                 ModuleName = a.Module.Name,
-                ActivityType = a.ActivityType.Name,
+                ActivityTypeName = a.ActivityType.Name,
                 Title = a.Name,
                 Start = a.StartTime,
                 End = a.EndTime
