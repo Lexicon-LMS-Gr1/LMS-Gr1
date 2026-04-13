@@ -32,6 +32,7 @@ public class TeacherDashboardQuery : ITeacherDashboardQuery
                 ModuleCount = c.Modules.Count,
                 StudentCount = c.Users.Count
             })
+            .OrderBy(c => c.StartDate)
             .ToListAsync();
 
         // Recent activities

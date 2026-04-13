@@ -76,7 +76,7 @@
                                         </strong>
                                         innehåller följande aktiviteter:
                                         <ul class="mb-0 mt-2">
-                                            @foreach (var activity in existingActivities.OrderBy(a => a.StartTime))
+                                            @foreach (var activity in existingActivities)
                                             {
                                                 <li>
                                                     @activity.StartTime.ToString("yyyy-MM-dd HH:mm")
@@ -185,7 +185,8 @@
     {
         try
         {
-            courses = await ApiService.GetAsync<List<CourseDto>>("api/course") ?? new();
+            courses = (await ApiService.GetAsync<List<CourseDto>>("api/course") ?? new())
+                .OrderBy(c => c.StartDate).ToList();
             activityTypes = await ApiService.GetAsync<List<ActivityTypeDto>>("api/activitytypes") ?? new();
         }
         catch (Exception ex)
@@ -209,7 +210,8 @@
 
             try
             {
-                modules = await ApiService.GetAsync<List<ModuleDto>>($"api/courses/{courseId}/modules") ?? new();
+                modules = (await ApiService.GetAsync<List<ModuleDto>>($"api/courses/{courseId}/modules") ?? new())
+                    .OrderBy(m => m.StartDate).ToList();
             }
             catch (Exception ex)
             {
@@ -231,11 +233,12 @@
         if (int.TryParse(e.Value?.ToString(), out var moduleId) && moduleId > 0)
         {
             selectedModuleId = moduleId;
-            selectedModule = modules.FirstOrDefault(m => m.Id == moduleId);
+            selectedModule = modules.SingleOrDefault(m => m.Id == moduleId);
 
             try
             {
-                existingActivities = await ApiService.GetAsync<List<ActivityDto>>($"api/modules/{moduleId}/activities") ?? new();
+                existingActivities = (await ApiService.GetAsync<List<ActivityDto>>($"api/modules/{moduleId}/activities") ?? new())
+                    .OrderBy(a => a.StartTime).ToList();
             }
             catch (Exception ex)
             {

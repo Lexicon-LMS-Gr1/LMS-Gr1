@@ -339,9 +339,6 @@
         showEditCourseModal = true;
     }
 
-
-
-
     private void CloseEditCourse()
     {
         showEditCourseModal = false;
@@ -361,7 +358,8 @@
             if (result != null)
             {
                 showEditCourseModal = false;
-                allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+                allCourses = (await ApiService.GetAsync<List<CourseListDto>>("api/course/list") ?? new())
+                    .OrderBy(c => c.StartDate).ToList();
                 await LoadDashboard();
             }
             else
@@ -551,7 +549,8 @@
     private async Task LoadDashboard()
     {
         dashboard = await ApiService.GetAsync<TeacherDashboardDto>("api/user/me/teacher-dashboard");
-        allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+        allCourses = (await ApiService.GetAsync<List<CourseListDto>>("api/course/list") ?? new())
+            .OrderBy(c => c.StartDate).ToList();
         notifications = await ApiService.GetAsync<List<NotificationDto>>("api/notifications/unread") ?? new();
         var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
 
@@ -587,21 +586,16 @@
 
         await ApiService.DeleteAsync($"api/course/{courseIdToDelete}");
 
-        allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+        allCourses = (await ApiService.GetAsync<List<CourseListDto>>("api/course/list") ?? new())
+            .OrderBy(c => c.StartDate).ToList();
         await LoadDashboard();
 
         StateHasChanged();
     }
-
-
-
-    
 
     private async Task MarkAsRead(int id)
     {
         await ApiService.PatchAsync($"api/notifications/{id}/read");
         notifications.RemoveAll(n => n.Id == id);
     }
-
-
 }
