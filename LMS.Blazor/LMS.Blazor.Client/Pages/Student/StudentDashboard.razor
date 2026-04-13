@@ -1,6 +1,7 @@
 ﻿@page "/dashboard"
 @inject IApiService Api
 @using Domain.Models.Entities
+@using LMS.Shared.DTOs.Course
 @using LMS.Shared.DTOs.Notification
 @using LMS.Shared.DTOs.StudentDashboard
 
@@ -123,10 +124,46 @@
 				<h4 class="mb-0 fw-semibold">Modulframsteg</h4>
 			</div>
 
-			<div class="p-4 text-center text-muted">
-				Modulframsteg kommer senare
+			<div class="card-body">
+				@if (course == null)
+				{
+					<div class="text-center text-muted py-3">
+						Laddar...
+					</div>
+				} else if (course.Modules == null || !course.Modules.Any())
+				{
+					<div class="text-center text-muted py-3">
+						Inga moduler hittades
+					</div>
+				} else
+				{
+					<ul class="list-group list-group-flush">
+						@foreach (var m in course.Modules)
+						{
+							<li class="list-group-item">
+								<div class="d-flex justify-content-between align-items-center">
+									<span class="fw-semibold">@m.Name</span>
+									<span class="fw-normal small text-dark">
+										@m.Progress %
+									</span>
+								</div>
+
+								<div class="progress mt-2" style="height: 8px;">
+									<div class="progress-bar"
+										 role="progressbar"
+										 style="width: @m.Progress%;"
+										 aria-valuenow="@m.Progress"
+										 aria-valuemin="0"
+										 aria-valuemax="100">
+									</div>
+								</div>
+							</li>
+						}
+					</ul>
+				}
 			</div>
 		</div>
+
 	}
 </div>
 
@@ -138,10 +175,12 @@
 
 	private bool isLoadingUpcoming = true;
 	private bool isLoadingNotifications = true;
+	private CourseDto? course;
 
 	protected override async Task OnInitializedAsync()
 	{
 		dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
+		course = await Api.GetAsync<CourseDto>("api/user/me/course");
 
 		upcomingAssignments = await Api.GetAsync<List<StudentAssignmentDto>>(
 			"api/student/assignments/upcoming"
