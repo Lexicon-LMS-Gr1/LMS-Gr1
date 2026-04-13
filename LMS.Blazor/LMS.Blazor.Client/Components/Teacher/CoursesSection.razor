@@ -24,7 +24,7 @@
             </thead>
 
             <tbody>
-                @foreach (var c in Courses)
+                @foreach (var c in Courses.OrderBy(c => c.StartDate))
                 {
                     <tr>
                         <td class="ps-4 fw-semibold">@c.Name</td>
@@ -94,7 +94,7 @@
     {
         return status switch
         {
-            "Active" => "bg-success",              // Pågående
+            "Active" => "bg-success",             // Pågående
             "Upcoming" => "bg-info text-dark",    // Kommande
             "Completed" => "bg-secondary",        // Avslutad
             _ => "bg-warning text-dark"           // fallback

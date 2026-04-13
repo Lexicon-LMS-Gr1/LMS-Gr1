@@ -64,7 +64,7 @@
         <li class="nav-item">
             <button class="nav-link @(activeTab == "participants" ? "active text-primary fw-semibold" : "text-dark")"
                     @onclick='() => activeTab = "participants"'>
-                Studenter
+                Elever
             </button>
         </li>
     </ul>
@@ -195,7 +195,7 @@
                                 <label class="form-label fw-semibold">Kurs</label>
                                 <select class="form-select" @bind="userForm.CourseId">
                                     <option value="">— Ingen kurs —</option>
-                                    @foreach (var c in allCourses)
+                                    @foreach (var c in allCourses.OrderBy(c => c.StartDate))
                                     {
                                         <option value="@c.Id">@c.Name</option>
                                     }
@@ -358,8 +358,7 @@
             if (result != null)
             {
                 showEditCourseModal = false;
-                allCourses = (await ApiService.GetAsync<List<CourseListDto>>("api/course/list") ?? new())
-                    .OrderBy(c => c.StartDate).ToList();
+                allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
                 await LoadDashboard();
             }
             else
@@ -515,14 +514,14 @@
 
     /* -------- OPEN COURSE DETAILS -------- */
     private void GoToCourse(int id)
-        {
-            selectedCourseId = id;
-        }
+    {
+        selectedCourseId = id;
+    }
 
     private void CloseCourseDetails()
-        {
-            selectedCourseId = null;
-        }
+    {
+        selectedCourseId = null;
+    }
 
 
     /* ------ CREATE COURSE MODAL ------------*/
@@ -549,8 +548,7 @@
     private async Task LoadDashboard()
     {
         dashboard = await ApiService.GetAsync<TeacherDashboardDto>("api/user/me/teacher-dashboard");
-        allCourses = (await ApiService.GetAsync<List<CourseListDto>>("api/course/list") ?? new())
-            .OrderBy(c => c.StartDate).ToList();
+        allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
         notifications = await ApiService.GetAsync<List<NotificationDto>>("api/notifications/unread") ?? new();
         var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
 
@@ -586,8 +584,7 @@
 
         await ApiService.DeleteAsync($"api/course/{courseIdToDelete}");
 
-        allCourses = (await ApiService.GetAsync<List<CourseListDto>>("api/course/list") ?? new())
-            .OrderBy(c => c.StartDate).ToList();
+        allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
         await LoadDashboard();
 
         StateHasChanged();

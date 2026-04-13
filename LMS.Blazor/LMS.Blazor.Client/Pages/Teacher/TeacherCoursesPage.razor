@@ -98,8 +98,7 @@
 
     private async Task LoadCourses()
     {
-        courses = (await ApiService.GetAsync<List<CourseListDto>>("api/course/list") ?? new())
-            .OrderBy(c => c.StartDate).ToList();
+        courses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
     }
 
     protected override async Task OnInitializedAsync()
@@ -142,8 +141,7 @@
             if (result != null)
             {
                 showEditModal = false;
-                courses = (await ApiService.GetAsync<List<CourseListDto>>("api/course/list") ?? new())
-                    .OrderBy(c => c.StartDate).ToList();
+                courses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
             }
             else
             {
