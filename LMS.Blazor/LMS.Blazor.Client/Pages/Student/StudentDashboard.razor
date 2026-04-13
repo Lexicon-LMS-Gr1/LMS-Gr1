@@ -1,5 +1,7 @@
 ﻿@page "/dashboard"
 @inject IApiService Api
+@using Domain.Models.Entities
+@using LMS.Shared.DTOs.Notification
 @using LMS.Shared.DTOs.StudentDashboard
 
 <PageTitle>Dashboard — Lexicon LMS</PageTitle>
@@ -8,144 +10,163 @@
 
 
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-1">
-                Välkommen tillbaka!
-            </h2>
-            <p class="text-muted mb-0">Översikt över dina aktiviteter och framsteg</p>
-        </div>
-    </div>
+	<div class="d-flex justify-content-between align-items-center mb-4">
+		<div>
+			<h2 class="mb-1">
+				Välkommen tillbaka!
+			</h2>
+			<p class="text-muted mb-0">Översikt över dina aktiviteter och framsteg</p>
+		</div>
+	</div>
 
 
-    @if (dashboard == null)
-    {
-        <div class="d-flex justify-content-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Laddar...</span>
-            </div>
-        </div>
-    }
-    else
-    {
-        <!-- Weekly Activities -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h4 class="mb-0 fw-semibold">Veckans aktiviteter</h4>
-                <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">
-                    Vecka @currentWeek
-                </span>
-            </div>
+	@if (dashboard == null)
+	{
+		<div class="d-flex justify-content-center py-5">
+			<div class="spinner-border text-primary" role="status">
+				<span class="visually-hidden">Laddar...</span>
+			</div>
+		</div>
+	} else
+	{
 
-            @foreach (var moduleGroup in dashboard.WeeklyActivities.GroupBy(a => a.ModuleName))
-{
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-semibold">Modul: @moduleGroup.Key</h5>
-            <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">
-            </span>
-        </div>
+		<!-- Notifications -->
+		
+		<NotificationList Notifications="notifications"
+						  OnMarkAsRead="MarkAsRead" />
 
-        <div class="list-group list-group-flush">
-            @foreach (var a in moduleGroup)
-            {
-                <div class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="d-flex align-items-center mb-1">
-                                            <span class="badge @BadgeHelper.GetBadgeColor(a.ActivityType) me-2">
-                                                @a.ActivityType
-                                            </span>
-                                <span class="fw-semibold">@a.Title</span>
-                            </div>
+		<!-- Weekly Activities -->
+		<div class="card shadow-sm mb-4">
+			<div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+				<h4 class="mb-0 fw-semibold">Veckans aktiviteter</h4>
+				<span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">
+					Vecka @currentWeek
+				</span>
+			</div>
 
-                            <div class="text-muted small">
-                                @a.Start.ToString("yyyy-MM-dd")
-                                <span class="mx-1">•</span>
-                                @a.Start.ToString("HH:mm") – @a.End.ToString("HH:mm")
-                            </div>
-                        </div>
+			@foreach (var moduleGroup in dashboard.WeeklyActivities.GroupBy(a => a.ModuleName))
+			{
+				<div class="card shadow-sm mb-4">
+					<div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+						<h5 class="mb-0 fw-semibold">Modul: @moduleGroup.Key</h5>
+						<span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">
+						</span>
+					</div>
+
+					<div class="list-group list-group-flush">
+						@foreach (var a in moduleGroup)
+						{
+							<div class="list-group-item">
+								<div class="d-flex justify-content-between align-items-start">
+									<div>
+										<div class="d-flex align-items-center mb-1">
+											<span class="badge @BadgeHelper.GetBadgeColor(a.ActivityType) me-2">
+												@a.ActivityType
+											</span>
+											<span class="fw-semibold">@a.Title</span>
+										</div>
+
+										<div class="text-muted small">
+											@a.Start.ToString("yyyy-MM-dd")
+											<span class="mx-1">•</span>
+											@a.Start.ToString("HH:mm") – @a.End.ToString("HH:mm")
+										</div>
+									</div>
 
                         
-                    </div>
-                </div>
-            }
-        </div>
-    </div>
-}
-        </div>
+								</div>
+							</div>
+						}
+					</div>
+				</div>
+			}
+		</div>
 
-        <!-- Upcoming Deadlines -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white py-3">
-                <h4 class="mb-0 fw-semibold">Kommande inlämningar</h4>
-            </div>
+		<!-- Upcoming Deadlines -->
+		<div class="card shadow-sm mb-4">
+			<div class="card-header bg-white py-3">
+				<h4 class="mb-0 fw-semibold">Kommande inlämningar</h4>
+			</div>
 
-            <div class="card-body">
-                @if (isLoadingUpcoming)
-                {
-                    <div class="text-center text-muted py-3">
-                        Laddar...
-                    </div>
-                }
-                else if (upcomingAssignments == null || !upcomingAssignments.Any())
-                {
-                    <div class="text-center text-muted py-3">
-                        Inga kommande inlämningar
-                    </div>
-                }
-                else
-                {
-                    <ul class="list-group list-group-flush">
-                        @foreach (var a in upcomingAssignments)
-                        {
-                            <li class="list-group-item">
-                                <div class="fw-semibold">@a.Name</div>
-                                <div class="text-muted small">
-                                    Deadline: @a.DueDate?.ToString("yyyy-MM-dd HH:mm")
-                                </div>
-                            </li>
-                        }
-                    </ul>
-                }
-            </div>
-        </div>
+			<div class="card-body">
+				@if (isLoadingUpcoming)
+				{
+					<div class="text-center text-muted py-3">
+						Laddar...
+					</div>
+				} else if (upcomingAssignments == null || !upcomingAssignments.Any())
+				{
+					<div class="text-center text-muted py-3">
+						Inga kommande inlämningar
+					</div>
+				} else
+				{
+					<ul class="list-group list-group-flush">
+						@foreach (var a in upcomingAssignments)
+						{
+							<li class="list-group-item">
+								<div class="fw-semibold">@a.Name</div>
+								<div class="text-muted small">
+									Deadline: @a.DueDate?.ToString("yyyy-MM-dd HH:mm")
+								</div>
+							</li>
+						}
+					</ul>
+				}
+			</div>
+		</div>
 
 
-        <!-- Module Progress -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white py-3">
-                <h4 class="mb-0 fw-semibold">Modulframsteg</h4>
-            </div>
+		<!-- Module Progress -->
+		<div class="card shadow-sm mb-4">
+			<div class="card-header bg-white py-3">
+				<h4 class="mb-0 fw-semibold">Modulframsteg</h4>
+			</div>
 
-            <div class="p-4 text-center text-muted">
-                Modulframsteg kommer senare
-            </div>
-        </div>
-    }
+			<div class="p-4 text-center text-muted">
+				Modulframsteg kommer senare
+			</div>
+		</div>
+	}
 </div>
 
 @code {
-    private StudentDashboardDto? dashboard;
-    private int currentWeek;
-    private List<StudentAssignmentDto>? upcomingAssignments;
-    private bool isLoadingUpcoming = true;
+	private StudentDashboardDto? dashboard;
+	private int currentWeek;
+	private List<StudentAssignmentDto>? upcomingAssignments;
+	private List<NotificationDto>? notifications;
 
-    protected override async Task OnInitializedAsync()
-    {
-        dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
+	private bool isLoadingUpcoming = true;
+	private bool isLoadingNotifications = true;
 
-        upcomingAssignments = await Api.GetAsync<List<StudentAssignmentDto>>(
-            "api/student/assignments/upcoming"
-        );
+	protected override async Task OnInitializedAsync()
+	{
+		dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
 
-        isLoadingUpcoming = false;
+		upcomingAssignments = await Api.GetAsync<List<StudentAssignmentDto>>(
+			"api/student/assignments/upcoming"
+		);
+		notifications = await Api.GetAsync<List<NotificationDto>>(
+		 "api/notifications/unread"
+	 );
 
-        var today = DateTime.Today;
-        var culture = new System.Globalization.CultureInfo("sv-SE");
-        currentWeek = culture.Calendar.GetWeekOfYear(today,
-            System.Globalization.CalendarWeekRule.FirstFourDayWeek,
-            DayOfWeek.Monday);
-    }
+		isLoadingUpcoming = false;
+		isLoadingNotifications = false;
+
+		var today = DateTime.Today;
+		var culture = new System.Globalization.CultureInfo("sv-SE");
+		currentWeek = culture.Calendar.GetWeekOfYear(today,
+			System.Globalization.CalendarWeekRule.FirstFourDayWeek,
+			DayOfWeek.Monday);
+	}
+
+
+	private async Task MarkAsRead(int id)
+	{
+		await Api.PatchAsync($"api/notifications/{id}/read");
+		notifications.RemoveAll(n => n.Id == id);
+	}
+
+
 
 }

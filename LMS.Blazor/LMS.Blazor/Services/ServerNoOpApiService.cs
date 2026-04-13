@@ -35,4 +35,10 @@ public class ServerNoOpApiService(ILogger<ServerNoOpApiService> logger) : IApiSe
         _logger.LogWarning("ServerNoOpApiService.DeleteAsync called for: {Endpoint}", endpoint);
         return Task.FromResult((false, (string?)null));
     }
+
+	public Task<(bool Success, string? Error)> PatchAsync(string endpoint, CancellationToken ct = default)
+	{
+		_logger.LogWarning("ServerNoOpApiService.PatchAsync called for: {Endpoint}", endpoint);
+		return Task.FromResult((false, (string?)null));
+	}
 }
