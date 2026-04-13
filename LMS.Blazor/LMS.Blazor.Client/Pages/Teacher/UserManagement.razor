@@ -92,7 +92,7 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">E-post <span class="text-danger">*</span></label>
-                            <InputText class="form-control" @bind-Value="formModel.Email" placeholder="namn@exempel.se" />
+                            <InputText class="form-control" @bind-Value="formModel.Email" placeholder="namn@exempel.se" autocomplete="off" />
                             <ValidationMessage For="() => formModel.Email" class="text-danger small" />
                         </div>
 
@@ -100,7 +100,7 @@
                         {
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Lösenord <span class="text-danger">*</span></label>
-                                <InputText type="password" class="form-control" @bind-Value="createPassword" placeholder="Minst 6 tecken" />
+                                <InputText type="password" class="form-control" @bind-Value="createPassword" placeholder="Minst 6 tecken" autocomplete="new-password" />
                                 @if (!string.IsNullOrEmpty(passwordError))
                                 {
                                     <div class="text-danger small mt-1">@passwordError</div>
@@ -559,14 +559,17 @@
     {
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Förnamn krävs.")]
         [System.ComponentModel.DataAnnotations.StringLength(50, MinimumLength = 2, ErrorMessage = "Förnamn måste vara mellan 2 och 50 tecken.")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[a-zA-ZåäöÅÄÖ \-']+$", ErrorMessage = "Förnamn får endast innehålla bokstäver, mellanslag, bindestreck och apostrofer.")]
         public string FirstName { get; set; } = string.Empty;
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Efternamn krävs.")]
         [System.ComponentModel.DataAnnotations.StringLength(50, MinimumLength = 2, ErrorMessage = "Efternamn måste vara mellan 2 och 50 tecken.")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[a-zA-ZåäöÅÄÖ \-']+$", ErrorMessage = "Efternamn får endast innehålla bokstäver, mellanslag, bindestreck och apostrofer.")]
         public string LastName { get; set; } = string.Empty;
 
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "E-post krävs.")]
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "E-postadress krävs.")]
         [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Ogiltig e-postadress.")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "E-postadress kan inte överstiga 100 tecken.")]
         public string Email { get; set; } = string.Empty;
     }
 }
