@@ -67,8 +67,26 @@ public class ClientApiService : IApiService
         var errorMessage = errorBody.Trim('"');
         return (false, string.IsNullOrWhiteSpace(errorMessage) ? null : errorMessage);
     }
+	public async Task<(bool Success, string? Error)> PatchAsync(string endpoint, CancellationToken ct = default)
+	{
+		var request = new HttpRequestMessage(HttpMethod.Patch, $"api/proxy/{endpoint}");
 
-    public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
+		var response = await _httpClient.SendAsync(request, ct);
+
+		if (HandleUnauthorized(response))
+			return (false, null);
+
+		if (response.IsSuccessStatusCode)
+			return (true, null);
+
+		var errorBody = await response.Content.ReadAsStringAsync(ct);
+		var errorMessage = ExtractErrorMessage(errorBody);
+
+		return (false, string.IsNullOrWhiteSpace(errorMessage) ? null : errorMessage);
+	}
+
+
+	public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data, CancellationToken ct = default)
     {
         var response = await _httpClient.PostAsJsonAsync($"api/proxy/{endpoint}", data, _jsonOptions, ct);
 

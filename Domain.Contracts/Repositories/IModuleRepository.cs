@@ -10,4 +10,6 @@ public interface IModuleRepository : IRepositoryBase<Module>
 	Task<Module?> GetModuleByIdAsync(int moduleId, bool trackChanges = false);
     Task<Module?> GetModuleWithActivitiesAsync(int moduleId, bool trackChanges = false);
     Task<IEnumerable<Module>> GetByCourseIdAsync(int courseId, bool trackChanges = false);
+
+	Task<Module?> GetModuleWithCourseAsync(int moduleId, bool trackChanges = false);
 }
