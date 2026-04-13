@@ -18,7 +18,7 @@ public class ActivityController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<ActivityDto>> UpdateActivity(int id, [FromBody] UpdateActivityDto dto)
+    public async Task<ActionResult<ActivityDto>> UpdateActivity(int id, [FromBody] ActivityUpdateDto dto)
     {
         if (id != dto.Id)
             return BadRequest();

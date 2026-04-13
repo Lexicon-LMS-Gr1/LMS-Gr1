@@ -374,7 +374,7 @@
 
     // ACTIVITY EDIT
     private bool showActivityModal;
-    private UpdateActivityDto activityForm = new();
+    private ActivityUpdateDto activityForm = new();
     private string? activityError;
     private EditContext? activityEditContext;
     private int? highlightedActivityId;
@@ -408,7 +408,8 @@
 
     private void OpenActivityModal(ActivityDto activity)
     {
-        activityForm = new UpdateActivityDto {
+        activityForm = new ActivityUpdateDto
+        {
             Id = activity.Id,
             Name = activity.Name,
             Description = activity.Description,
@@ -477,7 +478,7 @@
         activityError = null;
 
         try {
-            var result = await ApiService.PutAsync<UpdateActivityDto, ActivityDto>(
+            var result = await ApiService.PutAsync<ActivityUpdateDto, ActivityDto>(
                 $"api/activity/{activityForm.Id}", activityForm);
 
             if (result != null) {

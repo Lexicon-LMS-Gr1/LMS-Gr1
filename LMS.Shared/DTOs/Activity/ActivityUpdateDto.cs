@@ -1,6 +1,6 @@
 ﻿namespace LMS.Shared.DTOs.Activity;
 
-public class UpdateActivityDto : ActivityBaseDto
+public class ActivityUpdateDto : ActivityBaseDto
 {
     public int Id { get; set; }
 

@@ -177,7 +177,7 @@ public class ActivityService : IActivityService
     }
     */
 
-	public async Task<ActivityDto> UpdateActivityAsync(UpdateActivityDto dto)
+	public async Task<ActivityDto> UpdateActivityAsync(ActivityUpdateDto dto)
 	{
 		if (dto is null)
 			throw new ArgumentNullException(nameof(dto));
