@@ -4,241 +4,259 @@ using Domain.Models.Entities;
 using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.Document;
 using Microsoft.AspNetCore.Identity;
-using Service.Contracts;
 using Microsoft.EntityFrameworkCore;
+using Service.Contracts;
+
 namespace LMS.Services;
 
 public class DocumentService : IDocumentService
 {
-	private readonly IUnitOfWork _unitOfWork;
-	private readonly IFileStorageService _fileStorage;
-	private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IFileStorageService _fileStorage;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-	private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
-	{
-		".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx",
-		".txt", ".csv", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".rar"
-	};
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx",
+        ".txt", ".csv", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".rar"
+    };
 
-	private const long MaxFileSize = 50 * 1024 * 1024;
+    private const long MaxFileSize = 50 * 1024 * 1024;
 
-	public DocumentService(IUnitOfWork unitOfWork, IFileStorageService fileStorage, UserManager<ApplicationUser> userManager)
+    public DocumentService(IUnitOfWork unitOfWork, IFileStorageService fileStorage, UserManager<ApplicationUser> userManager)
 
-	{
-		_unitOfWork = unitOfWork;
-		_fileStorage = fileStorage;
-		_userManager = userManager;
-	}
+    {
+        _unitOfWork = unitOfWork;
+        _fileStorage = fileStorage;
+        _userManager = userManager;
+    }
 
-	public async Task<DocumentDto> UploadAsync(
-		DocumentCreateDto dto,
-		Stream fileStream,
-		string fileName,
-		string contentType,
-		long fileSize,
-		string uploadedByUserId)
-	{
-		var parentCount = new[] { dto.CourseId.HasValue, dto.ModuleId.HasValue, dto.ActivityId.HasValue }
-			.Count(x => x);
+    public async Task<DocumentDto> UploadAsync(
+        DocumentCreateDto dto,
+        Stream fileStream,
+        string fileName,
+        string contentType,
+        long fileSize,
+        string uploadedByUserId)
+    {
+        if (dto is null)
+            throw new BadRequestException("Dokumentdata saknas.", "Valideringsfel");
 
-		if (parentCount != 1)
-			throw new ArgumentException("Exactly one of CourseId, ModuleId, or ActivityId must be provided.");
+        if (fileStream is null)
+            throw new BadRequestException("Filström saknas.", "Valideringsfel");
 
-		if (fileSize > MaxFileSize)
-			throw new ArgumentException($"File size exceeds the maximum allowed size of {MaxFileSize / (1024 * 1024)} MB.");
+        if (string.IsNullOrWhiteSpace(fileName))
+            throw new BadRequestException("Filnamn saknas.", "Valideringsfel");
 
-		var extension = Path.GetExtension(fileName);
-		if (string.IsNullOrWhiteSpace(extension) || !AllowedExtensions.Contains(extension))
-			throw new ArgumentException($"File type '{extension}' is not allowed. Allowed types: {string.Join(", ", AllowedExtensions)}");
+        if (string.IsNullOrWhiteSpace(uploadedByUserId))
+            throw new BadRequestException("Uppladdande användare saknas.", "Valideringsfel");
 
-		var relativePath = await _fileStorage.SaveFileAsync(fileStream, fileName);
+        var parentCount = new[] { dto.CourseId.HasValue, dto.ModuleId.HasValue, dto.ActivityId.HasValue }
+            .Count(x => x);
 
-		var document = new Document
-		{
-			Name = dto.Name,
-			Description = dto.Description,
-			UploadTimestamp = DateTime.UtcNow,
-			FilePath = relativePath,
-			FileName = fileName,
-			ContentType = contentType,
-			FileSize = fileSize,
-			UploadedByUserId = uploadedByUserId,
-			CourseId = dto.CourseId,
-			ModuleId = dto.ModuleId,
-			ActivityId = dto.ActivityId
-		};
+        if (parentCount != 1)
+            throw new BadRequestException("Exakt en av CourseId, ModuleId eller ActivityId måste anges.", "Valideringsfel");
 
-		_unitOfWork.DocumentRepository.Create(document);
+        if (fileSize > MaxFileSize)
+            throw new BadRequestException(
+                $"Filstorleken överskrider maximal tillåten storlek på {MaxFileSize / (1024 * 1024)} MB.",
+                "Valideringsfel");
 
+        var extension = Path.GetExtension(fileName);
+        if (string.IsNullOrWhiteSpace(extension) || !AllowedExtensions.Contains(extension))
+            throw new BadRequestException(
+                $"Filtypen \"{extension}\" är inte tillåten. Tillåtna filtyper: {string.Join(", ", AllowedExtensions)}",
+                "Valideringsfel");
 
-		// Notification 
-		await CreateDocumentNotificationsAsync(dto, document, uploadedByUserId);
+        var relativePath = await _fileStorage.SaveFileAsync(fileStream, fileName);
 
+        var document = new Document
+        {
+            Name = dto.Name,
+            Description = dto.Description,
+            UploadTimestamp = DateTime.UtcNow,
+            FilePath = relativePath,
+            FileName = fileName,
+            ContentType = contentType,
+            FileSize = fileSize,
+            UploadedByUserId = uploadedByUserId,
+            CourseId = dto.CourseId,
+            ModuleId = dto.ModuleId,
+            ActivityId = dto.ActivityId
+        };
 
-		// end
+        _unitOfWork.DocumentRepository.Create(document);
 
+        // Notification 
+        await CreateDocumentNotificationsAsync(dto, document, uploadedByUserId);
 
-		await _unitOfWork.CompleteAsync();
+        // end
 
-		return MapToDto(document);
-	}
+        await _unitOfWork.CompleteAsync();
 
-	private async Task CreateDocumentNotificationsAsync(
-	DocumentCreateDto dto,
-	Document document,
-	string uploadedByUserId)
-	{
-		var uploader = await _userManager.FindByIdAsync(uploadedByUserId);
+        return MapToDto(document);
+    }
 
-		// endast lärare ska trigga notiser
-		if (uploader is null || !await _userManager.IsInRoleAsync(uploader, "Teacher"))
-			return;
+    private async Task CreateDocumentNotificationsAsync(
+        DocumentCreateDto dto,
+        Document document,
+        string uploadedByUserId)
+    {
+        var uploader = await _userManager.FindByIdAsync(uploadedByUserId);
 
-		int courseId;
-		string? courseName = null;
-		string? moduleName = null;
-		string? activityName = null;
+        // endast lärare ska trigga notiser
+        if (uploader is null || !await _userManager.IsInRoleAsync(uploader, "Teacher"))
+            return;
 
-		// exakt en av CourseId, ModuleId eller ActivityId är satt (validerat med parentCount)
-		if (dto.CourseId is int cId)
-		{
-			courseId = cId;
-		} else if (dto.ModuleId is int mId)
-		{
-			var module = await _unitOfWork.ModuleRepository.GetModuleWithCourseAsync(mId)
-				?? throw new NotFoundException("Modulen hittades inte.");
+        int courseId;
+        string? courseName = null;
+        string? moduleName = null;
+        string? activityName = null;
 
-			courseId = module.CourseId;
-			moduleName = module.Name;
-			courseName = module.Course.Name;
-		} else
-		{
-			var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(dto.ActivityId!.Value)
-				?? throw new NotFoundException("Aktiviteten hittades inte.");
+        // exakt en av CourseId, ModuleId eller ActivityId är satt (validerat med parentCount)
+        if (dto.CourseId is int cId)
+        {
+            courseId = cId;
+        }
+        else if (dto.ModuleId is int mId)
+        {
+            var module = await _unitOfWork.ModuleRepository.GetModuleWithCourseAsync(mId)
+                ?? throw new NotFoundException("Modulen hittades inte.");
 
-			courseId = activity.Module.CourseId;
-			activityName = activity.Name;
-			courseName = activity.Module.Course.Name;
-		}
+            courseId = module.CourseId;
+            moduleName = module.Name;
+            courseName = module.Course.Name;
+        }
+        else
+        {
+            var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(dto.ActivityId!.Value)
+                ?? throw new NotFoundException("Aktiviteten hittades inte.");
 
-		var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseId)
-			?? throw new NotFoundException("Kursen hittades inte.");
+            courseId = activity.Module.CourseId;
+            activityName = activity.Name;
+            courseName = activity.Module.Course.Name;
+        }
 
-		// skicka bara notiser om kursen har startat
-		if (course.StartDate > DateTime.UtcNow)
-			return;
+        var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseId)
+            ?? throw new NotFoundException("Kursen hittades inte.");
 
-		courseName ??= course.Name;
+        // skicka bara notiser om kursen har startat
+        if (course.StartDate > DateTime.UtcNow)
+            return;
 
-		// hämta alla användare i kursen
-		var students = await _userManager.Users
-			.Where(u => u.CourseId == courseId)
-			.ToListAsync();
+        courseName ??= course.Name;
 
-		foreach (var user in students)
-		{
-			if (await _userManager.IsInRoleAsync(user, "Student"))
-			{
-				_unitOfWork.NotificationRepository.Create(new Notification
-				{
-					UserId = user.Id,
-					Type = NotificationType.DocumentUploaded,
-					CreatedAt = DateTime.UtcNow,
-					IsRead = false,
+        // hämta alla användare i kursen
+        var students = await _userManager.Users
+            .Where(u => u.CourseId == courseId)
+            .ToListAsync();
 
-					ActorUserId = uploader.Id,
-					ActorName = $"{uploader.FirstName} {uploader.LastName}",
+        foreach (var user in students)
+        {
+            if (await _userManager.IsInRoleAsync(user, "Student"))
+            {
+                _unitOfWork.NotificationRepository.Create(new Notification
+                {
+                    UserId = user.Id,
+                    Type = NotificationType.DocumentUploaded,
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
 
-					CourseId = courseId,
-					CourseName = courseName,
+                    ActorUserId = uploader.Id,
+                    ActorName = $"{uploader.FirstName} {uploader.LastName}",
 
-					ModuleId = dto.ModuleId,
-					ModuleName = moduleName,
+                    CourseId = courseId,
+                    CourseName = courseName,
 
-					ActivityId = dto.ActivityId,
-					ActivityName = activityName,
+                    ModuleId = dto.ModuleId,
+                    ModuleName = moduleName,
 
-					DocumentId = document.Id,
-					DocumentName = document.Name,
+                    ActivityId = dto.ActivityId,
+                    ActivityName = activityName,
 
-					Message = document.Description
-				});
-			}
-		}
-	}
+                    DocumentId = document.Id,
+                    DocumentName = document.Name,
 
-	public async Task<DocumentDto?> GetByIdAsync(int id)
-	{
-		var document = await _unitOfWork.DocumentRepository.GetByIdAsync(id);
-		return document == null ? null : MapToDto(document);
-	}
+                    Message = document.Description
+                });
+            }
+        }
+    }
 
-	public async Task<IEnumerable<DocumentDto>> GetByCourseIdAsync(int courseId)
-	{
-		var documents = await _unitOfWork.DocumentRepository.GetByCourseIdAsync(courseId);
-		return documents.Select(MapToDto);
-	}
+    public async Task<DocumentDto> GetByIdAsync(int id)
+    {
+        var document = await _unitOfWork.DocumentRepository.GetByIdAsync(id);
 
-	public async Task<IEnumerable<DocumentDto>> GetByModuleIdAsync(int moduleId)
-	{
-		var documents = await _unitOfWork.DocumentRepository.GetByModuleIdAsync(moduleId);
-		return documents.Select(MapToDto);
-	}
+        if (document == null)
+            throw new NotFoundException($"Dokument med id {id} hittades inte.");
 
-	public async Task<IEnumerable<DocumentDto>> GetByActivityIdAsync(int activityId)
-	{
-		var documents = await _unitOfWork.DocumentRepository.GetByActivityIdAsync(activityId);
-		return documents.Select(MapToDto);
-	}
+        return MapToDto(document);
+    }
 
-	public async Task<(Stream FileStream, string ContentType, string FileName)?> DownloadAsync(int id)
-	{
-		var document = await _unitOfWork.DocumentRepository.GetByIdAsync(id);
-		if (document == null)
-			return null;
+    public async Task<IEnumerable<DocumentDto>> GetByCourseIdAsync(int courseId)
+    {
+        var documents = await _unitOfWork.DocumentRepository.GetByCourseIdAsync(courseId);
+        return documents.Select(MapToDto);
+    }
 
-		if (!_fileStorage.FileExists(document.FilePath))
-			throw new FileNotFoundException($"File not found on disk: {document.FilePath}");
+    public async Task<IEnumerable<DocumentDto>> GetByModuleIdAsync(int moduleId)
+    {
+        var documents = await _unitOfWork.DocumentRepository.GetByModuleIdAsync(moduleId);
+        return documents.Select(MapToDto);
+    }
 
-		var stream = _fileStorage.OpenReadStream(document.FilePath);
-		return (stream, document.ContentType, document.FileName);
-	}
+    public async Task<IEnumerable<DocumentDto>> GetByActivityIdAsync(int activityId)
+    {
+        var documents = await _unitOfWork.DocumentRepository.GetByActivityIdAsync(activityId);
+        return documents.Select(MapToDto);
+    }
 
-	public async Task<bool> DeleteAsync(int id)
-	{
-		var document = await _unitOfWork.DocumentRepository.GetByIdAsync(id, trackChanges: true);
-		if (document == null)
-			return false;
+    public async Task<(Stream FileStream, string ContentType, string FileName)> DownloadAsync(int id)
+    {
+        var document = await _unitOfWork.DocumentRepository.GetByIdAsync(id);
+        if (document == null)
+            throw new NotFoundException($"Dokument med id {id} hittades inte.");
 
-		_fileStorage.DeleteFile(document.FilePath);
+        if (!_fileStorage.FileExists(document.FilePath))
+            throw new InvalidOperationException($"Filen hittades inte på disk: {document.FilePath}");
 
-		_unitOfWork.DocumentRepository.Delete(document);
-		await _unitOfWork.CompleteAsync();
+        var stream = _fileStorage.OpenReadStream(document.FilePath);
+        return (stream, document.ContentType, document.FileName);
+    }
 
-		return true;
-	}
+    public async Task DeleteAsync(int id)
+    {
+        var document = await _unitOfWork.DocumentRepository.GetByIdAsync(id, trackChanges: true);
+        if (document == null)
+            throw new NotFoundException($"Dokument med id {id} hittades inte.");
 
-	private static DocumentDto MapToDto(Document document)
-	{
-		return new DocumentDto
-		{
-			Id = document.Id,
-			Name = document.Name,
-			Description = document.Description ?? string.Empty,
-			UploadTimestamp = document.UploadTimestamp,
-			UploadedByUserId = document.UploadedByUserId,
-			UploadedByUserName = document.UploadedBy != null
-				? $"{document.UploadedBy.FirstName} {document.UploadedBy.LastName}"
-				: string.Empty,
-			FilePath = document.FilePath,
-			FileExtension = Path.GetExtension(document.FileName),
-			FileSizeBytes = document.FileSize,
-			CourseId = document.CourseId,
-			CourseName = document.Course?.Name,
-			ModuleId = document.ModuleId,
-			ModuleName = document.Module?.Name,
-			ActivityId = document.ActivityId,
-			ActivityName = document.Activity?.Name
-		};
-	}
+        _fileStorage.DeleteFile(document.FilePath);
+
+        _unitOfWork.DocumentRepository.Delete(document);
+        await _unitOfWork.CompleteAsync();
+    }
+
+    private static DocumentDto MapToDto(Document document)
+    {
+        return new DocumentDto
+        {
+            Id = document.Id,
+            Name = document.Name,
+            Description = document.Description ?? string.Empty,
+            UploadTimestamp = document.UploadTimestamp,
+            UploadedByUserId = document.UploadedByUserId,
+            UploadedByUserName = document.UploadedBy != null
+                ? $"{document.UploadedBy.FirstName} {document.UploadedBy.LastName}"
+                : string.Empty,
+            FilePath = document.FilePath,
+            FileExtension = Path.GetExtension(document.FileName),
+            FileSizeBytes = document.FileSize,
+            CourseId = document.CourseId,
+            CourseName = document.Course?.Name,
+            ModuleId = document.ModuleId,
+            ModuleName = document.Module?.Name,
+            ActivityId = document.ActivityId,
+            ActivityName = document.Activity?.Name
+        };
+    }
 }

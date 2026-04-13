@@ -28,11 +28,14 @@ public class NotificationService : INotificationService
 
 	public async Task MarkAsReadAsync(int notificationId, string userId)
 	{
-		var notification = await _unitOfWork.NotificationRepository
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new BadRequestException("Användar-id saknas.", "Valideringsfel");
+
+        var notification = await _unitOfWork.NotificationRepository
 			.GetByIdAsync(notificationId, trackChanges: true);
 
 		if (notification is null)
-			throw new NotFoundException($"Notification med id {notificationId} hittades inte.");
+			throw new NotFoundException($"Notis med id {notificationId} hittades inte.");
 
 		if (notification.UserId != userId)
 			throw new ForbiddenException("Du saknar behörighet att markera denna notis som läst.");

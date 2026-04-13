@@ -1,11 +1,8 @@
 ﻿using Domain.Contracts.Repositories;
 using LMS.Shared.DTOs.Activity;
-using LMS.Shared.DTOs.Course;
 using LMS.Shared.DTOs.Module;
 using Service.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Domain.Models.Exceptions;
 
 namespace LMS.Services;
 
@@ -22,8 +19,11 @@ public class ModuleService : IModuleService
     {
         var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(moduleId);
 
+        //if (module == null)
+        //    return Enumerable.Empty<ActivityDto>();
+
         if (module == null)
-            return Enumerable.Empty<ActivityDto>();
+            throw new NotFoundException($"Modul med id {moduleId} hittades inte.");
 
         return module.Activities.Select(a => new ActivityDto
         {
@@ -37,39 +37,33 @@ public class ModuleService : IModuleService
         });
     }
 
-    //TODO: Skapar modul utan att koppla den till en kurs, används inte. Tas Bort?
-    public Task<ModuleDto> CreateModuleAsync(ModuleCreateDto moduleDto)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task<ModuleDto> CreateModuleAsync(int courseId, ModuleCreateDto moduleDto)
     {
         if (moduleDto is null)
-            throw new ArgumentNullException(nameof(moduleDto));
+            throw new BadRequestException("Moduldata saknas.", "Valideringsfel");
 
         if (string.IsNullOrWhiteSpace(moduleDto.Name))
-            throw new ArgumentException("Modulnamn saknas.");
+            throw new BadRequestException("Modulnamn saknas.", "Valideringsfel");
 
         if (string.IsNullOrWhiteSpace(moduleDto.Description))
-            throw new ArgumentException("Modulbeskrivning saknas.");
+            throw new BadRequestException("Modulbeskrivning saknas.", "Valideringsfel");
 
         if (moduleDto.StartDate > moduleDto.EndDate)
-            throw new ArgumentException("Startdatum får inte vara senare än slutdatum.");
+            throw new BadRequestException("Startdatum får inte vara senare än slutdatum.", "Valideringsfel");
 
         var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
 
         if (course is null)
-            throw new KeyNotFoundException($"Kurs med id \"{courseId}\" hittades inte.");
+            throw new NotFoundException($"Kurs med id \"{courseId}\" hittades inte.");
 
         if (moduleDto.StartDate < course.StartDate || moduleDto.EndDate > course.EndDate)
-            throw new ArgumentException("Modul \"{module.Name}\" ligger utanför kursens datumintervall.");
+            throw new BadRequestException($"Modul \"{moduleDto.Name}\" ligger utanför kursens datumintervall.", "Valideringsfel");
 
         bool overlaps = course.Modules.Any(m =>
             moduleDto.StartDate <= m.EndDate && moduleDto.EndDate >= m.StartDate);
 
         if (overlaps)
-            throw new ArgumentException("Modulen överlappar en annan modul i kursen.");
+            throw new BadRequestException("Modulen överlappar en annan modul i kursen.", "Valideringsfel");
 
         var module = new Domain.Models.Entities.Module
         {
@@ -95,12 +89,12 @@ public class ModuleService : IModuleService
         };
     }
 
-    public async Task<bool> DeleteModuleAsync(int id)
+    public async Task DeleteModuleAsync(int id)
     {
         var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(id, trackChanges: true);
 
         if (module == null)
-            return false;
+            throw new NotFoundException($"Modul med id {id} hittades inte.");
 
         if (module.Activities != null && module.Activities.Any())
         {
@@ -113,8 +107,6 @@ public class ModuleService : IModuleService
         _unitOfWork.ModuleRepository.Delete(module);
 
         await _unitOfWork.CompleteAsync();
-
-        return true;
     }
 
     public Task<IEnumerable<ModuleDto>> GetAllModulesAsync()
@@ -142,31 +134,31 @@ public class ModuleService : IModuleService
         });
     }
 
-    public async Task<ModuleDto?> UpdateModuleAsync(ModuleUpdateDto moduleUpdateDto)
+    public async Task<ModuleDto> UpdateModuleAsync(ModuleUpdateDto moduleUpdateDto)
     {
         var module = await _unitOfWork.ModuleRepository.GetModuleByIdAsync(moduleUpdateDto.Id, trackChanges: true);
 
         if (module == null)
-            return null;
+            throw new NotFoundException($"Modul med id {moduleUpdateDto.Id} hittades inte.");
 
         if (string.IsNullOrWhiteSpace(moduleUpdateDto.Name))
-            throw new ArgumentException("Modulnamn saknas.");
+            throw new BadRequestException("Modulnamn saknas.", "Valideringsfel");
 
         if (string.IsNullOrWhiteSpace(moduleUpdateDto.Description))
-            throw new ArgumentException("Modulbeskrivning saknas.");
+            throw new BadRequestException("Modulbeskrivning saknas.", "Valideringsfel");
 
         if (moduleUpdateDto.StartDate > moduleUpdateDto.EndDate)
-            throw new Exception("Startdatum får inte vara senare än slutdatum.");
+            throw new BadRequestException("Startdatum får inte vara senare än slutdatum.", "Valideringsfel");
 
         if (moduleUpdateDto.StartDate < module.Course.StartDate || moduleUpdateDto.EndDate > module.Course.EndDate)
-            throw new ArgumentException($"Modul \"{module.Name}\" ligger utanför kursens datumintervall.");
+            throw new BadRequestException($"Modul \"{module.Name}\" ligger utanför kursens datumintervall.", "Valideringsfel");
 
         bool overlaps = module.Course.Modules.Any(m =>
             m.Id != module.Id &&
             moduleUpdateDto.StartDate <= m.EndDate && moduleUpdateDto.EndDate >= m.StartDate);
 
         if (overlaps)
-            throw new ArgumentException("Modulen överlappar en annan modul i kursen.");
+            throw new BadRequestException("Modulen överlappar en annan modul i kursen.", "Valideringsfel");
 
         module.Name = moduleUpdateDto.Name.Trim();
         module.Description = moduleUpdateDto.Description.Trim();

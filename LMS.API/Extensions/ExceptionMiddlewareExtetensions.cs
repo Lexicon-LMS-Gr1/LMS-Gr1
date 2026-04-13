@@ -24,6 +24,7 @@ public static class ExceptionMiddlewareExtetensions
                         BadRequestException => (StatusCodes.Status400BadRequest, (exception as BadRequestException)!.Title),
                         NotFoundException => (StatusCodes.Status404NotFound, (exception as NotFoundException)!.Title),
                         TokenValidationException tokenEx => (tokenEx.StatusCode, "Unauthorized"),
+                        ForbiddenException => (StatusCodes.Status403Forbidden, (exception as ForbiddenException)!.Title),
                         _ => (StatusCodes.Status500InternalServerError, "Internal Server Error")
                     };
 

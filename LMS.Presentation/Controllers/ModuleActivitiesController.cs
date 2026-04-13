@@ -1,4 +1,5 @@
-﻿using LMS.Shared.DTOs.Activity;
+﻿using Domain.Models.Exceptions;
+using LMS.Shared.DTOs.Activity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
@@ -27,22 +28,10 @@ public class ModuleActivitiesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ActivityDto>> Create(int moduleId, [FromBody] ActivityCreateDto dto)
     {
-        try
-        {
-            var created = await _activityService.CreateActivityAsync(moduleId, dto);
-            return Ok(created);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid skapande av aktivitet." });
-        }
+        if (!ModelState.IsValid)
+            throw new BadRequestException("Ogiltiga data skickades för aktiviteten.", "Valideringsfel");
+
+        var created = await _activityService.CreateActivityAsync(moduleId, dto);
+        return Ok(created);
     }
 }
