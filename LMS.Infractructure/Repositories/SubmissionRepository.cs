@@ -28,7 +28,7 @@ namespace LMS.Infractructure.Repositories
 
         public async Task<Submission?> GetByIdAsync(int id)
 		{
-			return await _context.Submissions.Include(s => s.FeedbackGivenByTeacher).FirstOrDefaultAsync(s => s.Id == id);
+			return await _context.Submissions.Include(s => s.FeedbackGivenByTeacher).Include(s => s.Activity).FirstOrDefaultAsync(s => s.Id == id);
 		}
 
 		public async Task<IEnumerable<Submission>> GetByCourseIdAsync(int courseId, bool trackChanges = false)

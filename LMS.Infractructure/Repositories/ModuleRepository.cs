@@ -52,4 +52,16 @@ public class ModuleRepository : RepositoryBase<Module>, IModuleRepository
 
         return await query.ToListAsync();
     }
+
+	public async Task<Module?> GetModuleWithCourseAsync(int moduleId, bool trackChanges = false)
+	{
+		var query = _context.Modules
+			.Include(m => m.Course)
+			.AsQueryable();
+
+		if (!trackChanges)
+			query = query.AsNoTracking();
+
+		return await query.FirstOrDefaultAsync(m => m.Id == moduleId);
+	}
 }

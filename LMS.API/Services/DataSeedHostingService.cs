@@ -79,14 +79,16 @@ public class DataSeedHostingService : IHostedService
 		userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 		roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-		try {
+		try
+		{
 			await AddRolesAsync();
 			var activityTypes = await SeedActivityTypesAsync(context);
 			await SeedSpecialUsersAsync();
 			await SeedAllAsync(context, activityTypes);
 
 			logger.LogInformation("Seed complete");
-		} catch (Exception ex) {
+		} catch (Exception ex)
+		{
 			logger.LogError(ex, "Data seed failed");
 			throw;
 		}
@@ -98,7 +100,8 @@ public class DataSeedHostingService : IHostedService
 	{
 		var roles = new[] { TeacherRole, StudentRole };
 
-		foreach (var roleName in roles) {
+		foreach (var roleName in roles)
+		{
 			if (await roleManager.RoleExistsAsync(roleName))
 				continue;
 
@@ -162,7 +165,8 @@ public class DataSeedHostingService : IHostedService
 		ActivityType workshop,
 		ActivityType exam)
 	{
-		var databaseCourse = new Course {
+		var databaseCourse = new Course
+		{
 			Name = "Databases 2026",
 			Description = "Relationsdatabaser, SQL, datamodellering och normalisering.",
 			StartDate = new DateTime(2026, 1, 15),
@@ -337,7 +341,8 @@ public class DataSeedHostingService : IHostedService
 		ActivityType workshop,
 		ActivityType exam)
 	{
-		var dotNetCourse = new Course {
+		var dotNetCourse = new Course
+		{
 			Name = ".NET 2026",
 			Description = "Backendutveckling med C#, ASP.NET Core, Entity Framework och Web API.",
 			StartDate = new DateTime(2026, 3, 15),
@@ -514,7 +519,8 @@ public class DataSeedHostingService : IHostedService
 		ActivityType workshop,
 		ActivityType exam)
 	{
-		var frontendCourse = new Course {
+		var frontendCourse = new Course
+		{
 			Name = "Frontend 2026",
 			Description = "HTML, CSS, JavaScript och moderna frontend-flöden.",
 			StartDate = new DateTime(2026, 5, 18),
@@ -601,7 +607,8 @@ public class DataSeedHostingService : IHostedService
 		DateTime feedbackGivenAt,
 		string feedbackGivenByTeacherId)
 	{
-		return new Submission {
+		return new Submission
+		{
 			ActivityId = activityId,
 			StudentId = studentId,
 			FilePath = filePath,
@@ -624,7 +631,8 @@ public class DataSeedHostingService : IHostedService
 		DateTime endDate,
 		Course course)
 	{
-		return new Module {
+		return new Module
+		{
 			Name = name,
 			Description = description,
 			StartDate = startDate,
@@ -643,7 +651,8 @@ public class DataSeedHostingService : IHostedService
 		Module module,
 		DateTime? dueDate = null)
 	{
-		return new Activity {
+		return new Activity
+		{
 			Name = name,
 			Description = description,
 			StartTime = startTime,
@@ -664,7 +673,8 @@ public class DataSeedHostingService : IHostedService
 		string comment,
 		DateTime submittedAt)
 	{
-		return new Submission {
+		return new Submission
+		{
 			ActivityId = activityId,
 			StudentId = studentId,
 			FilePath = filePath,
@@ -676,7 +686,8 @@ public class DataSeedHostingService : IHostedService
 
 	private async Task CreateRandomStudentsForCourseAsync(int courseId, int count)
 	{
-		for (int i = 0; i < count; i++) {
+		for (int i = 0; i < count; i++)
+		{
 			await CreateAndAssignUserAsync(StudentRole, courseId);
 		}
 	}
@@ -727,7 +738,8 @@ public class DataSeedHostingService : IHostedService
 		var password = configuration["password"];
 		ArgumentNullException.ThrowIfNull(password);
 
-		var user = new ApplicationUser {
+		var user = new ApplicationUser
+		{
 			FirstName = firstName,
 			LastName = lastName,
 			Email = email,

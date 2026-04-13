@@ -20,6 +20,7 @@ public class Program
         builder.Services.ConfigureIdentity();
 
         builder.Services.AddHostedService<DataSeedHostingService>();
+
         builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MapperProfile>());
         builder.Services.ConfigureCors();
         builder.Services.ConfigureSwagger();

@@ -45,7 +45,9 @@ public class ActivityRepository : IActivityRepository
     {
         var query = _context.Activities
             .Include(a => a.ActivityType)
-            .AsQueryable();
+			.Include(a => a.Module)
+			    .ThenInclude(m => m.Course)
+			.AsQueryable();
 
         if (!trackChanges)
             query = query.AsNoTracking();

@@ -109,6 +109,11 @@ public static class ServiceExtensions
         services.AddScoped(provider =>
             new Lazy<IDocumentRepository>(() => provider.GetRequiredService<IDocumentRepository>()));
 
+
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped(provider =>
+            new Lazy<INotificationRepository>(() => provider.GetRequiredService<INotificationRepository>()));
+
     }
 
     public static void AddServiceLayer(this IServiceCollection services)
@@ -158,7 +163,9 @@ public static class ServiceExtensions
 
 
 
-
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped(provider =>
+            new Lazy<INotificationService>(() => provider.GetRequiredService<INotificationService>()));
 
 
 	}
