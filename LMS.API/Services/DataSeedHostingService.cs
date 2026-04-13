@@ -118,10 +118,10 @@ public class DataSeedHostingService : IHostedService
 
 		var activityTypes = new List<ActivityType>
 		{
-			new() { Name = "Lecture" },
-			new() { Name = "Assignment" },
+			new() { Name = "Föreläsning" },
+			new() { Name = "Inlämning" },
 			new() { Name = "Workshop" },
-			new() { Name = "Exam" }
+			new() { Name = "Examination" }
 		};
 
 		context.ActivityTypes.AddRange(activityTypes);
@@ -148,10 +148,10 @@ public class DataSeedHostingService : IHostedService
 
 	private async Task SeedAllAsync(ApplicationDbContext context, List<ActivityType> activityTypes)
 	{
-		var lecture = activityTypes.First(x => x.Name == "Lecture");
-		var assignment = activityTypes.First(x => x.Name == "Assignment");
+		var lecture = activityTypes.First(x => x.Name == "Föreläsning");
+		var assignment = activityTypes.First(x => x.Name == "Inlämning");
 		var workshop = activityTypes.First(x => x.Name == "Workshop");
-		var exam = activityTypes.First(x => x.Name == "Exam");
+		var exam = activityTypes.First(x => x.Name == "Examination");
 
 		await SeedDatabaseCourseAsync(context, lecture, assignment, workshop, exam);
 		await SeedDotNetCourseAsync(context, lecture, assignment, workshop, exam);
@@ -167,7 +167,7 @@ public class DataSeedHostingService : IHostedService
 	{
 		var databaseCourse = new Course
 		{
-			Name = "Databases 2026",
+			Name = "Databaser 2026",
 			Description = "Relationsdatabaser, SQL, datamodellering och normalisering.",
 			StartDate = new DateTime(2026, 1, 15),
 			EndDate = new DateTime(2026, 3, 13)
@@ -184,47 +184,47 @@ public class DataSeedHostingService : IHostedService
 		context.Modules.AddRange(module1, module2, module3, module4);
 		await context.SaveChangesAsync();
 
-		var m1Assignment1 = CreateActivity("Assignment 1: Tabeller och nycklar", "Skapa enkla tabeller och definiera primärnycklar.", Dt(2026, 1, 20), Dt(2026, 1, 20, 17), assignment, module1, Dt(2026, 1, 20, 17));
-		var m1Assignment2 = CreateActivity("Assignment 2: Grundläggande SQL", "Skriv enkla INSERT-, UPDATE- och SELECT-frågor.", Dt(2026, 1, 28), Dt(2026, 1, 28, 17), assignment, module1, Dt(2026, 1, 28, 17));
+		var m1Assignment1 = CreateActivity($"{assignment.Name} 1: Tabeller och nycklar", "Skapa enkla tabeller och definiera primärnycklar.", Dt(2026, 1, 20), Dt(2026, 1, 20, 17), assignment, module1, Dt(2026, 1, 20, 17));
+		var m1Assignment2 = CreateActivity($"{assignment.Name} 2: Grundläggande SQL", "Skriv enkla INSERT-, UPDATE- och SELECT-frågor.", Dt(2026, 1, 28), Dt(2026, 1, 28, 17), assignment, module1, Dt(2026, 1, 28, 17));
 
-		var m2Assignment1 = CreateActivity("Assignment 1: JOIN och filtrering", "Arbeta med JOIN, WHERE och ORDER BY.", Dt(2026, 2, 3), Dt(2026, 2, 3, 17), assignment, module2, Dt(2026, 2, 3, 17));
-		var m2Assignment2 = CreateActivity("Assignment 2: Aggregat och gruppering", "Använd GROUP BY, HAVING och aggregatfunktioner.", Dt(2026, 2, 11), Dt(2026, 2, 11, 17), assignment, module2, Dt(2026, 2, 11, 17));
+		var m2Assignment1 = CreateActivity($"{assignment.Name} 1: JOIN och filtrering", "Arbeta med JOIN, WHERE och ORDER BY.", Dt(2026, 2, 3), Dt(2026, 2, 3, 17), assignment, module2, Dt(2026, 2, 3, 17));
+		var m2Assignment2 = CreateActivity($"{assignment.Name} 2: Aggregat och gruppering", "Använd GROUP BY, HAVING och aggregatfunktioner.", Dt(2026, 2, 11), Dt(2026, 2, 11, 17), assignment, module2, Dt(2026, 2, 11, 17));
 
-		var m3Assignment1 = CreateActivity("Assignment 1: ER-diagram", "Modellera ett system med entiteter och relationer.", Dt(2026, 2, 17), Dt(2026, 2, 17, 17), assignment, module3, Dt(2026, 2, 17, 17));
-		var m3Assignment2 = CreateActivity("Assignment 2: Normalisering", "Normalisera en datamodell till minst tredje normalformen.", Dt(2026, 2, 25), Dt(2026, 2, 25, 17), assignment, module3, Dt(2026, 2, 25, 17));
+		var m3Assignment1 = CreateActivity($"{assignment.Name} 1: ER-diagram", "Modellera ett system med entiteter och relationer.", Dt(2026, 2, 17), Dt(2026, 2, 17, 17), assignment, module3, Dt(2026, 2, 17, 17));
+		var m3Assignment2 = CreateActivity($"{assignment.Name} 2: Normalisering", "Normalisera en datamodell till minst tredje normalformen.", Dt(2026, 2, 25), Dt(2026, 2, 25, 17), assignment, module3, Dt(2026, 2, 25, 17));
 
-		var m4Assignment1 = CreateActivity("Assignment 1: Vyer och subqueries", "Skapa vyer och använd subqueries i SQL.", Dt(2026, 3, 4), Dt(2026, 3, 4, 17), assignment, module4, Dt(2026, 3, 4, 17));
-		var m4Assignment2 = CreateActivity("Assignment 2: SQL-optimering", "Analysera queries och föreslå förbättringar.", Dt(2026, 3, 12), Dt(2026, 3, 12, 17), assignment, module4, Dt(2026, 3, 12, 17));
+		var m4Assignment1 = CreateActivity($"{assignment.Name} 1: Vyer och subqueries", "Skapa vyer och använd subqueries i SQL.", Dt(2026, 3, 4), Dt(2026, 3, 4, 17), assignment, module4, Dt(2026, 3, 4, 17));
+		var m4Assignment2 = CreateActivity($"{assignment.Name} 2: SQL-optimering", "Analysera queries och föreslå förbättringar.", Dt(2026, 3, 12), Dt(2026, 3, 12, 17), assignment, module4, Dt(2026, 3, 12, 17));
 
 		context.Activities.AddRange(
-			CreateActivity("Lecture: Introduktion till databaser", "Översikt av databaser och hur de används.", Dt(2026, 1, 15), Dt(2026, 1, 16, 17), lecture, module1),
-			CreateActivity("Workshop: Tabeller och relationer", "Praktisk modellering av tabeller och relationer.", Dt(2026, 1, 19), Dt(2026, 1, 19, 17), workshop, module1),
+			CreateActivity($"{lecture.Name}: Introduktion till databaser", "Översikt av databaser och hur de används.", Dt(2026, 1, 15), Dt(2026, 1, 16, 17), lecture, module1),
+			CreateActivity($"{workshop.Name}: Tabeller och relationer", "Praktisk modellering av tabeller och relationer.", Dt(2026, 1, 19), Dt(2026, 1, 19, 17), workshop, module1),
 			m1Assignment1,
-			CreateActivity("Lecture: SQL grunder", "SELECT, INSERT, UPDATE och DELETE.", Dt(2026, 1, 21), Dt(2026, 1, 23, 17), lecture, module1),
-			CreateActivity("Workshop: SQL-labb", "Övningar med grundläggande SQL-frågor.", Dt(2026, 1, 26), Dt(2026, 1, 27, 17), workshop, module1),
+			CreateActivity($"{lecture.Name}: SQL grunder", "SELECT, INSERT, UPDATE och DELETE.", Dt(2026, 1, 21), Dt(2026, 1, 23, 17), lecture, module1),
+			CreateActivity($"{workshop.Name}: SQL-labb", "Övningar med grundläggande SQL-frågor.", Dt(2026, 1, 26), Dt(2026, 1, 27, 17), workshop, module1),
 			m1Assignment2,
 
-			CreateActivity("Lecture: JOIN och filter", "Koppla tabeller och filtrera resultat.", Dt(2026, 1, 29), Dt(2026, 1, 30, 17), lecture, module2),
-			CreateActivity("Workshop: Query-labb", "Praktiska övningar i SQL queries.", Dt(2026, 2, 2), Dt(2026, 2, 2, 17), workshop, module2),
+			CreateActivity($"{lecture.Name}: JOIN och filter", "Koppla tabeller och filtrera resultat.", Dt(2026, 1, 29), Dt(2026, 1, 30, 17), lecture, module2),
+			CreateActivity($"{workshop.Name}: Query-labb", "Praktiska övningar i SQL queries.", Dt(2026, 2, 2), Dt(2026, 2, 2, 17), workshop, module2),
 			m2Assignment1,
-			CreateActivity("Lecture: Gruppfunktioner", "SUM, COUNT, AVG, GROUP BY och HAVING.", Dt(2026, 2, 4), Dt(2026, 2, 6, 17), lecture, module2),
-			CreateActivity("Workshop: Rapportfrågor", "Bygg queries för rapporter och sammanställningar.", Dt(2026, 2, 9), Dt(2026, 2, 10, 17), workshop, module2),
+			CreateActivity($"{lecture.Name}: Gruppfunktioner", "SUM, COUNT, AVG, GROUP BY och HAVING.", Dt(2026, 2, 4), Dt(2026, 2, 6, 17), lecture, module2),
+			CreateActivity($"{workshop.Name}: Rapportfrågor", "Bygg queries för rapporter och sammanställningar.", Dt(2026, 2, 9), Dt(2026, 2, 10, 17), workshop, module2),
 			m2Assignment2,
 
-			CreateActivity("Lecture: ER-modellering", "Identifiera entiteter, attribut och relationer.", Dt(2026, 2, 12), Dt(2026, 2, 13, 17), lecture, module3),
-			CreateActivity("Workshop: Modellering", "Skapa ER-diagram för ett domänproblem.", Dt(2026, 2, 16), Dt(2026, 2, 16, 17), workshop, module3),
+			CreateActivity($"{lecture.Name}: ER-modellering", "Identifiera entiteter, attribut och relationer.", Dt(2026, 2, 12), Dt(2026, 2, 13, 17), lecture, module3),
+			CreateActivity($"{workshop.Name}: Modellering", "Skapa ER-diagram för ett domänproblem.", Dt(2026, 2, 16), Dt(2026, 2, 16, 17), workshop, module3),
 			m3Assignment1,
-			CreateActivity("Lecture: Normalisering", "1NF, 2NF och 3NF.", Dt(2026, 2, 18), Dt(2026, 2, 20, 17), lecture, module3),
-			CreateActivity("Workshop: Datamodells-labb", "Förbättra och normalisera datamodeller.", Dt(2026, 2, 23), Dt(2026, 2, 24, 17), workshop, module3),
+			CreateActivity($"{lecture.Name}: Normalisering", "1NF, 2NF och 3NF.", Dt(2026, 2, 18), Dt(2026, 2, 20, 17), lecture, module3),
+			CreateActivity($"{workshop.Name}: Datamodells-labb", "Förbättra och normalisera datamodeller.", Dt(2026, 2, 23), Dt(2026, 2, 24, 17), workshop, module3),
 			m3Assignment2,
 
-			CreateActivity("Lecture: Avancerad SQL", "Subqueries, CTE och vyer.", Dt(2026, 2, 26), Dt(2026, 2, 27, 17), lecture, module4),
-			CreateActivity("Workshop: Query-optimering", "Analysera exekvering och förbättra queries.", Dt(2026, 3, 2), Dt(2026, 3, 3, 17), workshop, module4),
+			CreateActivity($"{lecture.Name}: Avancerad SQL", "Subqueries, CTE och vyer.", Dt(2026, 2, 26), Dt(2026, 2, 27, 17), lecture, module4),
+			CreateActivity($"{workshop.Name}: Query-optimering", "Analysera exekvering och förbättra queries.", Dt(2026, 3, 2), Dt(2026, 3, 3, 17), workshop, module4),
 			m4Assignment1,
-			CreateActivity("Lecture: Index och prestanda", "Hur index påverkar prestanda.", Dt(2026, 3, 5), Dt(2026, 3, 6, 17), lecture, module4),
-			CreateActivity("Workshop: Prestandalabb", "Optimera queries och jämför resultat.", Dt(2026, 3, 9), Dt(2026, 3, 11, 17), workshop, module4),
+			CreateActivity($"{lecture.Name}: Index och prestanda", "Hur index påverkar prestanda.", Dt(2026, 3, 5), Dt(2026, 3, 6, 17), lecture, module4),
+			CreateActivity($"{workshop.Name}: Prestandalabb", "Optimera queries och jämför resultat.", Dt(2026, 3, 9), Dt(2026, 3, 11, 17), workshop, module4),
 			m4Assignment2,
-			CreateActivity("Exam: Databases", "Avslutande examination för kursen.", Dt(2026, 3, 13), Dt(2026, 3, 13, 17), exam, module4, Dt(2026, 3, 13, 17))
+			CreateActivity($"{exam.Name}: Databaser", "Avslutande examination för kursen.", Dt(2026, 3, 13), Dt(2026, 3, 13, 17), exam, module4, Dt(2026, 3, 13, 17))
 		);
 
 		await context.SaveChangesAsync();
@@ -360,63 +360,62 @@ public class DataSeedHostingService : IHostedService
 		context.Modules.AddRange(module1, module2, module3, module4);
 		await context.SaveChangesAsync();
 
-		var m1Assignment1 = CreateActivity("Assignment 1: C# grunder", "Övningar i variabler, metoder och klasser.", Dt(2026, 3, 19), Dt(2026, 3, 19, 17), assignment, module1, Dt(2026, 3, 19, 17));
-		var m1Assignment2 = CreateActivity("Assignment 2: Objektorienterad modell", "Bygg en enkel modell med klasser och arv.", Dt(2026, 3, 27), Dt(2026, 3, 27, 17), assignment, module1, Dt(2026, 3, 27, 17));
+		var m1Assignment1 = CreateActivity($"{assignment.Name} 1: C# grunder", "Övningar i variabler, metoder och klasser.", Dt(2026, 3, 19), Dt(2026, 3, 19, 17), assignment, module1, Dt(2026, 3, 19, 17));
+		var m1Assignment2 = CreateActivity($"{assignment.Name} 2: Objektorienterad modell", "Bygg en enkel modell med klasser och arv.", Dt(2026, 3, 27), Dt(2026, 3, 27, 17), assignment, module1, Dt(2026, 3, 27, 17));
 
-		var m2Assignment1 = CreateActivity("Assignment 1: Första MVC/API-projektet", "Skapa endpoints och testa routing.", Dt(2026, 4, 2), Dt(2026, 4, 2, 17), assignment, module2, Dt(2026, 4, 2, 17));
-		var m2Assignment2 = CreateActivity("Assignment 2: ASP.NET Core-applikation", "Bygg en mindre applikation med DI och middleware.", Dt(2026, 4, 9), Dt(2026, 4, 9, 17), assignment, module2, Dt(2026, 4, 9, 17));
+		var m2Assignment1 = CreateActivity($"{assignment.Name} 1: Första MVC/API-projektet", "Skapa endpoints och testa routing.", Dt(2026, 4, 2), Dt(2026, 4, 2, 17), assignment, module2, Dt(2026, 4, 2, 17));
+		var m2Assignment2 = CreateActivity($"{assignment.Name} 2: ASP.NET Core-applikation", "Bygg en mindre applikation med DI och middleware.", Dt(2026, 4, 9), Dt(2026, 4, 9, 17), assignment, module2, Dt(2026, 4, 9, 17));
 
-		var m3Assignment1 = CreateActivity("Assignment 1: Datamodell i EF Core", "Skapa modeller, relationer och migrationer.", Dt(2026, 4, 12), Dt(2026, 4, 12, 17), assignment, module3, Dt(2026, 4, 12, 17));
-		var m3Assignment2 = CreateActivity("Assignment 2: Queries och persistens", "Arbeta med queries, include och sparande av data.", Dt(2026, 4, 14), Dt(2026, 4, 14, 17), assignment, module3, Dt(2026, 4, 14, 17));
-		var m3Assignment3 = CreateActivity("Assignment 3: Persistens och relationer", "Fördjupning i relationer, queries och uppdateringar.", Dt(2026, 4, 30), Dt(2026, 4, 30, 17), assignment, module3, Dt(2026, 4, 30, 17));
+		var m3Assignment1 = CreateActivity($"{assignment.Name} 1: Datamodell i EF Core", "Skapa modeller, relationer och migrationer.", Dt(2026, 4, 12), Dt(2026, 4, 12, 17), assignment, module3, Dt(2026, 4, 12, 17));
+		var m3Assignment2 = CreateActivity($"{assignment.Name} 2: Queries och persistens", "Arbeta med queries, include och sparande av data.", Dt(2026, 4, 14), Dt(2026, 4, 14, 17), assignment, module3, Dt(2026, 4, 14, 17));
+		var m3Assignment3 = CreateActivity($"{assignment.Name} 3: Persistens och relationer", "Fördjupning i relationer, queries och uppdateringar.", Dt(2026, 4, 30), Dt(2026, 4, 30, 17), assignment, module3, Dt(2026, 4, 30, 17));
 
-		var m4Assignment1 = CreateActivity("Assignment 1: REST-endpoints", "Implementera CRUD-endpoints i ett Web API.", Dt(2026, 5, 6), Dt(2026, 5, 6, 17), assignment, module4, Dt(2026, 5, 6, 17));
-		var m4Assignment2 = CreateActivity("Assignment 2: API-dokumentation", "Dokumentera och kvalitetssäkra API med Swagger.", Dt(2026, 5, 12), Dt(2026, 5, 12, 17), assignment, module4, Dt(2026, 5, 12, 17));
-
-
+		var m4Assignment1 = CreateActivity($"{assignment.Name} 1: REST-endpoints", "Implementera CRUD-endpoints i ett Web API.", Dt(2026, 5, 6), Dt(2026, 5, 6, 17), assignment, module4, Dt(2026, 5, 6, 17));
+		var m4Assignment2 = CreateActivity($"{assignment.Name} 2: API-dokumentation", "Dokumentera och kvalitetssäkra API med Swagger.", Dt(2026, 5, 12), Dt(2026, 5, 12, 17), assignment, module4, Dt(2026, 5, 12, 17));
 
 
-		var m2Assignment1_2 = CreateActivity("Assignment: Middleware", "Bygg och konfigurera middleware i pipeline.", Dt(2026, 4, 6), Dt(2026, 4, 6, 17), assignment, module2, Dt(2026, 4, 6, 17));
+
+		var m2Assignment1_2 = CreateActivity($"{assignment.Name}: Middleware", "Bygg och konfigurera middleware i pipeline.", Dt(2026, 4, 6), Dt(2026, 4, 6, 17), assignment, module2, Dt(2026, 4, 6, 17));
 
 
 
 		context.Activities.AddRange(
-			CreateActivity("Lecture: Introduktion till .NET", "Översikt av plattformen och kursupplägget.", Dt(2026, 3, 15), Dt(2026, 3, 16, 17), lecture, module1),
-			CreateActivity("Workshop: C# syntax", "Praktiska övningar i syntax och kontrollflöden.", Dt(2026, 3, 17), Dt(2026, 3, 18, 17), workshop, module1),
+			CreateActivity($"{lecture.Name}: Introduktion till .NET", "Översikt av plattformen och kursupplägget.", Dt(2026, 3, 15), Dt(2026, 3, 16, 17), lecture, module1),
+			CreateActivity($"{workshop.Name}: C# syntax", "Praktiska övningar i syntax och kontrollflöden.", Dt(2026, 3, 17), Dt(2026, 3, 18, 17), workshop, module1),
 			m1Assignment1,
-			CreateActivity("Lecture: Klasser och objekt", "Objektorientering i C#.", Dt(2026, 3, 22), Dt(2026, 3, 23, 17), lecture, module1),
-			CreateActivity("Workshop: Arv och interfaces", "Praktiskt arbete med arv, interface och abstraktion.", Dt(2026, 3, 24), Dt(2026, 3, 25, 17), workshop, module1),
-			CreateActivity("Lecture: Repetition C# grunder", "Sammanfattning och förberedelse inför inlämning.", Dt(2026, 3, 26), Dt(2026, 3, 26, 17), lecture, module1),
+			CreateActivity($"{lecture.Name}: Klasser och objekt", "Objektorientering i C#.", Dt(2026, 3, 22), Dt(2026, 3, 23, 17), lecture, module1),
+			CreateActivity($"{workshop.Name}: Arv och interfaces", "Praktiskt arbete med arv, interface och abstraktion.", Dt(2026, 3, 24), Dt(2026, 3, 25, 17), workshop, module1),
+			CreateActivity($"{lecture.Name}: Repetition C# grunder", "Sammanfattning och förberedelse inför inlämning.", Dt(2026, 3, 26), Dt(2026, 3, 26, 17), lecture, module1),
 			m1Assignment2,
 
-			CreateActivity("Lecture: ASP.NET Core intro", "Projektstruktur, startup och grundläggande begrepp.", Dt(2026, 3, 28), Dt(2026, 3, 29, 17), lecture, module2),
-			CreateActivity("Workshop: Routing och controllers", "Bygg controllers och arbeta med routes.", Dt(2026, 3, 30), Dt(2026, 4, 1, 17), workshop, module2),
+			CreateActivity($"{lecture.Name}: ASP.NET Core introduktion", "Projektstruktur, startup och grundläggande begrepp.", Dt(2026, 3, 28), Dt(2026, 3, 29, 17), lecture, module2),
+			CreateActivity($"{workshop.Name}: Routing och controllers", "Bygg controllers och arbeta med routes.", Dt(2026, 3, 30), Dt(2026, 4, 1, 17), workshop, module2),
 			m2Assignment1,
-			CreateActivity("Lecture: Dependency Injection", "Hur DI fungerar i ASP.NET Core.", Dt(2026, 4, 4), Dt(2026, 4, 5, 17), lecture, module2),
+			CreateActivity($"{lecture.Name}: Dependency Injection", "Hur DI fungerar i ASP.NET Core.", Dt(2026, 4, 4), Dt(2026, 4, 5, 17), lecture, module2),
 
-				//CreateActivity("Workshop: Middleware", "Bygg och konfigurera middleware i pipeline.", Dt(2026, 4, 6), Dt(2026, 4, 7, 17), workshop, module2),
-				m2Assignment1_2,
-			CreateActivity("Lecture: Repetition ASP.NET Core", "Sammanfattning och förberedelse inför inlämning.", Dt(2026, 4, 7), Dt(2026, 4, 8, 17), lecture, module2),
+            //CreateActivity($"{workshop.Name}: Middleware", "Bygg och konfigurera middleware i pipeline.", Dt(2026, 4, 6), Dt(2026, 4, 7, 17), workshop, module2),
+            m2Assignment1_2,
+			CreateActivity($"{lecture.Name}: Repetition ASP.NET Core", "Sammanfattning och förberedelse inför inlämning.", Dt(2026, 4, 7), Dt(2026, 4, 8, 17), lecture, module2),
 			m2Assignment2,
 
-			CreateActivity("Lecture: EF Core intro", "DbContext, entities och migrations.", Dt(2026, 4, 10), Dt(2026, 4, 11, 17), lecture, module3),
+			CreateActivity($"{lecture.Name}: EF Core introduktion", "DbContext, entities och migrations.", Dt(2026, 4, 10), Dt(2026, 4, 11, 17), lecture, module3),
 			m3Assignment1,
-			CreateActivity("Workshop: Databas och migrationer", "Skapa databas och kör migrationer.", Dt(2026, 4, 13), Dt(2026, 4, 13, 17), workshop, module3),
+			CreateActivity($"{workshop.Name}: Databas och migrationer", "Skapa databas och kör migrationer.", Dt(2026, 4, 13), Dt(2026, 4, 13, 17), workshop, module3),
 			m3Assignment2,
-			CreateActivity("Lecture: Relationer och queries", "En-till-många, include och filtrering.", Dt(2026, 4, 15), Dt(2026, 4, 17, 17), lecture, module3),
-			CreateActivity("Workshop: Persistens", "Läsa, skriva och uppdatera data med EF Core.", Dt(2026, 4, 18), Dt(2026, 4, 21, 17), workshop, module3),
-			CreateActivity("Lecture: Repetition EF Core", "Sammanfattning och förberedelse inför slutet av modulen.", Dt(2026, 4, 22), Dt(2026, 4, 24, 17), lecture, module3),
-			CreateActivity("Workshop: Fördjupning i relationer", "Praktiskt arbete med relationer och uppdateringar.", Dt(2026, 4, 25), Dt(2026, 4, 28, 17), workshop, module3),
-			CreateActivity("Lecture: Avslutande genomgång EF Core", "Sista genomgång innan sista inlämningen.", Dt(2026, 4, 29), Dt(2026, 4, 29, 17), lecture, module3),
+			CreateActivity($"{lecture.Name}: Relationer och queries", "En-till-många, include och filtrering.", Dt(2026, 4, 15), Dt(2026, 4, 17, 17), lecture, module3),
+			CreateActivity($"{workshop.Name}: Persistens", "Läsa, skriva och uppdatera data med EF Core.", Dt(2026, 4, 18), Dt(2026, 4, 21, 17), workshop, module3),
+			CreateActivity($"{lecture.Name}: Repetition EF Core", "Sammanfattning och förberedelse inför slutet av modulen.", Dt(2026, 4, 22), Dt(2026, 4, 24, 17), lecture, module3),
+			CreateActivity($"{workshop.Name}: Fördjupning i relationer", "Praktiskt arbete med relationer och uppdateringar.", Dt(2026, 4, 25), Dt(2026, 4, 28, 17), workshop, module3),
+			CreateActivity($"{lecture.Name}: Avslutande genomgång EF Core", "Sista genomgång innan sista inlämningen.", Dt(2026, 4, 29), Dt(2026, 4, 29, 17), lecture, module3),
 			m3Assignment3,
 
-			CreateActivity("Lecture: Web API intro", "REST, resurser och API-design.", Dt(2026, 5, 1), Dt(2026, 5, 2, 17), lecture, module4),
-			CreateActivity("Workshop: CRUD-endpoints", "Implementera GET, POST, PUT och DELETE.", Dt(2026, 5, 3), Dt(2026, 5, 5, 17), workshop, module4),
+			CreateActivity($"{lecture.Name}: Web API introduktion", "REST, resurser och API-design.", Dt(2026, 5, 1), Dt(2026, 5, 2, 17), lecture, module4),
+			CreateActivity($"{workshop.Name}: CRUD-endpoints", "Implementera GET, POST, PUT och DELETE.", Dt(2026, 5, 3), Dt(2026, 5, 5, 17), workshop, module4),
 			m4Assignment1,
-			CreateActivity("Lecture: Swagger och dokumentation", "Dokumentera och testa API:er.", Dt(2026, 5, 7), Dt(2026, 5, 8, 17), lecture, module4),
-			CreateActivity("Workshop: Validering och felhantering", "Förbättra API-kvalitet och robusthet.", Dt(2026, 5, 9), Dt(2026, 5, 11, 17), workshop, module4),
+			CreateActivity($"{lecture.Name}: Swagger och dokumentation", "Dokumentera och testa API:er.", Dt(2026, 5, 7), Dt(2026, 5, 8, 17), lecture, module4),
+			CreateActivity($"{workshop.Name}: Validering och felhantering", "Förbättra API-kvalitet och robusthet.", Dt(2026, 5, 9), Dt(2026, 5, 11, 17), workshop, module4),
 			m4Assignment2,
-			CreateActivity("Exam: Web API", "Avslutande examination för kursen.", Dt(2026, 5, 13), Dt(2026, 5, 13, 17), exam, module4, Dt(2026, 5, 13, 17))
+			CreateActivity($"{exam.Name}: Web API", "Avslutande examination för kursen.", Dt(2026, 5, 13), Dt(2026, 5, 13, 17), exam, module4, Dt(2026, 5, 13, 17))
 		);
 
 		await context.SaveChangesAsync();
@@ -532,53 +531,52 @@ public class DataSeedHostingService : IHostedService
 
 		var module1 = CreateModule("HTML och CSS", "Grundläggande struktur, semantik, layout och responsiv design.", new DateTime(2026, 5, 18), new DateTime(2026, 6, 1), frontendCourse);
 		var module2 = CreateModule("JavaScript grunder", "Variabler, funktioner, arrayer och objekt.", new DateTime(2026, 6, 2), new DateTime(2026, 6, 16), frontendCourse);
-		var module3 = CreateModule("DOM och events", "Interaktion, eventhantering och formulär.", new DateTime(2026, 6, 17), new DateTime(2026, 7, 1), frontendCourse);
+		var module3 = CreateModule("DOM och events", "Interaktion, event-hantering och formulär.", new DateTime(2026, 6, 17), new DateTime(2026, 7, 1), frontendCourse);
 		var module4 = CreateModule("API och frontendprojekt", "Fetch, async/await och sammanhängande frontendprojekt.", new DateTime(2026, 7, 2), new DateTime(2026, 7, 16), frontendCourse);
 
 		context.Modules.AddRange(module1, module2, module3, module4);
 		await context.SaveChangesAsync();
 
-		var m1Assignment1 = CreateActivity("Assignment 1: Semantisk HTML", "Bygg en semantisk webbsida med korrekt struktur.", Dt(2026, 5, 22), Dt(2026, 5, 22, 17), assignment, module1, Dt(2026, 5, 22, 17));
-		var m1Assignment2 = CreateActivity("Assignment 2: Responsiv layout", "Skapa en responsiv layout med CSS.", Dt(2026, 6, 1), Dt(2026, 6, 1, 17), assignment, module1, Dt(2026, 6, 1, 17));
+		var m1Assignment1 = CreateActivity($"{assignment.Name} 1: Semantisk HTML", "Bygg en semantisk webbsida med korrekt struktur.", Dt(2026, 5, 22), Dt(2026, 5, 22, 17), assignment, module1, Dt(2026, 5, 22, 17));
+		var m1Assignment2 = CreateActivity($"{assignment.Name} 2: Responsiv layout", "Skapa en responsiv layout med CSS.", Dt(2026, 6, 1), Dt(2026, 6, 1, 17), assignment, module1, Dt(2026, 6, 1, 17));
 
-		var m2Assignment1 = CreateActivity("Assignment 1: Funktioner och data", "Arbeta med funktioner, arrayer och objekt.", Dt(2026, 6, 8), Dt(2026, 6, 8, 17), assignment, module2, Dt(2026, 6, 8, 17));
-		var m2Assignment2 = CreateActivity("Assignment 2: JavaScript-övningar", "Lös flera uppgifter i JavaScript.", Dt(2026, 6, 16), Dt(2026, 6, 16, 17), assignment, module2, Dt(2026, 6, 16, 17));
+		var m2Assignment1 = CreateActivity($"{assignment.Name} 1: Funktioner och data", "Arbeta med funktioner, arrayer och objekt.", Dt(2026, 6, 8), Dt(2026, 6, 8, 17), assignment, module2, Dt(2026, 6, 8, 17));
+		var m2Assignment2 = CreateActivity($"{assignment.Name} 2: JavaScript-övningar", "Lös flera uppgifter i JavaScript.", Dt(2026, 6, 16), Dt(2026, 6, 16, 17), assignment, module2, Dt(2026, 6, 16, 17));
+		var m3Assignment1 = CreateActivity($"{assignment.Name} 1: DOM manipulation", "Bygg interaktivitet med DOM API.", Dt(2026, 6, 23), Dt(2026, 6, 23, 17), assignment, module3, Dt(2026, 6, 23, 17));
+		var m3Assignment2 = CreateActivity($"{assignment.Name} 2: Eventdriven UI", "Hantera användarinteraktioner och formulär.", Dt(2026, 7, 1), Dt(2026, 7, 1, 17), assignment, module3, Dt(2026, 7, 1, 17));
 
-		var m3Assignment1 = CreateActivity("Assignment 1: DOM manipulation", "Bygg interaktivitet med DOM API.", Dt(2026, 6, 23), Dt(2026, 6, 23, 17), assignment, module3, Dt(2026, 6, 23, 17));
-		var m3Assignment2 = CreateActivity("Assignment 2: Eventdriven UI", "Hantera användarinteraktioner och formulär.", Dt(2026, 7, 1), Dt(2026, 7, 1, 17), assignment, module3, Dt(2026, 7, 1, 17));
-
-		var m4Assignment1 = CreateActivity("Assignment 1: API-klient", "Hämta och visa data från ett API.", Dt(2026, 7, 9), Dt(2026, 7, 9, 17), assignment, module4, Dt(2026, 7, 9, 17));
-		var m4Assignment2 = CreateActivity("Assignment 2: Frontendprojekt", "Bygg ett mindre frontendprojekt som slutuppgift.", Dt(2026, 7, 15), Dt(2026, 7, 15, 17), assignment, module4, Dt(2026, 7, 15, 17));
+		var m4Assignment1 = CreateActivity($"{assignment.Name} 1: API-klient", "Hämta och visa data från ett API.", Dt(2026, 7, 9), Dt(2026, 7, 9, 17), assignment, module4, Dt(2026, 7, 9, 17));
+		var m4Assignment2 = CreateActivity($"{assignment.Name} 2: Frontendprojekt", "Bygg ett mindre frontendprojekt som slutuppgift.", Dt(2026, 7, 15), Dt(2026, 7, 15, 17), assignment, module4, Dt(2026, 7, 15, 17));
 
 		context.Activities.AddRange(
-			CreateActivity("Lecture: HTML intro", "Semantik, struktur och tillgänglighet.", Dt(2026, 5, 18), Dt(2026, 5, 19, 17), lecture, module1),
-			CreateActivity("Workshop: CSS layout", "Box model, flexbox och grid.", Dt(2026, 5, 20), Dt(2026, 5, 21, 17), workshop, module1),
+			CreateActivity($"{lecture.Name}: HTML introduktion", "Semantik, struktur och tillgänglighet.", Dt(2026, 5, 18), Dt(2026, 5, 19, 17), lecture, module1),
+			CreateActivity($"{workshop.Name}: CSS layout", "Box model, flexbox och grid.", Dt(2026, 5, 20), Dt(2026, 5, 21, 17), workshop, module1),
 			m1Assignment1,
-			CreateActivity("Lecture: Responsiv design", "Media queries och responsiva komponenter.", Dt(2026, 5, 25), Dt(2026, 5, 27, 17), lecture, module1),
-			CreateActivity("Workshop: Layout-labb", "Bygg en responsiv sida från designskiss.", Dt(2026, 5, 28), Dt(2026, 5, 29, 17), workshop, module1),
+			CreateActivity($"{lecture.Name}: Responsiv design", "Media queries och responsiva komponenter.", Dt(2026, 5, 25), Dt(2026, 5, 27, 17), lecture, module1),
+			CreateActivity($"{workshop.Name}: Layout-labb", "Bygg en responsiv sida från designskiss.", Dt(2026, 5, 28), Dt(2026, 5, 29, 17), workshop, module1),
 			m1Assignment2,
 
-			CreateActivity("Lecture: JavaScript intro", "Syntax, datatyper och kontrollflöden.", Dt(2026, 6, 2), Dt(2026, 6, 3, 17), lecture, module2),
-			CreateActivity("Workshop: Funktioner och arrayer", "Praktiska övningar i JavaScript.", Dt(2026, 6, 4), Dt(2026, 6, 5, 17), workshop, module2),
+			CreateActivity($"{lecture.Name}: JavaScript introduktion", "Syntax, datatyper och kontrollflöden.", Dt(2026, 6, 2), Dt(2026, 6, 3, 17), lecture, module2),
+			CreateActivity($"{workshop.Name}: Funktioner och arrayer", "Praktiska övningar i JavaScript.", Dt(2026, 6, 4), Dt(2026, 6, 5, 17), workshop, module2),
 			m2Assignment1,
-			CreateActivity("Lecture: Objekt och iteration", "Objekt, loopar och arraymetoder.", Dt(2026, 6, 9), Dt(2026, 6, 11, 17), lecture, module2),
-			CreateActivity("Workshop: JavaScript-labb", "Fördjupning i vardagliga JS-problem.", Dt(2026, 6, 12), Dt(2026, 6, 15, 17), workshop, module2),
+			CreateActivity($"{lecture.Name}: Objekt och iteration", "Objekt, loopar och arraymetoder.", Dt(2026, 6, 9), Dt(2026, 6, 11, 17), lecture, module2),
+			CreateActivity($"{workshop.Name}: JavaScript-labb", "Fördjupning i vardagliga JS-problem.", Dt(2026, 6, 12), Dt(2026, 6, 15, 17), workshop, module2),
 			m2Assignment2,
 
-			CreateActivity("Lecture: DOM intro", "Selektorer, noder och manipulering.", Dt(2026, 6, 17), Dt(2026, 6, 18, 17), lecture, module3),
-			CreateActivity("Workshop: DOM-labb", "Bygg interaktiva komponenter med DOM.", Dt(2026, 6, 19), Dt(2026, 6, 22, 17), workshop, module3),
+			CreateActivity($"{lecture.Name}: DOM introduktion", "Selektorer, noder och manipulering.", Dt(2026, 6, 17), Dt(2026, 6, 18, 17), lecture, module3),
+			CreateActivity($"{workshop.Name}: DOM-labb", "Bygg interaktiva komponenter med DOM.", Dt(2026, 6, 19), Dt(2026, 6, 22, 17), workshop, module3),
 			m3Assignment1,
-			CreateActivity("Lecture: Events", "Event listeners, bubbling och formulär.", Dt(2026, 6, 24), Dt(2026, 6, 26, 17), lecture, module3),
-			CreateActivity("Workshop: UI-flöden", "Bygg eventdrivna användargränssnitt.", Dt(2026, 6, 29), Dt(2026, 6, 30, 17), workshop, module3),
+			CreateActivity($"{lecture.Name}: Events", "Event listeners, bubbling och formulär.", Dt(2026, 6, 24), Dt(2026, 6, 26, 17), lecture, module3),
+			CreateActivity($"{workshop.Name}: UI-flöden", "Bygg eventdrivna användargränssnitt.", Dt(2026, 6, 29), Dt(2026, 6, 30, 17), workshop, module3),
 			m3Assignment2,
 
-			CreateActivity("Lecture: API och fetch", "Fetch, async/await och felhantering.", Dt(2026, 7, 2), Dt(2026, 7, 3, 17), lecture, module4),
-			CreateActivity("Workshop: API-klient", "Bygg en klient som hämtar och visar data.", Dt(2026, 7, 6), Dt(2026, 7, 8, 17), workshop, module4),
+			CreateActivity($"{lecture.Name}: API och fetch", "Fetch, async/await och felhantering.", Dt(2026, 7, 2), Dt(2026, 7, 3, 17), lecture, module4),
+			CreateActivity($"{workshop.Name}: API-klient", "Bygg en klient som hämtar och visar data.", Dt(2026, 7, 6), Dt(2026, 7, 8, 17), workshop, module4),
 			m4Assignment1,
-			CreateActivity("Lecture: Projektstruktur", "Planera och strukturera frontendprojekt.", Dt(2026, 7, 10), Dt(2026, 7, 13, 17), lecture, module4),
-			CreateActivity("Workshop: Projektarbete", "Praktiskt arbete med slutprojekt.", Dt(2026, 7, 14), Dt(2026, 7, 14, 17), workshop, module4),
+			CreateActivity($"{lecture.Name}: Projektstruktur", "Planera och strukturera frontendprojekt.", Dt(2026, 7, 10), Dt(2026, 7, 13, 17), lecture, module4),
+			CreateActivity($"{workshop.Name}: Projektarbete", "Praktiskt arbete med slutprojekt.", Dt(2026, 7, 14), Dt(2026, 7, 14, 17), workshop, module4),
 			m4Assignment2,
-			CreateActivity("Exam: Frontend", "Avslutande examination för kursen.", Dt(2026, 7, 16), Dt(2026, 7, 16, 17), exam, module4, Dt(2026, 7, 16, 17))
+			CreateActivity($"{exam.Name}: Frontend", "Avslutande examination för kursen.", Dt(2026, 7, 16), Dt(2026, 7, 16, 17), exam, module4, Dt(2026, 7, 16, 17))
 		);
 
 		await context.SaveChangesAsync();

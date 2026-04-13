@@ -30,7 +30,7 @@
             {
                 <p class="text-muted small mt-1 mb-0">@Activity.Description</p>
             }
-            @if (Activity.ActivityTypeName == "Assignment") {
+            @if (Activity.ActivityTypeName == "Inlämning") {
                 <div class="mt-1">
                     @if (Submission != null) {
                         <span class="badge bg-success">Inlämnad</span>
@@ -95,7 +95,7 @@
     protected override void OnParametersSet()
     {
 
-        if (Activity.ActivityTypeName == "Assignment")
+        if (Activity.ActivityTypeName == "Inlämning")
         {
             if (Submission != null)
                 IsComplete = true;
