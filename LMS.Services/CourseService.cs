@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
+using Domain.Models.Exceptions;
 using LMS.Infrastructure.Data;
 using LMS.Services.Mappers;
 using LMS.Shared.DTOs.Activity;
@@ -247,49 +248,144 @@ namespace LMS.Services
 			};
 		}
 
-		public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
-		{
+        //public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
+        //{
+        //          var course = await _unitOfWork.CourseRepository.GetCourseById(courseUpdateDto.Id);
+
+        //          if (course == null)
+        //		throw new Exception("Kursen kunde inte hittas.");
+
+        //          if (string.IsNullOrWhiteSpace(courseUpdateDto.Name))
+        //              throw new ArgumentException("Kursnamn saknas.");
+
+        //          if (string.IsNullOrWhiteSpace(courseUpdateDto.Description))
+        //              throw new ArgumentException("Kursbeskrivning saknas.");
+
+        //          if (courseUpdateDto.StartDate > courseUpdateDto.EndDate)
+        //              throw new Exception("Startdatum får inte vara senare än slutdatum.");
+
+
+        //          if (course.Modules.Count != 0 &&
+        //              (courseUpdateDto.StartDate != course.StartDate ||
+        //               courseUpdateDto.EndDate != course.EndDate))
+        //          {
+        //              throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
+        //          }
+
+        //              // Tillåt inte ändring av kursdatum om kursen innehåller moduler, för moduldatumen kan då
+        //              // hamna utanför kursdatumen.
+
+        //              /*
+        //              // Alternativt: Validera varje modul individuellt.
+        //              foreach (var module in course.Modules)
+        //              {
+        //                  // Modul måste ligga inom kursens datumintervall.
+        //                  if (module.StartDate < courseUpdateDto.StartDate || module.EndDate > courseUpdateDto.EndDate)
+        //                      throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
+        //              }
+        //              */
+
+        //          course.Name = courseUpdateDto.Name.Trim();
+        //	course.Description = courseUpdateDto.Description.Trim();
+        //	course.StartDate = courseUpdateDto.StartDate;
+        //	course.EndDate = courseUpdateDto.EndDate;
+
+        //          // TeacherId = null eller "" betyder: ta bort läraren
+        //          if (string.IsNullOrWhiteSpace(courseUpdateDto.TeacherId))
+        //          {
+        //              ApplicationUser? oldTeacher = null;
+
+        //              foreach (var user in course.Users)
+        //              {
+        //                  var roles = await _userManager.GetRolesAsync(user);
+        //                  if (roles.Contains("Teacher"))
+        //                  {
+        //                      oldTeacher = user;
+        //                      break;
+        //                  }
+        //              }
+
+        //              if (oldTeacher != null)
+        //              {
+        //                  oldTeacher.CourseId = null;
+        //                  await _userManager.UpdateAsync(oldTeacher);
+        //              }
+
+        //              await _unitOfWork.CompleteAsync();
+        //              return CourseMapper.ToBasicCourseDto(course);
+        //          }
+
+        //          // Annars: sätt ny lärare
+        //          {
+        //              ApplicationUser? oldTeacher = null;
+
+        //              foreach (var user in course.Users)
+        //              {
+        //                  var roles = await _userManager.GetRolesAsync(user);
+        //                  if (roles.Contains("Teacher"))
+        //                  {
+        //                      oldTeacher = user;
+        //                      break;
+        //                  }
+        //              }
+
+        //              var newTeacher = await _userManager.FindByIdAsync(courseUpdateDto.TeacherId);
+
+        //              if (newTeacher == null)
+        //                  throw new ArgumentException("Läraren kunde inte hittas.");
+
+        //              if (!await _userManager.IsInRoleAsync(newTeacher, "Teacher"))
+        //                  throw new ArgumentException("Vald användare är inte lärare.");
+
+        //              if (oldTeacher != null)
+        //              {
+        //                  oldTeacher.CourseId = null;
+        //                  await _userManager.UpdateAsync(oldTeacher);
+        //              }
+
+        //              newTeacher.CourseId = course.Id;
+        //              await _userManager.UpdateAsync(newTeacher);
+        //          }
+
+        //          //_unitOfWork.CourseRepository.Update(course);
+        //          await _unitOfWork.CompleteAsync();
+
+        //	return CourseMapper.ToBasicCourseDto(course);
+        //}
+
+        public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
+        {
             var course = await _unitOfWork.CourseRepository.GetCourseById(courseUpdateDto.Id);
 
             if (course == null)
-				throw new Exception("Kursen kunde inte hittas.");
+                throw new NotFoundException($"Kurs med id {courseUpdateDto.Id} hittades inte.");
 
             if (string.IsNullOrWhiteSpace(courseUpdateDto.Name))
-                throw new ArgumentException("Kursnamn saknas.");
+                throw new BadRequestException("Kursnamn saknas.", "Valideringsfel");
 
             if (string.IsNullOrWhiteSpace(courseUpdateDto.Description))
-                throw new ArgumentException("Kursbeskrivning saknas.");
+                throw new BadRequestException("Kursbeskrivning saknas.", "Valideringsfel");
 
             if (courseUpdateDto.StartDate > courseUpdateDto.EndDate)
-                throw new Exception("Startdatum får inte vara senare än slutdatum.");
+                throw new BadRequestException("Startdatum får inte vara senare än slutdatum.", "Valideringsfel");
 
-
-            if (course.Modules.Count != 0 &&
-                (courseUpdateDto.StartDate != course.StartDate ||
-                 courseUpdateDto.EndDate != course.EndDate))
+            // Tillåt ändring av kursdatum MEN säkerställ att inga moduler hamnar utanför
+            foreach (var module in course.Modules)
             {
-                throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
-            }
-          
-                // Tillåt inte ändring av kursdatum om kursen innehåller moduler, för moduldatumen kan då
-                // hamna utanför kursdatumen.
-               
-                /*
-                // Alternativt: Validera varje modul individuellt.
-                foreach (var module in course.Modules)
+                if (module.StartDate < courseUpdateDto.StartDate || module.EndDate > courseUpdateDto.EndDate)
                 {
-                    // Modul måste ligga inom kursens datumintervall.
-                    if (module.StartDate < courseUpdateDto.StartDate || module.EndDate > courseUpdateDto.EndDate)
-                        throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
+                    throw new BadRequestException(
+                        $"Kursens datum kan inte ändras eftersom modul \"{module.Name}\" hamnar utanför intervallet.",
+                        "Valideringsfel");
                 }
-                */
+            }
 
             course.Name = courseUpdateDto.Name.Trim();
-			course.Description = courseUpdateDto.Description.Trim();
-			course.StartDate = courseUpdateDto.StartDate;
-			course.EndDate = courseUpdateDto.EndDate;
+            course.Description = courseUpdateDto.Description.Trim();
+            course.StartDate = courseUpdateDto.StartDate;
+            course.EndDate = courseUpdateDto.EndDate;
 
-            // TeacherId = null eller "" betyder: ta bort läraren
+            // TeacherId = null eller "" => ta bort läraren
             if (string.IsNullOrWhiteSpace(courseUpdateDto.TeacherId))
             {
                 ApplicationUser? oldTeacher = null;
@@ -331,10 +427,10 @@ namespace LMS.Services
                 var newTeacher = await _userManager.FindByIdAsync(courseUpdateDto.TeacherId);
 
                 if (newTeacher == null)
-                    throw new ArgumentException("Läraren kunde inte hittas.");
+                    throw new NotFoundException("Läraren kunde inte hittas.");
 
                 if (!await _userManager.IsInRoleAsync(newTeacher, "Teacher"))
-                    throw new ArgumentException("Vald användare är inte lärare.");
+                    throw new BadRequestException("Vald användare är inte lärare.", "Valideringsfel");
 
                 if (oldTeacher != null)
                 {
@@ -346,11 +442,10 @@ namespace LMS.Services
                 await _userManager.UpdateAsync(newTeacher);
             }
 
-            //_unitOfWork.CourseRepository.Update(course);
             await _unitOfWork.CompleteAsync();
 
-			return CourseMapper.ToBasicCourseDto(course);
-		}
+            return CourseMapper.ToBasicCourseDto(course);
+        }
 
         public async Task<bool> DeleteCourseAsync(int courseId)
         {

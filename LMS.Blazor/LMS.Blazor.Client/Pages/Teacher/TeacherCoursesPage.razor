@@ -26,11 +26,10 @@
         </button>
     </div>
 
-    @if (!string.IsNullOrEmpty(formError))
+    @if (!string.IsNullOrEmpty(pageError))
     {
         <div class="alert alert-danger">
-            <span class="bi bi-exclamation-triangle me-2"></span>
-            @formError
+            @pageError
         </div>
     }
 
@@ -92,14 +91,16 @@
                  OnSave="HandleUpdate"
                  OnClose="CloseEditModal"
                  IsSaving="isSaving"
-                 ErrorMessage="@formError" />
+                 ErrorMessage="@modalError" />
 
 @code {
     private List<CourseListDto>? courses;
 
     private bool showEditModal;
     private bool isSaving;
-    private string? formError;
+    private string? pageError;
+    private string? modalError;
+
     private bool showCreateCourseModal = false;
 
     private CourseUpdateDto formModel = new();
@@ -112,7 +113,7 @@
         }
         catch (Exception ex)
         {
-            formError = $"Kunde inte ladda kurser: {ex.Message}";
+            pageError = $"Kunde inte ladda kurser: {ex.Message}";
             courses = new List<CourseListDto>();
         }
     }
@@ -134,20 +135,22 @@
             EndDate = course.EndDate
         };
 
-        formError = null;
+        modalError = null;
+        pageError = null;
         showEditModal = true;
     }
 
     private void CloseEditModal()
     {
         showEditModal = false;
-        formError = null;
+        modalError = null;
+        pageError = null;
     }
 
     private async Task HandleUpdate()
     {
         isSaving = true;
-        formError = null;
+        modalError = null;
 
         try
         {
@@ -161,12 +164,12 @@
             }
             else
             {
-                formError = "Kunde inte uppdatera kursen.";
+                modalError = "Kunde inte uppdatera kursen.";
             }
         }
         catch (Exception ex)
         {
-            formError = ex.Message;
+            modalError = ex.Message;
         }
         finally
         {
@@ -201,7 +204,7 @@
         }
         catch (Exception ex)
         {
-            formError = ex.Message;
+            pageError = ex.Message;
         }
 
         StateHasChanged();

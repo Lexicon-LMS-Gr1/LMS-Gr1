@@ -1,4 +1,5 @@
-﻿using LMS.Shared.DTOs.Course;
+﻿using Domain.Models.Exceptions;
+using LMS.Shared.DTOs.Course;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
@@ -67,25 +68,10 @@ public class CourseController : ControllerBase
     public async Task<ActionResult<CourseDto>> UpdateCourse(int id, [FromBody] CourseUpdateDto dto)
     {
         if (id != dto.Id)
-            return BadRequest("Kurs-id stämmer inte.");
+            throw new BadRequestException("Kurs-id stämmer inte.", "Valideringsfel");
 
-		try
-		{
-			var updated = await _serviceManager.CourseService.UpdateCourseAsync(dto);
-			return Ok(updated);
-		}
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av kurs." });
-        }
+        var updated = await _serviceManager.CourseService.UpdateCourseAsync(dto);
+        return Ok(updated);
     }
 
     [HttpDelete("{id}")]
