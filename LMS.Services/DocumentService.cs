@@ -3,6 +3,7 @@ using Domain.Contracts.Services;
 using Domain.Models.Entities;
 using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.Document;
+using LMS.Shared.Validation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Service.Contracts;
@@ -14,14 +15,6 @@ public class DocumentService : IDocumentService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorage;
     private readonly UserManager<ApplicationUser> _userManager;
-
-    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx",
-        ".txt", ".csv", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".rar"
-    };
-
-    private const long MaxFileSize = 50 * 1024 * 1024;
 
     public DocumentService(IUnitOfWork unitOfWork, IFileStorageService fileStorage, UserManager<ApplicationUser> userManager)
 
@@ -57,15 +50,15 @@ public class DocumentService : IDocumentService
         if (parentCount != 1)
             throw new BadRequestException("Exakt en av CourseId, ModuleId eller ActivityId måste anges.", "Valideringsfel");
 
-        if (fileSize > MaxFileSize)
+        if (fileSize > FileValidation.MaxFileSize)
             throw new BadRequestException(
-                $"Filstorleken överskrider maximal tillåten storlek på {MaxFileSize / (1024 * 1024)} MB.",
+                $"Filstorleken överskrider maximal tillåten storlek på {FileValidation.MaxFileSize / (1024 * 1024)} MB.",
                 "Valideringsfel");
 
         var extension = Path.GetExtension(fileName);
-        if (string.IsNullOrWhiteSpace(extension) || !AllowedExtensions.Contains(extension))
+        if (string.IsNullOrWhiteSpace(extension) || !FileValidation.AllowedExtensions.Contains(extension))
             throw new BadRequestException(
-                $"Filtypen \"{extension}\" är inte tillåten. Tillåtna filtyper: {string.Join(", ", AllowedExtensions)}",
+                $"Filtypen \"{extension}\" är inte tillåten. Tillåtna filtyper: {string.Join(", ", FileValidation.AllowedExtensions)}",
                 "Valideringsfel");
 
         var relativePath = await _fileStorage.SaveFileAsync(fileStream, fileName);

@@ -1,4 +1,5 @@
 @using LMS.Shared.DTOs.Submission
+@using LMS.Shared.Validation
 @inject IApiService ApiService
 
 @if (Show)
@@ -50,7 +51,12 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Välj fil</label>
-                            <InputFile OnChange="HandleFileSelected" class="form-control" />
+                            <InputFile OnChange="HandleFileSelected" class="form-control"
+                                       accept="@string.Join(",", FileValidation.AllowedExtensions)" />
+                            @if (!string.IsNullOrEmpty(validationError))
+                            {
+                                <div class="alert alert-warning mt-2 py-2 mb-0">@validationError</div>
+                            }
                             @if (selectedFile != null)
                             {
                                 <div class="mt-1 small text-muted">
@@ -77,7 +83,7 @@
                     {
                         <button class="btn btn-secondary" @onclick="Close" disabled="@uploading">Avbryt</button>
                         <button class="btn btn-primary" @onclick="SubmitFile"
-                                disabled="@(selectedFile == null || uploading)">
+                                disabled="@(selectedFile == null || uploading || validationError != null)">
                             @if (uploading)
                             {
                                 <span class="spinner-border spinner-border-sm me-1"></span>
@@ -108,6 +114,7 @@
     private IBrowserFile? selectedFile;
     private string? comment;
     private string? errorMessage;
+    private string? validationError;
     private bool uploading;
     private bool submitted;
     private bool isLateWarning;
@@ -116,6 +123,14 @@
     {
         selectedFile = e.File;
         errorMessage = null;
+
+        var ext = Path.GetExtension(selectedFile.Name);
+        if (string.IsNullOrWhiteSpace(ext) || !FileValidation.AllowedExtensions.Contains(ext))
+            validationError = $"Filtypen '{ext}' är inte tillåten.";
+        else if (selectedFile.Size > FileValidation.MaxFileSize)
+            validationError = "Filen är för stor. Maximal filstorlek är 50 MB.";
+        else
+            validationError = null;
     }
 
     private async Task SubmitFile()
