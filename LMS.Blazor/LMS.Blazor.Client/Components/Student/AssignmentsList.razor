@@ -68,11 +68,15 @@
                             <td class="text-center">
                                 @if (!a.IsSubmitted)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary" style="width:130px;"
-                                            @onclick="() => OpenSubmitModal(a)">
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            style="width:130px;"
+                                            @onclick="() => OpenSubmitModal(a)"
+                                            disabled="@(!CanSubmit(a))"
+                                            title="@GetSubmitTooltip(a)">
                                         <span class="bi bi-upload me-1"></span>
                                         Lämna in
                                     </button>
+
                                 }
                                 else
                                 {
@@ -188,6 +192,32 @@
             Console.WriteLine("Error loading assignments: " + ex.Message);
             assignments = new List<StudentAssignmentDto>();
         }
+    }
+
+    private bool CanSubmit(StudentAssignmentDto a)
+    {
+        var now = DateTime.Now;
+
+        if (a.ActivityStartDate.HasValue && now < a.ActivityStartDate.Value)
+            return false;
+
+        if (a.IsSubmitted)
+            return false;
+
+        return true;
+    }
+
+    private string GetSubmitTooltip(StudentAssignmentDto a)
+    {
+        var now = DateTime.Now;
+
+        if (a.ActivityStartDate.HasValue && now < a.ActivityStartDate.Value)
+            return "Aktiviteten har inte startat ännu.";
+
+        if (a.IsSubmitted)
+            return "Uppgiften är redan inlämnad.";
+
+        return "";
     }
 
 

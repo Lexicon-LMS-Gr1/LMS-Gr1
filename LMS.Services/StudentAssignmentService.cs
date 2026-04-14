@@ -41,6 +41,7 @@ namespace LMS.Services
                     ActivityId = a.Id,
                     Name = a.Name,
                     DueDate = a.DueDate,
+                    ActivityStartDate = a.StartTime,
                     IsSubmitted = submission != null,
                     IsLate = submission == null && now > a.DueDate,
 
