@@ -21,7 +21,7 @@ public class NotificationsController : ControllerBase
 	public async Task<IActionResult> GetUnreadNotifications()
 	{
 		var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); 
-		if (string.IsNullOrEmpty(userId))
+		if (string.IsNullOrWhiteSpace(userId))
 			return Unauthorized();
 		var notifications = await _serviceManager.NotificationService.GetUnreadByUserIdAsync(userId);
 		return Ok(notifications);

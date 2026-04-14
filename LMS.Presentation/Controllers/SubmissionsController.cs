@@ -1,4 +1,5 @@
 using Domain.Contracts.Services;
+using Domain.Models.Exceptions;
 using LMS.Presentation.Models;
 using LMS.Shared.DTOs.Feedback;
 using LMS.Shared.DTOs.Submission;
@@ -12,66 +13,58 @@ using System.Text;
 
 namespace LMS.Presentation.Controllers;
 
-
 [ApiController]
 [Route("api/submissions")]
 [Authorize]
 public class SubmissionsController : ControllerBase
 {
-	private readonly IServiceManager _serviceManager;
-	private readonly IFileStorageService _fileStorage;
+    private readonly IServiceManager _serviceManager;
+    private readonly IFileStorageService _fileStorage;
 
-	public SubmissionsController(IServiceManager serviceManager, IFileStorageService fileStorage)
-	{
-		_serviceManager = serviceManager;
-		_fileStorage = fileStorage;
-	}
+    public SubmissionsController(IServiceManager serviceManager, IFileStorageService fileStorage)
+    {
+        _serviceManager = serviceManager;
+        _fileStorage = fileStorage;
+    }
 
-	[HttpGet("{id:int}")]
-	public async Task<ActionResult<SubmissionDto>> GetSubmission(int id)
-	{
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<SubmissionDto>> GetSubmission(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new TokenValidationException();
 
-		var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-		if (string.IsNullOrEmpty(userId)) {
-			return Unauthorized();
-		}
+        var isTeacher = User.IsInRole("Teacher");
 
-		var isTeacher = User.IsInRole("Teacher");
+        var submission = await _serviceManager.SubmissionService.GetSubmissionByIdAsync(id, userId, isTeacher);
 
-		var submission = await _serviceManager.SubmissionService.GetSubmissionByIdAsync(id,userId,isTeacher);
+        return Ok(submission);
+    }
 
-		if (submission is null)
-			return NotFound();
+    [HttpGet("course/{courseId:int}")]
+    public async Task<ActionResult<List<SubmissionDto>>> GetSubmissionsForCourse(int courseId)
+    {
+        // Kanske inte behövs när vi har Authorize
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new TokenValidationException();
 
-		return Ok(submission);
-	}
+        var isTeacher = User.IsInRole("Teacher");
 
-	[HttpGet("course/{courseId:int}")]
-	public async Task<ActionResult<List<SubmissionDto>>> GetSubmissionsForCourse(int courseId)
-	{
-		// Kanske inte behövs när vi har Authorize
-		var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-		if (string.IsNullOrEmpty(userId)) {
-			return Unauthorized();
-		}
-		var isTeacher = User.IsInRole("Teacher");
+        var result = await _serviceManager.SubmissionService.GetSubmissionsForCourseAsync(courseId, userId, isTeacher);
 
-		var result = await _serviceManager.SubmissionService.GetSubmissionsForCourseAsync(courseId, userId, isTeacher);
-
-		return Ok(result);
-	}
+        return Ok(result);
+    }
 
     [HttpGet("activity/{activityId:int}")]
     [Authorize(Roles = "Teacher")]
     public async Task<ActionResult<List<SubmissionListItemDto>>> GetSubmissionsForActivity(int activityId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new TokenValidationException();
 
         var isTeacher = User.IsInRole("Teacher");
-        if (!isTeacher)
-            return Forbid();
 
         var result = await _serviceManager.SubmissionService
             .GetSubmissionsForActivityAsync(activityId, userId, isTeacher);
@@ -92,14 +85,16 @@ public class SubmissionsController : ControllerBase
     public async Task<IActionResult> GiveFeedback(int id, [FromBody] FeedbackDto dto)
     {
         var teacherId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(teacherId))
-            return Unauthorized();
+        if (string.IsNullOrWhiteSpace(teacherId))
+            throw new TokenValidationException();
+
+        if (!ModelState.IsValid)
+            throw new BadRequestException("Ogiltiga data skickades för feedback.", "Valideringsfel");
 
         await _serviceManager.SubmissionService
             .GiveFeedbackAsync(id, dto.Feedback, teacherId);
 
         return Ok(new { success = true });
-
     }
 
     [HttpPost("{activityId:int}")]
@@ -110,11 +105,11 @@ public class SubmissionsController : ControllerBase
         [FromForm] SubmissionUploadForm form)
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(studentId))
-            return Unauthorized();
+        if (string.IsNullOrWhiteSpace(studentId))
+            throw new TokenValidationException();
 
         if (form.File == null || form.File.Length == 0)
-            return BadRequest("Ingen fil vald.");
+            throw new BadRequestException("Ingen fil vald.", "Valideringsfel");
 
         // Store in organized path: submissions/{studentId}/{activityId}/{guid}_{originalName}
         var storageName = $"submissions/{studentId}/{activityId}/{Guid.NewGuid()}_{form.File.FileName}";
@@ -135,14 +130,10 @@ public class SubmissionsController : ControllerBase
         var fileInfo = await _serviceManager.SubmissionService
             .GetSubmissionFileInfoAsync(id);
 
-        if (fileInfo == null)
-            return NotFound();
-
-        var stream = _fileStorage.OpenReadStream(fileInfo.Value.FilePath);
+        var stream = _fileStorage.OpenReadStream(fileInfo.FilePath);
         if (stream == null)
-            return NotFound("Filen hittades inte.");
+            throw new InvalidOperationException("Filen hittades inte.");
 
-        return File(stream, "application/octet-stream", fileInfo.Value.FileName);
+        return File(stream, "application/octet-stream", fileInfo.FileName);
     }
-
 }

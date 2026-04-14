@@ -14,7 +14,7 @@ public class TeacherDashboardService : ITeacherDashboardService
         _query = query;
     }
 
-    public Task<TeacherDashboardDto> GetDashboardAsync()
+    public Task<TeacherDashboardDto> GetDashboardAsync() 
     {
         return _query.GetDashboardAsync();
     }

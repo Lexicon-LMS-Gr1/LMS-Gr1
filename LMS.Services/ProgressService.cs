@@ -1,4 +1,5 @@
 ﻿using Domain.Contracts.Repositories;
+using Domain.Models.Exceptions;
 using Service.Contracts;
 using System;
 using System.Collections.Generic;
@@ -17,8 +18,14 @@ public class ProgressService : IProgressService
 	// Progressmetoderna ska kanske ska göras om till egen ProgressService
 	public async Task<int> GetCourseProgressAsync(string userId, int courseId)
 	{
-		// All activities for the course
-		var activities = await _unitOfWork.ActivityRepository.GetByCourseIdAsync(courseId);
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new BadRequestException("Användar-id saknas.", "Valideringsfel");
+
+        if (courseId <= 0)
+            throw new BadRequestException("Ogiltigt kurs-id.", "Valideringsfel");
+
+        // All activities for the course
+        var activities = await _unitOfWork.ActivityRepository.GetByCourseIdAsync(courseId);
 
 		var activityCount = activities.Count();
 		if (activityCount == 0) return 0;
@@ -67,7 +74,13 @@ public class ProgressService : IProgressService
 
 	public async Task<int> GetModuleProgressAsync(string userId, int moduleId)
 	{
-		var activities = await _unitOfWork.ActivityRepository.GetByModuleIdAsync(moduleId);
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new BadRequestException("Användar-id saknas.", "Valideringsfel");
+
+        if (moduleId <= 0)
+            throw new BadRequestException("Ogiltigt modul-id.", "Valideringsfel");
+
+        var activities = await _unitOfWork.ActivityRepository.GetByModuleIdAsync(moduleId);
 
 		var activityCount = activities.Count();
 		if (activityCount == 0) return 0;

@@ -97,9 +97,18 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Teachers = await ApiService.GetAsync<List<TeacherItem>>("api/course/teachers")
-                   ?? new List<TeacherItem>();
+        try
+        {
+            Teachers = await ApiService.GetAsync<List<TeacherItem>>("api/course/teachers")
+                       ?? new List<TeacherItem>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error loading teachers: " + ex.Message);
+            Teachers = new List<TeacherItem>();
+        }
     }
+
 
     private async Task Save()
     {

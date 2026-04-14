@@ -1,6 +1,7 @@
-﻿using LMS.Shared.DTOs.Activity;
-using LMS.Shared.DTOs.Course;
+﻿using Domain.Models.Exceptions;
+using LMS.Shared.DTOs.Activity;
 using LMS.Shared.DTOs.Module;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
 using System;
@@ -11,58 +12,41 @@ namespace LMS.Presentation.Controllers;
 
 [ApiController]
 [Route("api/module")]
+[Authorize(Roles = "Teacher")]
 public class ModuleController : ControllerBase
 {
-	private readonly IServiceManager _serviceManager;
+    private readonly IServiceManager _serviceManager;
 
-	public ModuleController(IServiceManager serviceManager)
-	{
-		_serviceManager = serviceManager;
-	}
+    public ModuleController(IServiceManager serviceManager)
+    {
+        _serviceManager = serviceManager;
+    }
 
-	[HttpGet("{moduleId}/activities")]
-	public async Task<ActionResult<IEnumerable<ActivityDto>>> GetActivities(int moduleId)
-	{
-		var activities = await _serviceManager.ModuleService.GetActivitiesAsync(moduleId);
-		return Ok(activities);
-	}
+    [HttpGet("{moduleId}/activities")]
+    public async Task<ActionResult<IEnumerable<ActivityDto>>> GetActivities(int moduleId)
+    {
+        var activities = await _serviceManager.ModuleService.GetActivitiesAsync(moduleId);
+        return Ok(activities);
+    }
 
     [HttpPut("{moduleId}")]
     public async Task<IActionResult> UpdateModule(int moduleId, [FromBody] ModuleUpdateDto dto)
     {
         if (moduleId != dto.Id)
-            return BadRequest("Modul-id stämmer inte.");
+            throw new BadRequestException("Modul-id stämmer inte.", "Valideringsfel");
 
-        try
-        {
-            var updated = await _serviceManager.ModuleService.UpdateModuleAsync(dto);
+        if (!ModelState.IsValid)
+            throw new BadRequestException("Ogiltigt data skickades för modulen.", "Valideringsfel");
 
-            if (updated == null)
-                return NotFound();
+        var updated = await _serviceManager.ModuleService.UpdateModuleAsync(dto);
 
-            return Ok(updated);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av modul." });
-        }
+        return Ok(updated);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteModule(int id)
     {
-        var result = await _serviceManager.ModuleService.DeleteModuleAsync(id);
-
-        if (!result)
-            return NotFound();
+        await _serviceManager.ModuleService.DeleteModuleAsync(id);
 
         return NoContent();
     }

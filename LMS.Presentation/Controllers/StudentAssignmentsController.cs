@@ -1,4 +1,5 @@
 ﻿using Domain.Models.Entities;
+using Domain.Models.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -30,8 +31,11 @@ namespace LMS.Presentation.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
 
+            if (user == null)
+                throw new ForbiddenException("Användaren kunde inte identifieras.");
+
             if (user.CourseId == null)
-                return BadRequest("Student is not assigned to any course.");
+                throw new BadRequestException("Studenten är inte kopplad till någon kurs.", "Valideringsfel");
 
             var result = await _serviceManager.StudentAssignmentService
                 .GetStudentAssignmentsAsync(user.Id, user.CourseId.Value);
@@ -45,8 +49,11 @@ namespace LMS.Presentation.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
 
+            if (user == null)
+                throw new ForbiddenException("Användaren kunde inte identifieras.");
+
             if (user.CourseId == null)
-                return BadRequest("Student is not assigned to any course.");
+                throw new BadRequestException("Studenten är inte kopplad till någon kurs.", "Valideringsfel");
 
             var result = await _serviceManager.StudentAssignmentService
                 .GetUpcomingAssignmentsAsync(user.Id);

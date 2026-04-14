@@ -13,244 +13,266 @@ namespace LMS.Services;
 
 public class SubmissionService : ISubmissionService
 {
-	private readonly IUnitOfWork _unitOfWork;
-	private readonly UserManager<ApplicationUser> _userManager;
-	public SubmissionService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
-	{
-		_unitOfWork = unitOfWork;
-		_userManager = userManager;
-	}
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly UserManager<ApplicationUser> _userManager;
+    public SubmissionService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+    {
+        _unitOfWork = unitOfWork;
+        _userManager = userManager;
+    }
 
-	public async Task<SubmissionDto?> GetSubmissionByIdAsync(int submissionId, string currentUserId, bool isTeacher)
-	{
-		var submission = await _unitOfWork.SubmissionRepository.GetByIdAsync(submissionId);
+    public async Task<SubmissionDto> GetSubmissionByIdAsync(int submissionId, string currentUserId, bool isTeacher)
+    {
+        if (string.IsNullOrWhiteSpace(currentUserId))
+            throw new BadRequestException("Användar-id saknas.", "Valideringsfel");
 
-		if (submission is null)
-			return null;
+        var submission = await _unitOfWork.SubmissionRepository.GetByIdAsync(submissionId);
 
-		// studenter får endast se egna 
-		if (submission.StudentId != currentUserId)
-		{
-			// lärare får se alla submissions
-			if (isTeacher == false)
-				return null;
-		}
+        if (submission is null)
+            throw new NotFoundException($"Inlämning med id {submissionId} hittades inte.");
 
+        // studenter får endast se egna 
+        if (submission.StudentId != currentUserId)
+        {
+            // lärare får se alla submissions
+            if (isTeacher == false)
+                throw new ForbiddenException("Du saknar behörighet att se denna inlämning.");
+        }
 
+        return ToSubmissionDto(submission);
+    }
 
-		return ToSubmissionDto(submission);
-	}
+    public async Task<IEnumerable<SubmissionDto>> GetSubmissionsForCourseAsync(int courseId, string currentUserId, bool isTeacher)
+    {
+        if (string.IsNullOrWhiteSpace(currentUserId))
+            throw new BadRequestException("Användar-id saknas.", "Valideringsfel");
 
-	public async Task<IEnumerable<SubmissionDto>> GetSubmissionsForCourseAsync(int courseId, string currentUserId, bool isTeacher)
-	{
-		var submissions = await _unitOfWork.SubmissionRepository.GetByCourseIdAsync(courseId);
+        if (courseId <= 0)
+            throw new BadRequestException("Ogiltigt kurs-id.", "Valideringsfel");
 
-		// Lärare får se alla, studenter bara egna
-		if (!isTeacher)
-		{
-			submissions = submissions.Where(s => s.StudentId == currentUserId);
-		}
+        var submissions = await _unitOfWork.SubmissionRepository.GetByCourseIdAsync(courseId);
 
-		return submissions.Select(s => ToSubmissionDto(s));
-	}
+        // Lärare får se alla, studenter bara egna
+        if (!isTeacher)
+        {
+            submissions = submissions.Where(s => s.StudentId == currentUserId);
+        }
 
+        return submissions.Select(s => ToSubmissionDto(s));
+    }
 
-	private static SubmissionDto ToSubmissionDto(Submission submission)
-	{
-		var dto = new SubmissionDto
-		{
-			Id = submission.Id,
-			ActivityId = submission.ActivityId,
-			StudentId = submission.StudentId,
-			FileName = submission.FileName,
-			Comment = submission.Comment,
-			SubmittedAt = submission.SubmittedAt,
-			IsLate = submission.IsLate,
-			Feedback = submission.Feedback,
-			FeedbackGivenAt = submission.FeedbackGivenAt,
-			FeedbackGivenByTeacherId = submission.FeedbackGivenByTeacherId
-		};
+    private static SubmissionDto ToSubmissionDto(Submission submission)
+    {
+        var dto = new SubmissionDto
+        {
+            Id = submission.Id,
+            ActivityId = submission.ActivityId,
+            StudentId = submission.StudentId,
+            FileName = submission.FileName,
+            Comment = submission.Comment,
+            SubmittedAt = submission.SubmittedAt,
+            IsLate = submission.IsLate,
+            Feedback = submission.Feedback,
+            FeedbackGivenAt = submission.FeedbackGivenAt,
+            FeedbackGivenByTeacherId = submission.FeedbackGivenByTeacherId
+        };
 
-		string? teacherName = null;
+        string? teacherName = null;
 
-		if (submission.FeedbackGivenByTeacher != null)
-		{
-			teacherName = $"{submission.FeedbackGivenByTeacher.FirstName} {submission.FeedbackGivenByTeacher.LastName}";
-		}
+        if (submission.FeedbackGivenByTeacher != null)
+        {
+            teacherName = $"{submission.FeedbackGivenByTeacher.FirstName} {submission.FeedbackGivenByTeacher.LastName}";
+        }
 
-		dto.FeedbackGivenByTeacherName = teacherName;
+        dto.FeedbackGivenByTeacherName = teacherName;
 
-		return dto;
-	}
+        return dto;
+    }
 
-	public async Task<SubmissionDto> SubmitAsync(int activityId, string studentId, string filePath, string fileName, string? comment)
-	{
-		var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(activityId);
-		if (activity == null)
-			throw new NotFoundException("Aktiviteten hittades inte.");
+    public async Task<SubmissionDto> SubmitAsync(int activityId, string studentId, string filePath, string fileName, string? comment)
+    {
+        if (activityId <= 0)
+            throw new BadRequestException("Ogiltigt aktivitets-id.", "Valideringsfel");
 
-		bool isLate = activity.DueDate.HasValue && DateTime.UtcNow > activity.DueDate.Value;
+        if (string.IsNullOrWhiteSpace(studentId))
+            throw new BadRequestException("Student-id saknas.", "Valideringsfel");
 
-		var submission = new Submission
-		{
-			ActivityId = activityId,
-			StudentId = studentId,
-			FilePath = filePath,
-			FileName = fileName,
-			Comment = comment ?? "",
-			SubmittedAt = DateTime.UtcNow,
-			IsLate = isLate
-		};
+        if (string.IsNullOrWhiteSpace(filePath))
+            throw new BadRequestException("Filsökväg saknas.", "Valideringsfel");
 
-		_unitOfWork.SubmissionRepository.Add(submission);
+        if (string.IsNullOrWhiteSpace(fileName))
+            throw new BadRequestException("Filnamn saknas.", "Valideringsfel");
 
-		// Notification part
-		var usersInCourse = await _userManager.Users.Where(u => u.CourseId == activity.Module.CourseId).ToListAsync();
+        var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(activityId);
+        if (activity == null)
+            throw new NotFoundException("Aktiviteten hittades inte.");
 
-		ApplicationUser? teacher = null;
+        bool isLate = activity.DueDate.HasValue && DateTime.UtcNow > activity.DueDate.Value;
 
-		foreach (var user in usersInCourse)
-		{
-			if (await _userManager.IsInRoleAsync(user, "Teacher"))
-			{
-				teacher = user;
-				break;
-			}
-		}
+        var submission = new Submission
+        {
+            ActivityId = activityId,
+            StudentId = studentId,
+            FilePath = filePath,
+            FileName = fileName,
+            Comment = comment ?? "",
+            SubmittedAt = DateTime.UtcNow,
+            IsLate = isLate
+        };
 
-		if (teacher is not null)
-		{
-			var student = await _userManager.FindByIdAsync(studentId);
+        _unitOfWork.SubmissionRepository.Add(submission);
 
-			var notification = new Notification
-			{
-				UserId = teacher.Id,
-				Type = NotificationType.SubmissionCreated,
-				CreatedAt = DateTime.UtcNow,
-				IsRead = false,
+        // Notification part
+        var usersInCourse = await _userManager.Users.Where(u => u.CourseId == activity.Module.CourseId).ToListAsync();
 
-				ActorUserId = studentId,
-				ActorName = student is not null
-					? $"{student.FirstName} {student.LastName}"
-					: "En elev",
+        ApplicationUser? teacher = null;
 
-				CourseId = activity.Module.CourseId,
-				CourseName = activity.Module.Course.Name,
+        foreach (var user in usersInCourse)
+        {
+            if (await _userManager.IsInRoleAsync(user, "Teacher"))
+            {
+                teacher = user;
+                break;
+            }
+        }
 
-				ActivityId = activity.Id,
-				ActivityName = activity.Name,
+        if (teacher is not null)
+        {
+            var student = await _userManager.FindByIdAsync(studentId);
 
-				SubmissionId = submission.Id
-			};
+            var notification = new Notification
+            {
+                UserId = teacher.Id,
+                Type = NotificationType.SubmissionCreated,
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false,
 
-			_unitOfWork.NotificationRepository.Create(notification);
-		}
-		// end Notification part
+                ActorUserId = studentId,
+                ActorName = student is not null
+                    ? $"{student.FirstName} {student.LastName}"
+                    : "En elev",
 
-		await _unitOfWork.CompleteAsync();
+                CourseId = activity.Module.CourseId,
+                CourseName = activity.Module.Course.Name,
 
-		return ToSubmissionDto(submission);
-	}
+                ActivityId = activity.Id,
+                ActivityName = activity.Name,
 
-	public async Task<(string FilePath, string FileName)?> GetSubmissionFileInfoAsync(int submissionId)
-	{
-		var submission = await _unitOfWork.SubmissionRepository.GetByIdAsync(submissionId);
-		if (submission == null)
-			return null;
+                SubmissionId = submission.Id
+            };
 
-		return (submission.FilePath, submission.FileName);
-	}
+            _unitOfWork.NotificationRepository.Create(notification);
+        }
+        // end Notification part
 
-	public async Task GiveFeedbackAsync(int submissionId, string feedback, string teacherId)
-	{
-		var submission = await _unitOfWork.SubmissionRepository.GetByIdAsync(submissionId);
+        await _unitOfWork.CompleteAsync();
 
-		if (submission == null)
-			throw new NotFoundException("Submission hittades inte.");
+        return ToSubmissionDto(submission);
+    }
 
-		submission.Feedback = feedback;
-		submission.FeedbackGivenAt = DateTime.UtcNow;
-		submission.FeedbackGivenByTeacherId = teacherId;
+    public async Task<(string FilePath, string FileName)> GetSubmissionFileInfoAsync(int submissionId)
+    {
+        var submission = await _unitOfWork.SubmissionRepository.GetByIdAsync(submissionId);
+        if (submission == null)
+            throw new NotFoundException($"Inlämning med id {submissionId} hittades inte.");
 
+        return (submission.FilePath, submission.FileName);
+    }
 
-		var teacher = await _userManager.FindByIdAsync(teacherId);
+    public async Task GiveFeedbackAsync(int submissionId, string feedback, string teacherId)
+    {
+        if (string.IsNullOrWhiteSpace(teacherId))
+            throw new BadRequestException("Lärar-id saknas.", "Valideringsfel");
 
-		var notification = new Notification
-		{
-			UserId = submission.StudentId,
-			Type = NotificationType.FeedbackReceived,
-			CreatedAt = DateTime.UtcNow,
-			IsRead = false,
+        var submission = await _unitOfWork.SubmissionRepository.GetByIdAsync(submissionId);
 
-			ActorUserId = teacherId,
-			ActorName = teacher != null
-				   ? $"{teacher.FirstName} {teacher.LastName}"
-				   : null,
+        if (submission == null)
+            throw new NotFoundException("Inlämning hittades inte.");
 
-			ActivityId = submission.ActivityId,
-			ActivityName = submission.Activity.Name,
+        submission.Feedback = feedback;
+        submission.FeedbackGivenAt = DateTime.UtcNow;
+        submission.FeedbackGivenByTeacherId = teacherId;
 
-			SubmissionId = submission.Id,
+        var teacher = await _userManager.FindByIdAsync(teacherId);
 
-			Message = feedback
-		};
+        var notification = new Notification
+        {
+            UserId = submission.StudentId,
+            Type = NotificationType.FeedbackReceived,
+            CreatedAt = DateTime.UtcNow,
+            IsRead = false,
 
-		_unitOfWork.NotificationRepository.Create(notification);
-		await _unitOfWork.CompleteAsync();
-	}
+            ActorUserId = teacherId,
+            ActorName = teacher != null
+                   ? $"{teacher.FirstName} {teacher.LastName}"
+                   : null,
 
+            ActivityId = submission.ActivityId,
+            ActivityName = submission.Activity.Name,
 
+            SubmissionId = submission.Id,
 
+            Message = feedback
+        };
 
-	public async Task<IEnumerable<SubmissionListItemDto>> GetSubmissionsForActivityAsync(
-	int activityId,
-	string currentUserId,
-	bool isTeacher)
-	{
-		if (!isTeacher)
-			return Enumerable.Empty<SubmissionListItemDto>();
+        _unitOfWork.NotificationRepository.Create(notification);
+        await _unitOfWork.CompleteAsync();
+    }
 
-		var submissions = await _unitOfWork.SubmissionRepository.GetByActivityIdAsync(activityId);
+    public async Task<IEnumerable<SubmissionListItemDto>> GetSubmissionsForActivityAsync(
+        int activityId,
+        string currentUserId,
+        bool isTeacher)
+    {
+        if (string.IsNullOrWhiteSpace(currentUserId))
+            throw new BadRequestException("Användar-id saknas.", "Valideringsfel");
 
-		return submissions.Select(s => new SubmissionListItemDto
-		{
-			SubmissionId = s.Id,
-			StudentId = s.StudentId,
-			StudentName = $"{s.Student.FirstName} {s.Student.LastName}",
-			StudentEmail = s.Student.Email,
+        if (activityId <= 0)
+            throw new BadRequestException("Ogiltigt aktivitets-id.", "Valideringsfel");
 
-			CourseName = s.Activity.Module.Course.Name,
-			ModuleName = s.Activity.Module.Name,
-			ActivityName = s.Activity.Name,
+        if (!isTeacher)
+            throw new ForbiddenException("Du saknar behörighet att se inlämningar för denna aktivitet.");
 
-			SubmittedAt = s.SubmittedAt,
-			FileName = s.FileName,
+        var submissions = await _unitOfWork.SubmissionRepository.GetByActivityIdAsync(activityId);
 
-			HasFeedback = !string.IsNullOrWhiteSpace(s.Feedback),
-			FeedbackGivenAt = s.FeedbackGivenAt
-		});
-	}
+        return submissions.Select(s => new SubmissionListItemDto
+        {
+            SubmissionId = s.Id,
+            StudentId = s.StudentId,
+            StudentName = $"{s.Student.FirstName} {s.Student.LastName}",
+            StudentEmail = s.Student.Email,
 
-	public async Task<IEnumerable<SubmissionListItemDto>> GetAllSubmissionsAsync()
-	{
-		var submissions = await _unitOfWork.SubmissionRepository.GetAllAsync();
+            CourseName = s.Activity.Module.Course.Name,
+            ModuleName = s.Activity.Module.Name,
+            ActivityName = s.Activity.Name,
 
-		return submissions.Select(s => new SubmissionListItemDto
-		{
-			SubmissionId = s.Id,
-			StudentId = s.StudentId,
-			StudentName = $"{s.Student.FirstName} {s.Student.LastName}",
-			StudentEmail = s.Student.Email,
+            SubmittedAt = s.SubmittedAt,
+            FileName = s.FileName,
 
-			CourseName = s.Activity.Module.Course.Name,
-			ModuleName = s.Activity.Module.Name,
-			ActivityName = s.Activity.Name,
-			ActivityId = s.ActivityId,
+            HasFeedback = !string.IsNullOrWhiteSpace(s.Feedback),
+            FeedbackGivenAt = s.FeedbackGivenAt
+        });
+    }
 
-			SubmittedAt = s.SubmittedAt,
-			HasFeedback = !string.IsNullOrWhiteSpace(s.Feedback),
-			FeedbackGivenAt = s.FeedbackGivenAt
-		});
-	}
+    public async Task<IEnumerable<SubmissionListItemDto>> GetAllSubmissionsAsync()
+    {
+        var submissions = await _unitOfWork.SubmissionRepository.GetAllAsync();
 
+        return submissions.Select(s => new SubmissionListItemDto
+        {
+            SubmissionId = s.Id,
+            StudentId = s.StudentId,
+            StudentName = $"{s.Student.FirstName} {s.Student.LastName}",
+            StudentEmail = s.Student.Email,
+
+            CourseName = s.Activity.Module.Course.Name,
+            ModuleName = s.Activity.Module.Name,
+            ActivityName = s.Activity.Name,
+            ActivityId = s.ActivityId,
+
+            SubmittedAt = s.SubmittedAt,
+            HasFeedback = !string.IsNullOrWhiteSpace(s.Feedback),
+            FeedbackGivenAt = s.FeedbackGivenAt
+        });
+    }
 }

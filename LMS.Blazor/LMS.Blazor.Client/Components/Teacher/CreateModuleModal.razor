@@ -112,6 +112,7 @@
 
         try
         {
+			// Egen klientvalidering, för snabbare feedback och färre onödiga requests till API:et
             if (!CourseStartDate.HasValue || !CourseEndDate.HasValue)
             {
                 errorMessage = "Kursens datumintervall saknas.";
@@ -159,6 +160,7 @@
                 return;
             }
 
+			// Om klientvalideringen lyckades -> Skicka requesten till API:et
             var result = await ApiService.PostAsync<ModuleCreateDto, ModuleDto>(
                 $"api/courses/{CourseId}/modules",
                 model);
@@ -174,7 +176,7 @@
             if (OnCreated.HasDelegate)
                 await OnCreated.InvokeAsync();
         }
-        catch (Exception ex)
+		catch (Exception ex)  // Fångar generella exceptions från ClientApiService, med detaljinfo från API:et (tex 400 Bad Request med validation errors)
         {
             errorMessage = ex.Message;
         }

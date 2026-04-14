@@ -60,10 +60,18 @@
     {
         if (Submission != null)
         {
-            var full = await ApiService.GetAsync<SubmissionDto>(
-                $"api/submissions/{Submission.SubmissionId}");
+            try
+            {
+                var full = await ApiService.GetAsync<SubmissionDto>(
+                    $"api/submissions/{Submission.SubmissionId}");
 
-            feedbackText = full?.Feedback ?? "";
+                feedbackText = full?.Feedback ?? "";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error loading submission: " + ex.Message);
+                feedbackText = "";
+            }
         }
     }
 
@@ -92,7 +100,5 @@
             isSaving = false;
         }
     }
-
-
 
 }

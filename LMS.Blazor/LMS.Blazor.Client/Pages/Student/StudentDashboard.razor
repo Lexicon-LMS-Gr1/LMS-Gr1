@@ -20,6 +20,13 @@
 		</div>
 	</div>
 
+	@if (!string.IsNullOrEmpty(errorMessage))
+	{
+		<div class="alert alert-danger">
+			<span class="bi bi-exclamation-triangle me-2"></span>
+			@errorMessage
+		</div>
+	}
 
 	@if (dashboard == null)
 	{
@@ -177,35 +184,84 @@
 	private bool isLoadingNotifications = true;
 	private CourseDto? course;
 
+	private string? errorMessage;
+
 	protected override async Task OnInitializedAsync()
 	{
-		dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
-		course = await Api.GetAsync<CourseDto>("api/user/me/course");
+		try
+		{
+			dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
+		}
+		catch (Exception ex)
+		{
+			errorMessage ??= "Vissa delar av dashboarden kunde inte laddas.";
+			Console.Error.WriteLine($"Fel vid laddning av dashboarden: {ex.Message}");
+		}
 
-		upcomingAssignments = await Api.GetAsync<List<StudentAssignmentDto>>(
-			"api/student/assignments/upcoming"
-		);
-		notifications = await Api.GetAsync<List<NotificationDto>>(
-		 "api/notifications/unread"
-	 );
+		try
+		{
+			course = await Api.GetAsync<CourseDto>("api/user/me/course");
+		}
+		catch (Exception ex)
+		{
+			errorMessage ??= "Vissa delar av dashboarden kunde inte laddas.";
+			Console.Error.WriteLine($"Fel vid laddning av kursen: {ex.Message}");
+		}
 
-		isLoadingUpcoming = false;
-		isLoadingNotifications = false;
+		try
+		{
+			upcomingAssignments = await Api.GetAsync<List<StudentAssignmentDto>>(
+				"api/student/assignments/upcoming"
+			) ?? new();
+		}
+		catch (Exception ex)
+		{
+			errorMessage ??= "Vissa delar av dashboarden kunde inte laddas.";
+			Console.Error.WriteLine($"Fel vid laddning av kommande inlämningar: {ex.Message}");
+			upcomingAssignments = new List<StudentAssignmentDto>();
+		}
+		finally
+		{
+			isLoadingUpcoming = false;
+		}
+
+		try
+		{
+			notifications = await Api.GetAsync<List<NotificationDto>>(
+				"api/notifications/unread"
+			) ?? new();
+		}
+		catch (Exception ex)
+		{
+			errorMessage ??= "Vissa delar av dashboarden kunde inte laddas.";
+			Console.Error.WriteLine($"Fel vid laddning av aviseringar: {ex.Message}");
+			notifications = new List<NotificationDto>();
+		}
+		finally
+		{
+			isLoadingNotifications = false;
+		}
 
 		var today = DateTime.Today;
 		var culture = new System.Globalization.CultureInfo("sv-SE");
-		currentWeek = culture.Calendar.GetWeekOfYear(today,
+		currentWeek = culture.Calendar.GetWeekOfYear(
+			today,
 			System.Globalization.CalendarWeekRule.FirstFourDayWeek,
-			DayOfWeek.Monday);
+			DayOfWeek.Monday
+		);
 	}
-
 
 	private async Task MarkAsRead(int id)
 	{
-		await Api.PatchAsync($"api/notifications/{id}/read");
-		notifications.RemoveAll(n => n.Id == id);
+		try
+		{
+			await Api.PatchAsync($"api/notifications/{id}/read");
+			notifications.RemoveAll(n => n.Id == id);
+		}
+		catch (Exception ex)
+		{
+			errorMessage ??= "Kunde inte markera aviseringen som läst.";
+			Console.Error.WriteLine($"Fel vid markering av avisering som läst: {ex.Message}");
+		}
 	}
-
-
-
 }

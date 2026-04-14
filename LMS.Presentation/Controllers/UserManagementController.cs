@@ -1,8 +1,9 @@
-using System.Security.Claims;
+using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
+using System.Security.Claims;
 
 namespace LMS.Presentation.Controllers;
 
@@ -29,10 +30,6 @@ public class UserManagementController : ControllerBase
     public async Task<ActionResult<UserDto>> GetUserById(string id)
     {
         var user = await _serviceManager.UserManagementService.GetUserByIdAsync(id);
-
-        if (user == null)
-            return NotFound($"Användare med id \"{id}\" kunde inte hittas.");
-
         return Ok(user);
     }
 
@@ -54,57 +51,23 @@ public class UserManagementController : ControllerBase
     public async Task<ActionResult<UserDto>> CreateUser([FromBody] UserCreateDto dto)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+            throw new BadRequestException("Ogiltigt data skickades för användaren.", "Valideringsfel");
 
-        try
-        {
-            var user = await _serviceManager.UserManagementService.CreateUserAsync(dto);
-            return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid skapande av användare." });
-        }
+        var user = await _serviceManager.UserManagementService.CreateUserAsync(dto);
+        return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
     }
 
     [HttpPut("{id}")]
     public async Task<ActionResult<UserDto>> UpdateUser(string id, [FromBody] UserUpdateDto dto)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+            throw new BadRequestException("Ogiltigt data skickades för användaren.", "Valideringsfel");
 
         if (id != dto.Id)
-            return BadRequest("Id i URL:en matchar inte id i request body.");
+            throw new BadRequestException("Id i URL:en matchar inte id i request body.", "Valideringsfel");
 
-        try
-        {
-            var user = await _serviceManager.UserManagementService.UpdateUserAsync(dto);
-            return Ok(user);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av användare." });
-        }
+        var user = await _serviceManager.UserManagementService.UpdateUserAsync(dto);
+        return Ok(user);
     }
 
     [HttpDelete("{id}")]
@@ -113,24 +76,10 @@ public class UserManagementController : ControllerBase
         // Prevent a teacher from deleting their own account
         var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (currentUserId != null && currentUserId == id)
-            return BadRequest("Du kan inte ta bort ditt eget konto.");
+            throw new BadRequestException("Du kan inte ta bort ditt eget konto.", "Valideringsfel");
 
-        try
-        {
-            var result = await _serviceManager.UserManagementService.DeleteUserAsync(id);
+        await _serviceManager.UserManagementService.DeleteUserAsync(id);
 
-            if (!result)
-                return NotFound($"Användare med id \"{id}\" kunde inte hittas.");
-
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid borttagning av användare." });
-        }
+        return NoContent();
     }
 }

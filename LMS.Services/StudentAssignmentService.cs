@@ -1,4 +1,5 @@
 ﻿using Domain.Contracts.Repositories;
+using Domain.Models.Exceptions;
 using Service.Contracts;
 using System;
 using System.Collections.Generic;
@@ -17,9 +18,14 @@ namespace LMS.Services
 
         public async Task<List<StudentAssignmentDto>> GetStudentAssignmentsAsync(string studentId, int courseId)
         {
+            if (string.IsNullOrWhiteSpace(studentId))
+                throw new BadRequestException("Student-id saknas.", "Valideringsfel");
+
+            if (courseId <= 0)
+                throw new BadRequestException("Ogiltigt kurs-id.", "Valideringsfel");
+
             var activities = await _unitOfWork.ActivityRepository
                 .GetSubmissionActivitiesForCourseAsync(courseId);
-
 
             var submissions = await _unitOfWork.SubmissionRepository
                 .GetByStudentIdAsync(studentId);
@@ -51,6 +57,9 @@ namespace LMS.Services
 
         public async Task<List<StudentAssignmentDto>> GetUpcomingAssignmentsAsync(string studentId)
         {
+            if (string.IsNullOrWhiteSpace(studentId))
+                throw new BadRequestException("Student-id saknas.", "Valideringsfel");
+
             var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(studentId);
             if (course == null)
                 return new List<StudentAssignmentDto>();

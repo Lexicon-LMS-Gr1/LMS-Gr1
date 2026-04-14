@@ -26,6 +26,14 @@
         </button>
     </div>
 
+    @if (!string.IsNullOrEmpty(formError))
+    {
+        <div class="alert alert-danger">
+            <span class="bi bi-exclamation-triangle me-2"></span>
+            @formError
+        </div>
+    }
+
     @if (courses is null)
     {
         <div class="d-flex justify-content-center py-5">
@@ -98,7 +106,15 @@
 
     private async Task LoadCourses()
     {
-        courses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+       try
+        {
+            courses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+        }
+        catch (Exception ex)
+        {
+            formError = $"Kunde inte ladda kurser: {ex.Message}";
+            courses = new List<CourseListDto>();
+        }
     }
 
     protected override async Task OnInitializedAsync()
@@ -179,7 +195,14 @@
     {
         showCreateCourseModal = false;
 
-        await LoadCourses();
+        try
+        {
+            await LoadCourses();
+        }
+        catch (Exception ex)
+        {
+            formError = ex.Message;
+        }
 
         StateHasChanged();
     }

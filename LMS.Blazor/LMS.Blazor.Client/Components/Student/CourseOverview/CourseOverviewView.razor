@@ -4,7 +4,16 @@
 @using LMS.Shared.DTOs.Submission
 @inject IApiService ApiService
 
-<div class="container-fluid py-4">
+<div class="container py-4">
+
+    @if (!string.IsNullOrEmpty(documentError))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-1"></i> @documentError
+            <button type="button" class="btn-close" @onclick="() => documentError = null"></button>
+        </div>
+    }
+
     <div class="mb-4">
         <h1 class="h2 fw-bold mb-2">@Course.Name</h1>
         <p class="text-muted mb-2">@Course.Description</p>
@@ -72,6 +81,7 @@
     private List<DocumentDto>? courseDocuments;
     private List<DocumentDto>? allModuleDocuments;
     private List<DocumentDto>? allActivityDocuments;
+    private string? documentError;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -81,26 +91,33 @@
 
     private async Task LoadDocumentsAsync()
     {
-        courseDocuments = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?courseId={Course.Id}");
-
-        allModuleDocuments = new List<DocumentDto>();
-        allActivityDocuments = new List<DocumentDto>();
-
-        foreach (var module in Course.Modules)
+        try
         {
-            var moduleDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?moduleId={module.Id}");
-            if (moduleDocs != null)
-                allModuleDocuments.AddRange(moduleDocs);
+            courseDocuments = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?courseId={Course.Id}");
 
-            if (module.Activities != null)
+            allModuleDocuments = new List<DocumentDto>();
+            allActivityDocuments = new List<DocumentDto>();
+
+            foreach (var module in Course.Modules)
             {
-                foreach (var activity in module.Activities)
+                var moduleDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?moduleId={module.Id}");
+                if (moduleDocs != null)
+                    allModuleDocuments.AddRange(moduleDocs);
+
+                if (module.Activities != null)
                 {
-                    var actDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?activityId={activity.Id}");
-                    if (actDocs != null)
-                        allActivityDocuments.AddRange(actDocs);
+                    foreach (var activity in module.Activities)
+                    {
+                        var actDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?activityId={activity.Id}");
+                        if (actDocs != null)
+                            allActivityDocuments.AddRange(actDocs);
+                    }
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            documentError = ex.Message;
         }
     }
 
@@ -128,6 +145,7 @@
 
     private async Task LoadSubmissionsAsync()
     {
+        
         submissions = await ApiService.GetAsync<List<SubmissionDto>>($"api/submissions/course/{Course.Id}");
     }
 }

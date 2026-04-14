@@ -9,6 +9,15 @@
         </h5>
     </div>
 
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger m-3">
+            <span class="bi bi-exclamation-triangle me-2"></span>
+            @errorMessage
+        </div>
+    }
+
+
     <div class="table-responsive">
         @if (assignments == null)
         {
@@ -121,6 +130,8 @@
     private bool showSubmitModal = false;
     private int submitActivityId;
     private DateTime? submitDueDate;
+    private string? errorMessage;
+
 
     private void OpenSubmitModal(StudentAssignmentDto assignment)
     {
@@ -137,10 +148,20 @@
     private async Task HandleSubmissionUploaded(SubmissionDto dto)
     {
         showSubmitModal = false;
-        // Reload assignments to reflect the new submission status
-        assignments = await ApiService.GetAsync<List<StudentAssignmentDto>>(
-            "api/student/assignments");
+
+        try
+        {
+            assignments = await ApiService.GetAsync<List<StudentAssignmentDto>>(
+                "api/student/assignments");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Kunde inte uppdatera inlämningslistan.";
+            Console.WriteLine("Error reloading assignments: " + ex.Message);
+        }
+
     }
+
 
     private void OpenFeedbackModal(StudentAssignmentDto assignment)
     {
@@ -156,8 +177,19 @@
 
     protected override async Task OnInitializedAsync()
     {
-        assignments = await ApiService.GetAsync<List<StudentAssignmentDto>>(
-            "api/student/assignments");
+        try
+        {
+            assignments = await ApiService.GetAsync<List<StudentAssignmentDto>>(
+                "api/student/assignments");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Kunde inte ladda inlämningarna.";
+            Console.WriteLine("Error loading assignments: " + ex.Message);
+            assignments = new List<StudentAssignmentDto>();
+        }
     }
+
+
 }
 

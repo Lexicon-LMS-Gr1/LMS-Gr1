@@ -25,6 +25,13 @@
     </div>
 
     <div class="table-responsive">
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger m-3">
+                <span class="bi bi-exclamation-triangle me-2"></span>
+                @errorMessage
+            </div>
+        }
         @if (isLoading)
         {
             <p class="p-3">Laddar...</p>
@@ -105,24 +112,38 @@
 
     private SubmissionListItemDto? selectedSubmission;
     private bool showFeedbackModal = false;
+    private string? errorMessage;
+
 
     protected override async Task OnInitializedAsync()
     {
         isLoading = true;
-        
-        items = await ApiService.GetAsync<List<SubmissionListItemDto>>("api/submissions")
-            ?? new List<SubmissionListItemDto>();
+        try
+        {
+            items = await ApiService.GetAsync<List<SubmissionListItemDto>>("api/submissions")
+                ?? new List<SubmissionListItemDto>();
 
-        // Extract unique course names
-        courseNames = items
-            .Select(i => i.CourseName)
-            .Distinct()
-            .OrderBy(n => n)
-            .ToList();
+            // Extract unique course names
+            courseNames = items
+                .Select(i => i.CourseName)
+                .Distinct()
+                .OrderBy(n => n)
+                .ToList();
 
-        filteredItems = items;
+            filteredItems = items;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Kunde inte ladda inlämningar: {ex.Message}";
+            items = new List<SubmissionListItemDto>();
+            filteredItems = items;
+        }
 
-        isLoading = false;
+
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void OnCourseFilterChanged(ChangeEventArgs e)

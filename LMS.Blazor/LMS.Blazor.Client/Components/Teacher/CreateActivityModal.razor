@@ -148,10 +148,11 @@
         {
             activityTypes = (await ApiService.GetAsync<List<ActivityTypeDto>>("api/activitytypes")) ?? new();
         }
-        catch
+        catch (Exception ex)
         {
             activityTypes = new();
-            errorMessage = "Kunde inte ladda aktivitetstyper.";
+            //errorMessage = "Kunde inte ladda aktivitetstyper.";
+            errorMessage = ex.Message;
         }
     }
 
@@ -282,7 +283,7 @@
 
     // Metoden kollar första lediga datumintervall där den nya aktiviteten kan skapas
     // Används för att fylla i strt- och slutdatum automatiskt vid öppnande av detta modala fönster
-    // Saknas datumintervall förhindras visningen av fönstret
+	// Saknas datumintervall förhindras visningen av formuläret och en varning visas istället
     private (DateTime Start, DateTime End)? GetFirstAvailableDateRange()
     {
         var moduleStart = ModuleStartDate?.Date ?? DateTime.Today;
