@@ -19,7 +19,7 @@ namespace LMS.Services
         public async Task<List<StudentAssignmentDto>> GetStudentAssignmentsAsync(string studentId, int courseId)
         {
             if (string.IsNullOrWhiteSpace(studentId))
-                throw new BadRequestException("Student-id saknas.", "Valideringsfel");
+                throw new BadRequestException("Elev-id saknas.", "Valideringsfel");
 
             if (courseId <= 0)
                 throw new BadRequestException("Ogiltigt kurs-id.", "Valideringsfel");
@@ -58,7 +58,7 @@ namespace LMS.Services
         public async Task<List<StudentAssignmentDto>> GetUpcomingAssignmentsAsync(string studentId)
         {
             if (string.IsNullOrWhiteSpace(studentId))
-                throw new BadRequestException("Student-id saknas.", "Valideringsfel");
+                throw new BadRequestException("Elev-id saknas.", "Valideringsfel");
 
             var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(studentId);
             if (course == null)
