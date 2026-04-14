@@ -264,6 +264,20 @@
                         </div>
 
                         <div class="mb-3">
+                            <div class="form-check">
+                                <InputCheckbox class="form-check-input" @bind-Value="addDeadline" />
+                                <label class="form-check-label">Lägg till deadline</label>
+                            </div>
+                        </div>
+
+                        @if (addDeadline)
+                        {
+                            <div class="mb-3">                                
+                                <InputDate class="form-control" @bind-Value="activityForm.DueDate" />
+                            </div>
+                        }
+
+                       @*  <div class="mb-3">
                             <label class="form-label">Deadline</label>
 
                             <div class="d-flex gap-2">
@@ -277,7 +291,7 @@
                                     <i class="bi bi-x"></i>
                                 </button>
                             </div>
-                        </div>
+                        </div> *@
                     </div>
 
                     <div class="modal-footer">
@@ -408,6 +422,7 @@
     private int? uploadModuleId;
     private int? uploadActivityId;
     private string? documentError;
+	private bool addDeadline;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -430,6 +445,15 @@
         activityEditContext = new EditContext(activityForm);
         activityError = null;
         showActivityModal = true;
+
+        if(activity.DueDate.HasValue)
+        {
+            addDeadline = true;
+        }
+        else
+        {
+            addDeadline = false;
+		}
     }
 
     private void CloseActivityModal()
@@ -487,6 +511,28 @@
         activityError = null;
 
         try {
+
+            if (addDeadline && !activityForm.DueDate.HasValue)
+            {
+                activityError = "Datum för deadline måste anges.";
+                return;
+            }
+
+            if (addDeadline && activityForm.DueDate.HasValue)
+            {
+                var dueDate = activityForm.DueDate.Value.Date;
+
+                if (dueDate < activityForm.StartTime.Date || dueDate > activityForm.EndTime.Date)
+                {
+                    activityError = "Deadline måste ligga inom aktivitetens datumintervall.";
+                    return;
+                }
+            }
+            else if (!addDeadline)
+            {
+                activityForm.DueDate = null;
+			}
+
             var result = await ApiService.PutAsync<ActivityUpdateDto, ActivityDto>(
                 $"api/activity/{activityForm.Id}", activityForm);
 
