@@ -35,7 +35,7 @@ namespace LMS.Presentation.Controllers
                 throw new ForbiddenException("Användaren kunde inte identifieras.");
 
             if (user.CourseId == null)
-                throw new BadRequestException("Studenten är inte kopplad till någon kurs.", "Valideringsfel");
+                throw new BadRequestException("Eleven är inte kopplad till någon kurs.", "Valideringsfel");
 
             var result = await _serviceManager.StudentAssignmentService
                 .GetStudentAssignmentsAsync(user.Id, user.CourseId.Value);
@@ -53,7 +53,7 @@ namespace LMS.Presentation.Controllers
                 throw new ForbiddenException("Användaren kunde inte identifieras.");
 
             if (user.CourseId == null)
-                throw new BadRequestException("Studenten är inte kopplad till någon kurs.", "Valideringsfel");
+                throw new BadRequestException("Eleven är inte kopplad till någon kurs.", "Valideringsfel");
 
             var result = await _serviceManager.StudentAssignmentService
                 .GetUpcomingAssignmentsAsync(user.Id);

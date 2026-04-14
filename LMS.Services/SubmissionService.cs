@@ -31,10 +31,10 @@ public class SubmissionService : ISubmissionService
         if (submission is null)
             throw new NotFoundException($"Inlämning med id {submissionId} hittades inte.");
 
-        // studenter får endast se egna 
+        // Elever får endast se egna 
         if (submission.StudentId != currentUserId)
         {
-            // lärare får se alla submissions
+            // Lärare får se alla submissions
             if (isTeacher == false)
                 throw new ForbiddenException("Du saknar behörighet att se denna inlämning.");
         }
@@ -52,7 +52,7 @@ public class SubmissionService : ISubmissionService
 
         var submissions = await _unitOfWork.SubmissionRepository.GetByCourseIdAsync(courseId);
 
-        // Lärare får se alla, studenter bara egna
+        // Lärare får se alla, elever endast egna
         if (!isTeacher)
         {
             submissions = submissions.Where(s => s.StudentId == currentUserId);
@@ -95,7 +95,7 @@ public class SubmissionService : ISubmissionService
             throw new BadRequestException("Ogiltigt aktivitets-id.", "Valideringsfel");
 
         if (string.IsNullOrWhiteSpace(studentId))
-            throw new BadRequestException("Student-id saknas.", "Valideringsfel");
+            throw new BadRequestException("Elev-id saknas.", "Valideringsfel");
 
         if (string.IsNullOrWhiteSpace(filePath))
             throw new BadRequestException("Filsökväg saknas.", "Valideringsfel");

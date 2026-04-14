@@ -100,10 +100,10 @@ public class UserManagementService : IUserManagementService
 
         // Validate business rules
         if (dto.Role == "Teacher" && dto.CourseId.HasValue)
-            throw new BadRequestException("En lärare kan inte kopplas till en kurs på samma sätt som en student.", "Valideringsfel");
+            throw new BadRequestException("En lärare kan inte kopplas till en kurs på samma sätt som en elev.", "Valideringsfel");
 
         if (dto.Role == "Student" && !dto.CourseId.HasValue)
-            throw new BadRequestException("En student måste kopplas till en kurs.", "Valideringsfel");
+            throw new BadRequestException("En elev måste kopplas till en kurs.", "Valideringsfel");
 
         var user = new ApplicationUser
         {
@@ -158,10 +158,10 @@ public class UserManagementService : IUserManagementService
 
         // Teachers cannot have CourseId
         if (currentRole == "Teacher" && dto.CourseId.HasValue)
-            throw new BadRequestException("En lärare kan inte kopplas till en kurs på samma sätt som en student.", "Valideringsfel");
+            throw new BadRequestException("En lärare kan inte kopplas till en kurs på samma sätt som en elev.", "Valideringsfel");
 
         if (currentRole == "Student" && !dto.CourseId.HasValue)
-            throw new BadRequestException("En student måste kopplas till en kurs.", "Valideringsfel");
+            throw new BadRequestException("En elev måste kopplas till en kurs.", "Valideringsfel");
 
 
         user.FirstName = dto.FirstName.Trim();
@@ -217,7 +217,7 @@ public class UserManagementService : IUserManagementService
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new InvalidOperationException($"Kunde inte ta bort student: {errors}");
+                throw new InvalidOperationException($"Kunde inte ta bort elev: {errors}");
             }
         }
     }

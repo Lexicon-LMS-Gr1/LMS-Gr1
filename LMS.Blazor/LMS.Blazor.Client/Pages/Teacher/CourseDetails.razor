@@ -1,6 +1,7 @@
 ﻿@page "/teacher/courses/{Id:int}"
 @using LMS.Blazor.Client.Components.Teacher
 @inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = "Teacher")]
 
 <CourseDetailsSection CourseId="Id"
                OnBack="GoBack" />

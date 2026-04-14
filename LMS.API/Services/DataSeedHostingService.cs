@@ -18,7 +18,7 @@ BytMig123!
 	Databasen har 3 kurser
 
 				
-				Databases 2026: januari - mars (har varit)
+				Databaser 2026: januari - mars (har varit)
 				Ansvarig lärare:	anna.teacher@test.com (gett feedback på alla inlämningar)
 				Exempelelev:		alice@test.com (gjort alla inlämningar)
 
