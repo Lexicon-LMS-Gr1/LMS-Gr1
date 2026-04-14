@@ -1,268 +1,243 @@
 ﻿@page "/dashboard"
 @inject IApiService Api
+
+@using System.Globalization
 @using Domain.Models.Entities
 @using LMS.Shared.DTOs.Course
 @using LMS.Shared.DTOs.Notification
 @using LMS.Shared.DTOs.StudentDashboard
-@attribute [Authorize(Roles = "Student")]
 
 <PageTitle>Dashboard — Lexicon LMS</PageTitle>
 
 <div class="container-fluid py-4">
+    <div class="mb-4">
+        <h2 class="mb-1">Välkommen tillbaka!</h2>
+        <p class="text-muted mb-0">Översikt över dina aktiviteter och framsteg.</p>
+    </div>
 
+    @if (dashboard is null)
+    {
+        <div class="card shadow-sm">
+            <div class="card-body py-5 text-center text-muted">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Laddar...</span>
+                </div>
+                <div>Laddar dashboard...</div>
+            </div>
+        </div>
+    } else
+    {
+        @if (notifications is { Count: > 0 })
+        {
+            <div class="mb-4">
+                <NotificationList Notifications="notifications" OnMarkAsRead="MarkAsRead" />
+            </div>
+        }
 
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-semibold">Veckans aktiviteter</h4>
+                <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">
+                    Vecka @currentWeek
+                </span>
+            </div>
 
-	<div class="d-flex justify-content-between align-items-center mb-4">
-		<div>
-			<h2 class="mb-1">
-				Välkommen tillbaka!
-			</h2>
-			<p class="text-muted mb-0">Översikt över dina aktiviteter och framsteg</p>
-		</div>
-	</div>
+            <div class="card-body p-0">
+                @if (dashboard.WeeklyActivities is null || !dashboard.WeeklyActivities.Any())
+                {
+                    <div class="text-center text-muted py-4">
+                        Inga aktiviteter planerade denna vecka.
+                    </div>
+                } else
+                {
+                    var groupedActivities = dashboard.WeeklyActivities
+                        .GroupBy(a => a.ModuleName)
+                        .ToList();
 
-	@if (!string.IsNullOrEmpty(errorMessage))
-	{
-		<div class="alert alert-danger">
-			<span class="bi bi-exclamation-triangle me-2"></span>
-			@errorMessage
-		</div>
-	}
+                    @for (int i = 0; i < groupedActivities.Count; i++)
+                    {
+                        var moduleGroup = groupedActivities[i];
 
-	@if (dashboard == null)
-	{
-		<div class="d-flex justify-content-center py-5">
-			<div class="spinner-border text-primary" role="status">
-				<span class="visually-hidden">Laddar...</span>
-			</div>
-		</div>
-	} else
-	{
+                        <div class="p-3 @(i < groupedActivities.Count - 1 ? "border-bottom" : "")">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0 fw-semibold">@moduleGroup.Key</h5>
+                                <span class="badge bg-light text-dark">
+                                    @moduleGroup.Count() aktivitet@(moduleGroup.Count() == 1 ? "" : "er")
+                                </span>
+                            </div>
 
-		<!-- Notifications -->
-		
-		<NotificationList Notifications="notifications"
-						  OnMarkAsRead="MarkAsRead" />
+                            <div class="list-group list-group-flush">
+                                @foreach (var activity in moduleGroup)
+                                {
+                                    <div class="list-group-item px-0">
+                                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                            <div>
+                                                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                                    <span class="badge @BadgeHelper.GetBadgeColor(activity.ActivityTypeName)">
+                                                        @activity.ActivityTypeName
+                                                    </span>
+                                                    <span class="fw-semibold">@activity.Title</span>
+                                                </div>
 
-		<!-- Weekly Activities -->
-		<div class="card shadow-sm mb-4">
-			<div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-				<h4 class="mb-0 fw-semibold">Veckans aktiviteter</h4>
-				<span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">
-					Vecka @currentWeek
-				</span>
-			</div>
+                                                <div class="text-muted small">
+                                                    @FormatDateRange(activity.Start, activity.End)
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
 
-			@foreach (var moduleGroup in dashboard.WeeklyActivities.GroupBy(a => a.ModuleName))
-			{
-				<div class="card shadow-sm mb-4">
-					<div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-						<h5 class="mb-0 fw-semibold">Modul: @moduleGroup.Key</h5>
-						<span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">
-						</span>
-					</div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h4 class="mb-0 fw-semibold">Kommande inlämningar</h4>
+            </div>
 
-					<div class="list-group list-group-flush">
-						@foreach (var a in moduleGroup)
-						{
-							<div class="list-group-item">
-								<div class="d-flex justify-content-between align-items-start">
-									<div>
-										<div class="d-flex align-items-center mb-1">
-											<span class="badge @BadgeHelper.GetBadgeColor(a.ActivityTypeName) me-2">
-												@a.ActivityTypeName
-											</span>
-											<span class="fw-semibold">@a.Title</span>
-										</div>
+            <div class="card-body p-0">
+                @if (isLoadingUpcoming)
+                {
+                    <div class="text-center text-muted py-4">
+                        Laddar kommande inlämningar...
+                    </div>
+                } else if (upcomingAssignments is null || !upcomingAssignments.Any())
+                {
+                    <div class="text-center text-muted py-4">
+                        Inga kommande inlämningar.
+                    </div>
+                } else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var assignment in upcomingAssignments.OrderBy(a => a.DueDate))
+                        {
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                    <div>
+                                        <div class="fw-semibold">@assignment.Name</div>
+                                        <div class="text-muted small">
+                                            Deadline: @FormatDateTime(assignment.DueDate)
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
 
-										<div class="text-muted small">
-											@a.Start.ToString("yyyy-MM-dd")
-											<span class="mx-1">•</span>
-											@a.Start.ToString("HH:mm") – @a.End.ToString("HH:mm")
-										</div>
-									</div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h4 class="mb-0 fw-semibold">Modulframsteg</h4>
+            </div>
 
-                        
-								</div>
-							</div>
-						}
-					</div>
-				</div>
-			}
-		</div>
+            <div class="card-body p-0">
+                @if (course is null)
+                {
+                    <div class="text-center text-muted py-4">
+                        Laddar modulframsteg...
+                    </div>
+                } else if (course.Modules is null || !course.Modules.Any())
+                {
+                    <div class="text-center text-muted py-4">
+                        Inga moduler hittades.
+                    </div>
+                } else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var module in course.Modules)
+                        {
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-semibold">@module.Name</span>
 
-		<!-- Upcoming Deadlines -->
-		<div class="card shadow-sm mb-4">
-			<div class="card-header bg-white py-3">
-				<h4 class="mb-0 fw-semibold">Kommande inlämningar</h4>
-			</div>
+                                    @if (module.Progress >= 100)
+                                    {
+                                        <span class="badge bg-success">Genomförd</span>
+                                    } else
+                                    {
+                                        <span class="small text-muted">@module.Progress %</span>
+                                    }
+                                </div>
 
-			<div class="card-body">
-				@if (isLoadingUpcoming)
-				{
-					<div class="text-center text-muted py-3">
-						Laddar...
-					</div>
-				} else if (upcomingAssignments == null || !upcomingAssignments.Any())
-				{
-					<div class="text-center text-muted py-3">
-						Inga kommande inlämningar
-					</div>
-				} else
-				{
-					<ul class="list-group list-group-flush">
-						@foreach (var a in upcomingAssignments)
-						{
-							<li class="list-group-item">
-								<div class="fw-semibold">@a.Name</div>
-								<div class="text-muted small">
-									Deadline: @a.DueDate?.ToString("yyyy-MM-dd HH:mm")
-								</div>
-							</li>
-						}
-					</ul>
-				}
-			</div>
-		</div>
-
-
-		<!-- Module Progress -->
-		<div class="card shadow-sm mb-4">
-			<div class="card-header bg-white py-3">
-				<h4 class="mb-0 fw-semibold">Modulframsteg</h4>
-			</div>
-
-			<div class="card-body">
-				@if (course == null)
-				{
-					<div class="text-center text-muted py-3">
-						Laddar...
-					</div>
-				} else if (course.Modules == null || !course.Modules.Any())
-				{
-					<div class="text-center text-muted py-3">
-						Inga moduler hittades
-					</div>
-				} else
-				{
-					<ul class="list-group list-group-flush">
-						@foreach (var m in course.Modules)
-						{
-							<li class="list-group-item">
-								<div class="d-flex justify-content-between align-items-center">
-									<span class="fw-semibold">@m.Name</span>
-									<span class="fw-normal small text-dark">
-										@m.Progress %
-									</span>
-								</div>
-
-								<div class="progress mt-2" style="height: 8px;">
-									<div class="progress-bar"
-										 role="progressbar"
-										 style="width: @m.Progress%;"
-										 aria-valuenow="@m.Progress"
-										 aria-valuemin="0"
-										 aria-valuemax="100">
-									</div>
-								</div>
-							</li>
-						}
-					</ul>
-				}
-			</div>
-		</div>
-
-	}
+                                @if (module.Progress < 100)
+                                {
+                                    <div class="progress" role="progressbar"
+                                         aria-valuenow="@module.Progress"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                        <div class="progress-bar bg-primary"
+                                             style="@($"width: {module.Progress}%;")">
+                                        </div>
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    }
 </div>
 
 @code {
-	private StudentDashboardDto? dashboard;
-	private int currentWeek;
-	private List<StudentAssignmentDto>? upcomingAssignments;
-	private List<NotificationDto>? notifications;
+    private StudentDashboardDto? dashboard;
+    private int currentWeek;
+    private List<StudentAssignmentDto>? upcomingAssignments;
+    private List<NotificationDto>? notifications;
+    private CourseDto? course;
 
-	private bool isLoadingUpcoming = true;
-	private bool isLoadingNotifications = true;
-	private CourseDto? course;
+    private bool isLoadingUpcoming = true;
+    private bool isLoadingNotifications = true;
 
-	private string? errorMessage;
+    private static readonly CultureInfo SwedishCulture = new("sv-SE");
 
-	protected override async Task OnInitializedAsync()
-	{
-		try
-		{
-			dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
-		}
-		catch (Exception ex)
-		{
-			errorMessage ??= "Vissa delar av dashboarden kunde inte laddas.";
-			Console.Error.WriteLine($"Fel vid laddning av dashboarden: {ex.Message}");
-		}
+    protected override async Task OnInitializedAsync()
+    {
+        dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
+        course = await Api.GetAsync<CourseDto>("api/user/me/course");
 
-		try
-		{
-			course = await Api.GetAsync<CourseDto>("api/user/me/course");
-		}
-		catch (Exception ex)
-		{
-			errorMessage ??= "Vissa delar av dashboarden kunde inte laddas.";
-			Console.Error.WriteLine($"Fel vid laddning av kursen: {ex.Message}");
-		}
+        upcomingAssignments = await Api.GetAsync<List<StudentAssignmentDto>>(
+            "api/student/assignments/upcoming"
+        );
 
-		try
-		{
-			upcomingAssignments = await Api.GetAsync<List<StudentAssignmentDto>>(
-				"api/student/assignments/upcoming"
-			) ?? new();
-		}
-		catch (Exception ex)
-		{
-			errorMessage ??= "Vissa delar av dashboarden kunde inte laddas.";
-			Console.Error.WriteLine($"Fel vid laddning av kommande inlämningar: {ex.Message}");
-			upcomingAssignments = new List<StudentAssignmentDto>();
-		}
-		finally
-		{
-			isLoadingUpcoming = false;
-		}
+        notifications = await Api.GetAsync<List<NotificationDto>>(
+            "api/notifications/unread"
+        );
 
-		try
-		{
-			notifications = await Api.GetAsync<List<NotificationDto>>(
-				"api/notifications/unread"
-			) ?? new();
-		}
-		catch (Exception ex)
-		{
-			errorMessage ??= "Vissa delar av dashboarden kunde inte laddas.";
-			Console.Error.WriteLine($"Fel vid laddning av aviseringar: {ex.Message}");
-			notifications = new List<NotificationDto>();
-		}
-		finally
-		{
-			isLoadingNotifications = false;
-		}
+        isLoadingUpcoming = false;
+        isLoadingNotifications = false;
 
-		var today = DateTime.Today;
-		var culture = new System.Globalization.CultureInfo("sv-SE");
-		currentWeek = culture.Calendar.GetWeekOfYear(
-			today,
-			System.Globalization.CalendarWeekRule.FirstFourDayWeek,
-			DayOfWeek.Monday
-		);
-	}
+        var today = DateTime.Today;
+        currentWeek = SwedishCulture.Calendar.GetWeekOfYear(
+            today,
+            CalendarWeekRule.FirstFourDayWeek,
+            DayOfWeek.Monday
+        );
+    }
 
-	private async Task MarkAsRead(int id)
-	{
-		try
-		{
-			await Api.PatchAsync($"api/notifications/{id}/read");
-			notifications.RemoveAll(n => n.Id == id);
-		}
-		catch (Exception ex)
-		{
-			errorMessage ??= "Kunde inte markera aviseringen som läst.";
-			Console.Error.WriteLine($"Fel vid markering av avisering som läst: {ex.Message}");
-		}
-	}
+    private async Task MarkAsRead(int id)
+    {
+        await Api.PatchAsync($"api/notifications/{id}/read");
+        notifications?.RemoveAll(n => n.Id == id);
+    }
+
+    private static string FormatDateTime(DateTime? dateTime)
+    {
+        return dateTime?.ToString("d MMM yyyy", SwedishCulture) ?? "-";
+    }
+
+    private static string FormatDateRange(DateTime start, DateTime end)
+    {
+        if (start.Date == end.Date)
+        {
+            return start.ToString("d MMM yyyy", SwedishCulture);
+        }
+
+        return $"{start.ToString("d MMM yyyy", SwedishCulture)} – {end.ToString("d MMM yyyy", SwedishCulture)}";
+    }
 }

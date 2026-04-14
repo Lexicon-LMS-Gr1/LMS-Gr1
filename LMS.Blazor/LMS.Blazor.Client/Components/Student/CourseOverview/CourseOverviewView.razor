@@ -68,7 +68,7 @@
         {
             <ModuleItem Module="module"
                         ModuleDocuments="@GetModuleDocuments(module.Id)"
-                        ActivityDocuments="@GetActivityDocumentsForModule(module)" 
+                        ActivityDocuments="@GetActivityDocumentsForModule(module)"
                         Submissions="submissions" />
         }
     </div>
@@ -114,8 +114,7 @@
                     }
                 }
             }
-        }
-        catch (Exception ex)
+        } catch (Exception ex)
         {
             documentError = ex.Message;
         }

@@ -95,21 +95,32 @@
 
     private static string GetTimeAgo(DateTime dateTime)
     {
-        var timeSpan = DateTime.UtcNow - dateTime;
+        var utcDateTime = dateTime.Kind switch
+        {
+            DateTimeKind.Utc => dateTime,
+            DateTimeKind.Local => dateTime.ToUniversalTime(),
+            DateTimeKind.Unspecified => DateTime.SpecifyKind(dateTime, DateTimeKind.Utc),
+            _ => dateTime
+        };
+
+        var timeSpan = DateTime.UtcNow - utcDateTime;
 
         if (timeSpan.TotalSeconds < 60)
-            return "Alldeles nyss";
+            return "Nyss";
 
         if (timeSpan.TotalMinutes < 60)
             return $"{(int)timeSpan.TotalMinutes} min sedan";
 
         if (timeSpan.TotalHours < 24)
-            return $"{(int)timeSpan.TotalHours} tim sedan";
+            return $"{(int)timeSpan.TotalHours} h sedan";
+
+        if (timeSpan.TotalDays < 2)
+            return "Igår";
 
         if (timeSpan.TotalDays < 7)
             return $"{(int)timeSpan.TotalDays} dagar sedan";
 
-        return dateTime.ToString("yyyy-MM-dd");
+        return utcDateTime.ToLocalTime().ToString("yyyy-MM-dd");
     }
 
     private static string TruncateMessage(string message, int maxLength = 90)
