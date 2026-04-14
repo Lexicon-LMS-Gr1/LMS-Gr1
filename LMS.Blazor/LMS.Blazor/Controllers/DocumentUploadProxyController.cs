@@ -38,11 +38,11 @@ public class DocumentUploadProxyController : ControllerBase
         [FromForm] int? activityId)
     {
         if (file == null || file.Length == 0)
-            return BadRequest("No file was provided.");
+            return BadRequest(new { title = "Valideringsfel", detail = "Ingen fil har valts." });
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId))
-            return Unauthorized();
+            return Unauthorized(new { title = "Unauthorized", detail = "Ogiltig eller saknad token." });
 
         var client = _httpClientFactory.CreateClient("LmsApiClient");
 
@@ -89,11 +89,11 @@ public class DocumentUploadProxyController : ControllerBase
         [FromForm] string? comment)
     {
         if (file == null || file.Length == 0)
-            return BadRequest("Ingen fil vald.");
+            return BadRequest(new { title = "Valideringsfel", detail = "Ingen fil har valts." });
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId))
-            return Unauthorized();
+            return Unauthorized(new { title = "Unauthorized", detail = "Ogiltig eller saknad token." });
 
         var client = _httpClientFactory.CreateClient("LmsApiClient");
 
