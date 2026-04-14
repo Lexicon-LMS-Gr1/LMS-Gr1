@@ -68,20 +68,25 @@
                             <td class="text-center">
                                 @if (!a.IsSubmitted)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary"
-                                            style="width:130px;"
-                                            @onclick="() => OpenSubmitModal(a)"
-                                            disabled="@(!CanSubmit(a))"
-                                            title="@GetSubmitTooltip(a)">
-                                        <span class="bi bi-upload me-1"></span>
-                                        Lämna in
-                                    </button>
-
+                                    @if (a.ActivityStartDate.HasValue && DateTime.Now < a.ActivityStartDate.Value)
+                                    {
+                                        <div class="text-muted small">
+                                            @GetAvailabilityText(a)
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                style="width:130px;"
+                                                @onclick="() => OpenSubmitModal(a)">
+                                            <span class="bi bi-upload me-1"></span>
+                                            Lämna in
+                                        </button>
+                                    }
                                 }
                                 else
                                 {
                                     <div class="d-flex flex-column align-items-center gap-1">
-
                                         <a class="btn btn-sm btn-outline-success"
                                                style="width:130px;"
                                                href="@($"/api/proxy/submissions/{a.SubmissionId}/download")"
@@ -91,6 +96,7 @@
                                         </a>
                                     </div>
                                 }
+
                             </td>
 
                             <td class="text-center">
@@ -220,6 +226,30 @@
         return "";
     }
 
+    private string GetAvailabilityText(StudentAssignmentDto a)
+    {
+        if (!a.ActivityStartDate.HasValue)
+            return "";
+
+        var now = DateTime.Now;
+        var start = a.ActivityStartDate.Value;
+
+        if (now >= start)
+            return "";
+
+        var diff = start - now;
+
+        if (diff.TotalDays >= 1)
+            return $"Tillgänglig om {Math.Floor(diff.TotalDays)} dagar";
+
+        if (diff.TotalHours >= 1)
+            return $"Tillgänglig om {Math.Floor(diff.TotalHours)} timmar";
+
+        if (diff.TotalMinutes >= 1)
+            return $"Tillgänglig om {Math.Floor(diff.TotalMinutes)} minuter";
+
+        return "Tillgänglig snart";
+    }
 
 }
 
