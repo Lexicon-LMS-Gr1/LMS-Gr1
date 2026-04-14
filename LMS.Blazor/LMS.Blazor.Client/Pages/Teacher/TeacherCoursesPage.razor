@@ -26,6 +26,14 @@
         </button>
     </div>
 
+    @if (!string.IsNullOrEmpty(formError))
+    {
+        <div class="alert alert-danger">
+            <span class="bi bi-exclamation-triangle me-2"></span>
+            @formError
+        </div>
+    }
+
     @if (courses is null)
     {
         <div class="d-flex justify-content-center py-5">

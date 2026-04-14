@@ -5,6 +5,14 @@
 
 @inject IApiService Api
 
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        <span class="bi bi-exclamation-triangle me-2"></span>
+        @errorMessage
+    </div>
+}
+
 @if (course is null)
 {
     <div class="alert alert-info">Laddar kurs...</div>
@@ -17,6 +25,8 @@ else
 @code {
     private CourseDto? course;
     private bool isLoading = true;
+    private string? errorMessage;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -26,6 +36,7 @@ else
         }
         catch (Exception ex)
         {
+            errorMessage = "Kunde inte ladda kursen.";
             Console.Error.WriteLine($"Fel vid laddning av kursen: {ex.Message}");
         }
         finally
@@ -33,4 +44,5 @@ else
             isLoading = false;
         }
     }
+
 }
