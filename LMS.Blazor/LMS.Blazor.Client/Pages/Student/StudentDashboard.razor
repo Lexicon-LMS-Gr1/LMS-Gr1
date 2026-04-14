@@ -179,18 +179,54 @@
 
 	protected override async Task OnInitializedAsync()
 	{
-		dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
-		course = await Api.GetAsync<CourseDto>("api/user/me/course");
+		try
+		{
+			dashboard = await Api.GetAsync<StudentDashboardDto>("api/user/me/dashboard");
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"Fel vid laddning av dashboarden: {ex.Message}");
+        }
+		try
+		{
+			course = await Api.GetAsync<CourseDto>("api/user/me/course");
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"Fel vid laddning av kursen: {ex.Message}");
+        }
 
-		upcomingAssignments = await Api.GetAsync<List<StudentAssignmentDto>>(
-			"api/student/assignments/upcoming"
-		);
-		notifications = await Api.GetAsync<List<NotificationDto>>(
-		 "api/notifications/unread"
-	 );
+		try
+		{
+			upcomingAssignments = await Api.GetAsync<List<StudentAssignmentDto>>(
+				"api/student/assignments/upcoming"
+			) ?? new();
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"Fel vid laddning av kommande inlämningar: {ex.Message}");
+			upcomingAssignments = new List<StudentAssignmentDto>();
+        }
+		finally
+		{
+			isLoadingUpcoming = false;
+		}
+		try
+		{
+			notifications = await Api.GetAsync<List<NotificationDto>>(
+				"api/notifications/unread"
+			) ?? new();
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"Fel vid laddning av aviseringar: {ex.Message}");
+			notifications = new List<NotificationDto>();
+        }
 
-		isLoadingUpcoming = false;
-		isLoadingNotifications = false;
+		finally
+		{
+			isLoadingNotifications = false;
+		}
 
 		var today = DateTime.Today;
 		var culture = new System.Globalization.CultureInfo("sv-SE");
@@ -202,8 +238,14 @@
 
 	private async Task MarkAsRead(int id)
 	{
-		await Api.PatchAsync($"api/notifications/{id}/read");
-		notifications.RemoveAll(n => n.Id == id);
+		try{
+			await Api.PatchAsync($"api/notifications/{id}/read");
+			notifications.RemoveAll(n => n.Id == id);
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"Fel vid markering av avisering som läst: {ex.Message}");
+        }
 	}
 
 

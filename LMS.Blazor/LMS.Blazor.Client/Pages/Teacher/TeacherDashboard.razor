@@ -496,20 +496,27 @@
 
     private async Task ReloadStudents()
     {
-        var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
+        try
+        {
+            var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
 
-        allStudents = allUsers
-            .Where(u => u.Role == "Student")
-            .Select(u => new StudentListDto
-            {
-                Id = u.Id,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                Email = u.Email,
-                CourseId = u.CourseId,
-                CourseName = u.CourseName ?? ""
-            })
-            .ToList();
+            allStudents = allUsers
+                .Where(u => u.Role == "Student")
+                .Select(u => new StudentListDto
+                    {
+                        Id = u.Id,
+                        FirstName = u.FirstName,
+                        LastName = u.LastName,
+                        Email = u.Email,
+                        CourseId = u.CourseId,
+                        CourseName = u.CourseName ?? ""
+                    })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fel vid omladdning av elever: {ex.Message}");
+        }
     }
 
     /* -------- OPEN COURSE DETAILS -------- */
@@ -544,30 +551,39 @@
 
         StateHasChanged();
     }
+
     private List<NotificationDto> notifications = new();
+
     private async Task LoadDashboard()
     {
-        dashboard = await ApiService.GetAsync<TeacherDashboardDto>("api/user/me/teacher-dashboard");
-        allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
-        notifications = await ApiService.GetAsync<List<NotificationDto>>("api/notifications/unread") ?? new();
-        var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
+        try
+        {
+            dashboard = await ApiService.GetAsync<TeacherDashboardDto>("api/user/me/teacher-dashboard");
+            allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+            notifications = await ApiService.GetAsync<List<NotificationDto>>("api/notifications/unread") ?? new();
+            var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
 
-        allStudents = allUsers
-            .Where(u => u.Role == "Student")
-            .Select(u => new StudentListDto
-            {
-                Id = u.Id,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                Email = u.Email,
-                CourseId = u.CourseId,
-                CourseName = u.CourseName ?? ""
-            })
-            .ToList();
+            allStudents = allUsers
+                .Where(u => u.Role == "Student")
+                .Select(u => new StudentListDto
+                    {
+                        Id = u.Id,
+                        FirstName = u.FirstName,
+                        LastName = u.LastName,
+                        Email = u.Email,
+                        CourseId = u.CourseId,
+                        CourseName = u.CourseName ?? ""
+                    })
+                .ToList();
 
-        allTeachers = allUsers
-            .Where(u => u.Role == "Teacher")
-            .ToList();
+            allTeachers = allUsers
+                .Where(u => u.Role == "Teacher")
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fel vid laddning av dashboarden: {ex.Message}");
+        }
     }
 
     /* -------- DELETE COURSE -------- */
@@ -581,18 +597,31 @@
     {
         if (!confirmed)
             return;
+        try
+        {
+            await ApiService.DeleteAsync($"api/course/{courseIdToDelete}");
 
-        await ApiService.DeleteAsync($"api/course/{courseIdToDelete}");
-
-        allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
-        await LoadDashboard();
+            allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+            await LoadDashboard();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fel vid borttagning av kurs: {ex.Message}");
+        }
 
         StateHasChanged();
     }
 
     private async Task MarkAsRead(int id)
     {
-        await ApiService.PatchAsync($"api/notifications/{id}/read");
-        notifications.RemoveAll(n => n.Id == id);
+        try
+        {
+            await ApiService.PatchAsync($"api/notifications/{id}/read");
+            notifications.RemoveAll(n => n.Id == id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fel vid markering av notifikation som läst: {ex.Message}");
+        }
     }
 }

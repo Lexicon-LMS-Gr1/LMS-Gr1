@@ -20,6 +20,17 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        course = await Api.GetAsync<CourseDto>("api/user/me/course");
+        try
+        {
+            course = await Api.GetAsync<CourseDto>("api/user/me/course");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Fel vid laddning av kursen: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }

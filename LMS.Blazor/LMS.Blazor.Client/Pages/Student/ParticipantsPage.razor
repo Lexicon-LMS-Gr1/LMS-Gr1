@@ -135,6 +135,11 @@
                 .ThenBy(p => p.Id)
                 .ToList();
         }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Fel vid laddning av kursdeltagare: {ex.Message}");
+            participants = new List<ParticipantDto>();
+        }
         finally
         {
             isLoading = false;

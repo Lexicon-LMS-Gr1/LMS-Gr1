@@ -48,10 +48,18 @@
     {
         if (Submission != null)
         {
-            var full = await ApiService.GetAsync<SubmissionDto>(
-                $"api/submissions/{Submission.SubmissionId}");
+            try
+            {
+                var full = await ApiService.GetAsync<SubmissionDto>(
+                    $"api/submissions/{Submission.SubmissionId}");
 
-            feedbackText = full?.Feedback ?? "";
+                feedbackText = full?.Feedback ?? "";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error loading submission: " + ex.Message);
+                feedbackText = "";
+            }
         }
     }
 
@@ -62,14 +70,24 @@
 
         isSaving = true;
 
-        await ApiService.PutAsync<object, object>(
-            $"/api/submissions/{Submission.SubmissionId}/feedback",
-            new { Feedback = feedbackText });
+        try
+        {
+            await ApiService.PutAsync<object, object>(
+                $"/api/submissions/{Submission.SubmissionId}/feedback",
+                new { Feedback = feedbackText });
 
-        isSaving = false;
-
-        await OnSaved.InvokeAsync();
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error saving feedback: " + ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+        }
     }
+
 
 
 }

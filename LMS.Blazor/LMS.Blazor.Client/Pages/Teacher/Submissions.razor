@@ -109,20 +109,31 @@
     protected override async Task OnInitializedAsync()
     {
         isLoading = true;
-        
-        items = await ApiService.GetAsync<List<SubmissionListItemDto>>("api/submissions")
-            ?? new List<SubmissionListItemDto>();
+        try
+        {
+            items = await ApiService.GetAsync<List<SubmissionListItemDto>>("api/submissions")
+                ?? new List<SubmissionListItemDto>();
 
-        // Extract unique course names
-        courseNames = items
-            .Select(i => i.CourseName)
-            .Distinct()
-            .OrderBy(n => n)
-            .ToList();
+            // Extract unique course names
+            courseNames = items
+                .Select(i => i.CourseName)
+                .Distinct()
+                .OrderBy(n => n)
+                .ToList();
 
-        filteredItems = items;
+            filteredItems = items;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Fel vid laddning av inlämningar: {ex.Message}");
+            items = new List<SubmissionListItemDto>();
+            filteredItems = items;
+        }
 
-        isLoading = false;
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void OnCourseFilterChanged(ChangeEventArgs e)

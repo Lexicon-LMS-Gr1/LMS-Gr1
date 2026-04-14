@@ -128,6 +128,7 @@
 
     private async Task LoadSubmissionsAsync()
     {
+        
         submissions = await ApiService.GetAsync<List<SubmissionDto>>($"api/submissions/course/{Course.Id}");
     }
 }
