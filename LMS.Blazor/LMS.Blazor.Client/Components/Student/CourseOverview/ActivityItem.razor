@@ -1,111 +1,150 @@
 @namespace LMS.Blazor.Client.Components.CourseOverview
-@using LMS.Shared.DTOs.Module
-@using LMS.Shared.DTOs.Activity
+@using LMS.Shared.DTOs.Course
 @using LMS.Shared.DTOs.Document
 @using LMS.Shared.DTOs.Submission
+@inject IApiService ApiService
 
-<div class="list-group-item py-3">
-    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+<div class="container-fluid py-4">
 
-        <div>
-            <span class="badge rounded-pill @BadgeHelper.GetBadgeColor(Activity.ActivityTypeName)">
-                @Activity.ActivityTypeName
-            </span>
-
-            <span class="mb-3 h5">@Activity.Name</span>
-
-            <p class="text-muted mb-0">
-                <i class="bi bi-calendar"></i>
-                @if (Activity.StartTime.Date == Activity.EndTime.Date)
-                {
-                    @Activity.StartTime.ToString("yyyy-MM-dd")
-
-                } else
-                {
-                    @(Activity.StartTime.Date.ToString("yyyy-MM-dd") + " - " + Activity.EndTime.Date.ToString("yyyy-MM-dd")  )           
-                }
-              </p>
-
-            @if (!string.IsNullOrWhiteSpace(Activity.Description))
-            {
-                <p class="text-muted small mt-1 mb-0">@Activity.Description</p>
-            }
-            @if (Activity.ActivityTypeName == "Inlämning") {
-                <div class="mt-1">
-                    @if (Submission != null) {
-                        <span class="badge bg-success">Inlämnad</span>
-
-                        @if (!string.IsNullOrWhiteSpace(Submission.Feedback)) {
-                            <div class="mt-2 p-2 border rounded bg-success-subtle">
-                                Feedback:
-                                <p class="mb-0 small">@Submission.Feedback</p>
-                                <p class="mb-0 small">@Submission.FeedbackGivenAt?.ToString("yyyy-MM-dd")</p>
-                                <p class="mb-0 small">@Submission.FeedbackGivenByTeacherName</p>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="mt-2 p-2 border rounded bg-info-subtle">
-                                <p class="mb-0 small">Väntar på rättning.</p>
-                            </div>
-                        }
-                    } else {
-                        <span class="badge bg-warning text-dark">Ej inlämnad</span>
-                    }
-                </div>
-            }
-        </div>
-
-        @if (IsComplete) {
-            <div class="d-flex align-items-center justify-content-end gap-2">
-                <span class="bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                    <i class="bi bi-check-circle"></i>
-                </span>
-                <span>Genomförd</span>
-            </div>
-        } else {
-            <div class="d-flex align-items-center justify-content-end gap-2">
-                <span class="bg-light text-muted rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                    <i class="bi bi-circle"></i>
-                </span>
-                <span>Ej genomförd</span>
-            </div>
-        }
-    </div>
-
-    <!-- Activity-level documents for students -->
-    @if (Documents?.Any() == true)
+    @if (!string.IsNullOrEmpty(documentError))
     {
-        <div class="d-inline-flex align-items-center gap-2 bg-success-subtle text-success px-2 py-1 rounded">
-            <span class="small text-secondary fw-semibold">
-                <i class="bi bi-paperclip me-1"></i>Dokument
-            </span>
-            <DocumentList Documents="@Documents" CanDelete="false" />
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-1"></i> @documentError
+            <button type="button" class="btn-close" @onclick="() => documentError = null"></button>
         </div>
     }
+
+    <div class="mb-4">
+        <h1 class="h2 fw-bold mb-2">@Course.Name</h1>
+        <p class="text-muted mb-2">@Course.Description</p>
+        <p class="text-muted mb-0">
+            <i class="bi bi-calendar"></i>
+            @Course.DateRange
+        </p>
+
+        <p class="text-muted mt-2">
+            <i class="bi bi-person-badge"></i>
+            <strong>Lärare:</strong>
+            @(!string.IsNullOrWhiteSpace(Course.TeacherName)
+                ? Course.TeacherName
+                : "Ingen lärare tilldelad")
+        </p>
+    </div>
+
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <h2 class="h4 fw-semibold mb-3">Kursframsteg</h2>
+            <p class="mb-3">
+                <span class="fs-2 fw-bold text-primary">@Course.Progress %</span>
+                <span class="text-muted ms-1">avklarat</span>
+            </p>
+            <div class="progress"
+                 role="progressbar"
+                 aria-valuenow="@Course.Progress"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+                <div class="progress-bar" style="width: @(Course.Progress)%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course-level documents for students -->
+    @if (courseDocuments?.Any() == true)
+    {
+        <div class="mb-4">
+            <h3 class="h5 fw-semibold mb-2">
+                <i class="bi bi-folder2-open text-primary me-1"></i>
+                Kursdokument
+            </h3>
+            <DocumentList Documents="@courseDocuments" CanDelete="false" />
+        </div>
+    }
+
+    <h2 class="h3 fw-semibold mb-3">Moduler</h2>
+
+    <div class="list-group">
+        @foreach (var module in Course.Modules)
+        {
+            <ModuleItem Module="module"
+                        ModuleDocuments="@GetModuleDocuments(module.Id)"
+                        ActivityDocuments="@GetActivityDocumentsForModule(module)"
+                        Submissions="submissions" />
+        }
+    </div>
 </div>
 
 @code {
-    [Parameter] public ActivityDto Activity { get; set; }
-    [Parameter] public List<DocumentDto>? Documents { get; set; }
-    [Parameter] public SubmissionDto? Submission { get; set; }
+    [Parameter, EditorRequired]
+    public CourseDto Course { get; set; } = new();
 
-    private bool IsComplete = false;
+    private List<DocumentDto>? courseDocuments;
+    private List<DocumentDto>? allModuleDocuments;
+    private List<DocumentDto>? allActivityDocuments;
+    private string? documentError;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-
-        if (Activity.ActivityTypeName == "Inlämning")
-        {
-            if (Submission != null)
-                IsComplete = true;
-        } else
-        {
-            if (DateTime.Now > Activity.EndTime) {
-                IsComplete = true;
-            }
-        }
-
+        await LoadDocumentsAsync();
+        await LoadSubmissionsAsync();
     }
 
+    private async Task LoadDocumentsAsync()
+    {
+        try
+        {
+            courseDocuments = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?courseId={Course.Id}");
+
+            allModuleDocuments = new List<DocumentDto>();
+            allActivityDocuments = new List<DocumentDto>();
+
+            foreach (var module in Course.Modules)
+            {
+                var moduleDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?moduleId={module.Id}");
+                if (moduleDocs != null)
+                    allModuleDocuments.AddRange(moduleDocs);
+
+                if (module.Activities != null)
+                {
+                    foreach (var activity in module.Activities)
+                    {
+                        var actDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?activityId={activity.Id}");
+                        if (actDocs != null)
+                            allActivityDocuments.AddRange(actDocs);
+                    }
+                }
+            }
+        } catch (Exception ex)
+        {
+            documentError = ex.Message;
+        }
+    }
+
+    private List<DocumentDto>? GetModuleDocuments(int moduleId)
+        => allModuleDocuments?.Where(d => d.ModuleId == moduleId).ToList();
+
+    private Dictionary<int, List<DocumentDto>> GetActivityDocumentsForModule(LMS.Shared.DTOs.Module.ModuleDto module)
+    {
+        var dict = new Dictionary<int, List<DocumentDto>>();
+        if (module.Activities != null && allActivityDocuments != null)
+        {
+            foreach (var activity in module.Activities)
+            {
+                var docs = allActivityDocuments.Where(d => d.ActivityId == activity.Id).ToList();
+                if (docs.Any())
+                    dict[activity.Id] = docs;
+            }
+        }
+        return dict;
+    }
+
+
+    // Submission part
+    private List<SubmissionDto>? submissions;
+
+    private async Task LoadSubmissionsAsync()
+    {
+        
+        submissions = await ApiService.GetAsync<List<SubmissionDto>>($"api/submissions/course/{Course.Id}");
+    }
 }
