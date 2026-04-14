@@ -15,6 +15,16 @@
                 </div>
 
                 <div class="modal-body">
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger py-2">
+                            <span class="bi bi-exclamation-triangle me-1"></span>
+                            @errorMessage
+                        </div>
+                    }
+
+
                     <textarea class="form-control"
                               rows="5"
                               @bind="feedbackText"></textarea>
@@ -40,6 +50,8 @@
     [Parameter] public bool Show { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
+    private string? errorMessage;
+
 
     private string feedbackText = "";
     private bool isSaving = false;
@@ -61,15 +73,26 @@
             return;
 
         isSaving = true;
+        errorMessage = null;
 
-        await ApiService.PutAsync<object, object>(
-            $"/api/submissions/{Submission.SubmissionId}/feedback",
-            new { Feedback = feedbackText });
+        try
+        {
+            await ApiService.PutAsync<object, object>(
+                $"/api/submissions/{Submission.SubmissionId}/feedback",
+                new { Feedback = feedbackText });
 
-        isSaving = false;
+            isSaving = false;
 
-        await OnSaved.InvokeAsync();
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Kunde inte spara feedback. Försök igen.";
+            Console.WriteLine("Error saving feedback: " + ex.Message);
+            isSaving = false;
+        }
     }
+
 
 
 }
