@@ -635,7 +635,13 @@
         if (!confirmed)
             return;
 
-        await ApiService.DeleteAsync($"api/activity/{activityIdToDelete}");
+        var result = await ApiService.DeleteAsync($"api/activity/{activityIdToDelete}");
+
+        if (!result.Success)
+        {
+            activityError = result.Error;
+            return;
+        }
 
         await LoadCourseAsync();
         await LoadDocumentsAsync();
@@ -646,7 +652,13 @@
         if (!confirmed)
             return;
 
-        await ApiService.DeleteAsync($"api/module/{moduleIdToDelete}");
+        var result = await ApiService.DeleteAsync($"api/module/{moduleIdToDelete}");
+
+        if (!result.Success)
+        {
+            moduleError = result.Error;
+            return;
+        }
 
         await LoadCourseAsync();
         await LoadDocumentsAsync();
