@@ -2,15 +2,15 @@
 {
     public static class BadgeHelper
     {
-        public static string GetBadgeColor(string type)
+        public static string GetBadgeColor(string activityTypeName)
         {
-            return type switch
+            return activityTypeName switch
             {
-                "Lecture" => "bg-primary",
+                "Föreläsning" => "bg-primary",
+                "Inlämning" => "bg-info text-dark",
                 "Workshop" => "bg-warning text-dark",
-                "Assignment" => "bg-info text-dark",
-                "Exam" => "bg-danger",
-                "Seminar" => "bg-success",
+                "Examination" => "bg-danger",
+                //"Seminar" => "bg-success",
                 _ => "bg-secondary"
             };
         }

@@ -30,7 +30,7 @@
                             <label class="form-label">Kurs</label>
                             <select class="form-select" @onchange="OnCourseChanged">
                                 <option value="0" selected="@(selectedCourseId == 0)">Välj kurs</option>
-                                @foreach (var course in courses)
+                                @foreach (var course in courses.OrderBy(c => c.StartDate))
                                 {
                                     <option value="@course.Id" selected="@(course.Id == selectedCourseId)">
                                         @course.Name
@@ -45,7 +45,7 @@
                                 <label class="form-label">Modul</label>
                                 <select class="form-select" @onchange="OnModuleChanged">
                                     <option value="0" selected="@(selectedModuleId == 0)">Välj modul</option>
-                                    @foreach (var module in modules)
+                                    @foreach (var module in modules.OrderBy(m => m.StartDate))
                                     {
                                         <option value="@module.Id" selected="@(module.Id == selectedModuleId)">
                                             (@module.StartDate.ToString("yyyy-MM-dd") – @module.EndDate.ToString("yyyy-MM-dd")) - @module.Name
@@ -76,7 +76,7 @@
                                         </strong>
                                         innehåller följande aktiviteter:
                                         <ul class="mb-0 mt-2">
-                                            @foreach (var activity in existingActivities)
+                                            @foreach (var activity in existingActivities.OrderBy(a => a.StartTime))
                                             {
                                                 <li>
                                                     @activity.StartTime.ToString("yyyy-MM-dd HH:mm")
@@ -185,8 +185,7 @@
     {
         try
         {
-            courses = (await ApiService.GetAsync<List<CourseDto>>("api/course") ?? new())
-                .OrderBy(c => c.StartDate).ToList();
+            courses = await ApiService.GetAsync<List<CourseDto>>("api/course") ?? new();
             activityTypes = await ApiService.GetAsync<List<ActivityTypeDto>>("api/activitytypes") ?? new();
         }
         catch (Exception ex)
@@ -210,8 +209,7 @@
 
             try
             {
-                modules = (await ApiService.GetAsync<List<ModuleDto>>($"api/courses/{courseId}/modules") ?? new())
-                    .OrderBy(m => m.StartDate).ToList();
+                modules = await ApiService.GetAsync<List<ModuleDto>>($"api/courses/{courseId}/modules") ?? new();
             }
             catch (Exception ex)
             {
@@ -237,8 +235,7 @@
 
             try
             {
-                existingActivities = (await ApiService.GetAsync<List<ActivityDto>>($"api/modules/{moduleId}/activities") ?? new())
-                    .OrderBy(a => a.StartTime).ToList();
+                existingActivities = await ApiService.GetAsync<List<ActivityDto>>($"api/modules/{moduleId}/activities") ?? new();
             }
             catch (Exception ex)
             {

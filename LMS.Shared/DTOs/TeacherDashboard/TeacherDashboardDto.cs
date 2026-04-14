@@ -25,7 +25,7 @@ namespace LMS.Shared.DTOs.TeacherDashboard
     public class RecentActivityDto
     {
         public int Id { get; set; }
-        public string Type { get; set; } = null!;      // "Föreläsning", "Inlämning", etc (ActivityType.Name)
+        public string TypeName { get; set; } = null!;      // "Föreläsning", "Inlämning", etc (ActivityType.Name)
         public string Description { get; set; } = null!;
         public DateTime Timestamp { get; set; }
     }
@@ -33,7 +33,7 @@ namespace LMS.Shared.DTOs.TeacherDashboard
     public class UpcomingActivityDto
     {
         public int Id { get; set; }
-        public string Type { get; set; } = null!;
+        public string TypeName { get; set; } = null!;
         public string Name { get; set; } = null!;
         public string CourseName { get; set; } = null!;
         public DateTime StartTime { get; set; }

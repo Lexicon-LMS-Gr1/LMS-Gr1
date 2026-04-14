@@ -43,7 +43,7 @@ public class TeacherDashboardQuery : ITeacherDashboardQuery
             .Select(a => new RecentActivityDto
             {
                 Id = a.Id,
-                Type = a.ActivityType.Name,
+                TypeName = a.ActivityType.Name,
                 Description = a.Name + " – " + a.Module.Course.Name,
                 Timestamp = a.StartTime
             })
@@ -58,7 +58,7 @@ public class TeacherDashboardQuery : ITeacherDashboardQuery
             .Select(a => new UpcomingActivityDto
             {
                 Id = a.Id,
-                Type = a.ActivityType.Name,
+                TypeName = a.ActivityType.Name,
                 Name = a.Name,
                 CourseName = a.Module.Course.Name,
                 StartTime = a.StartTime

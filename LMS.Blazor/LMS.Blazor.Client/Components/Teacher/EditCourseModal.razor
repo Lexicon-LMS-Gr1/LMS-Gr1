@@ -45,7 +45,7 @@
                             <select class="form-select" @bind="FormModel.TeacherId">
                                 <option value="">-- Ingen lärare --</option>
 
-                                @foreach (var t in Teachers)
+                                @foreach (var t in Teachers.OrderBy(t => t.FullName))
                                 {
                                     <option value="@t.Id">@t.FullName</option>
                                 }
