@@ -17,7 +17,7 @@
                     {
                         <p>
                             <strong>Lämnades:</strong>
-                            @Assignment.FeedbackGivenAt.Value.ToString("yyyy-MM-dd HH:mm")
+                            @Assignment.FeedbackGivenAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
                             @if (!string.IsNullOrWhiteSpace(Assignment.FeedbackGivenByTeacherName))
                             {
                                 <span class="text-muted"> av @Assignment.FeedbackGivenByTeacherName</span>

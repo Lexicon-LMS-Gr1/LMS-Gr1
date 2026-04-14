@@ -69,7 +69,7 @@
                             <td>@s.ModuleName</td>
                             <td>@s.ActivityName</td>
 
-                            <td>@s.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@s.SubmittedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                             <td>
                                 <a class="btn btn-sm btn-outline-primary"
                                        href="@($"/api/proxy/submissions/{s.SubmissionId}/download")"                                       target="_blank">
