@@ -67,7 +67,14 @@
                                     <td>@(a.DueDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
 
                                     <td class="text-center">
-                                        <span class="badge bg-warning text-dark">Ej inlämnad</span>
+                                        @if (a.IsLate)
+                                        {
+                                            <span class="badge bg-danger">Försenad</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Ej inlämnad</span>
+                                        }
                                     </td>
 
                                     <td class="text-center">
@@ -88,6 +95,7 @@
                     </table>
                 </div>
             }
+
 
             <!-- SEKTION 2: Kommande -->
             <h6 class="fw-bold text-secondary mb-3">Kommande</h6>
