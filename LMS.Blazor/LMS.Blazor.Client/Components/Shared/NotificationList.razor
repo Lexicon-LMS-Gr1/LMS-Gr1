@@ -95,15 +95,7 @@
 
     private static string GetTimeAgo(DateTime dateTime)
     {
-        var utcDateTime = dateTime.Kind switch
-        {
-            DateTimeKind.Utc => dateTime,
-            DateTimeKind.Local => dateTime.ToUniversalTime(),
-            DateTimeKind.Unspecified => DateTime.SpecifyKind(dateTime, DateTimeKind.Utc),
-            _ => dateTime
-        };
-
-        var timeSpan = DateTime.UtcNow - utcDateTime;
+        var timeSpan = DateTime.UtcNow - dateTime;
 
         if (timeSpan.TotalSeconds < 60)
             return "Nyss";
@@ -120,7 +112,7 @@
         if (timeSpan.TotalDays < 7)
             return $"{(int)timeSpan.TotalDays} dagar sedan";
 
-        return utcDateTime.ToLocalTime().ToString("yyyy-MM-dd");
+        return dateTime.ToLocalTime().ToString("yyyy-MM-dd");
     }
 
     private static string TruncateMessage(string message, int maxLength = 90)
