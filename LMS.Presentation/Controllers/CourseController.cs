@@ -49,19 +49,11 @@ public class CourseController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CourseDto>> CreateCourse([FromBody] CourseCreateDto courseCreateDto)
     {
-        try
-        {
-            var createdCourse = await _serviceManager.CourseService.CreateCourseAsync(courseCreateDto);
-            return Ok(createdCourse);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid skapande av kurs." });
-        }
+        if (!ModelState.IsValid)
+            throw new BadRequestException("Ogiltiga data skickades för kursen.", "Valideringsfel");
+
+        var createdCourse = await _serviceManager.CourseService.CreateCourseAsync(courseCreateDto);
+        return Ok(createdCourse);
     }
 
     [HttpPut("{id}")]

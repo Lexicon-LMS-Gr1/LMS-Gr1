@@ -194,17 +194,11 @@
         {
             var result = await ApiService.PostAsync<CourseCreateDto, CourseDto>("api/course", model);
 
-            if (result is null)
-            {
-                errorMessage = "Kunde inte skapa kurs.";
-                return;
-            }
-
             await OnCreated.InvokeAsync(result);
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            errorMessage = ex.Message ?? "Ett oväntat fel uppstod.";
         }
         finally
         {
