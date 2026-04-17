@@ -61,7 +61,7 @@
                     </div>
                     <form action="Account/Logout" method="post">
                         <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <input type="hidden" name="ReturnUrl" value="" />
                         <button type="submit" class="btn-logout">
                             <i class="bi bi-box-arrow-left"></i>
                             Logga ut
@@ -85,7 +85,7 @@
 </div>
 
 @code {
-    private string? currentUrl;
+    //private string? currentUrl;
 
     private List<NavMenuItemModel> StudentMenuItems => new()
     {
@@ -99,20 +99,19 @@
     {
         new("bi bi-house", "Dashboard", "teacher/dashboard", NavLinkMatch.All),
         new("bi bi-book", "Kurser", "teacher/courses", NavLinkMatch.All),
-        new("bi bi-plus-circle", "Skapa ny kurs", "teacher/courses/create"),
-        new("bi bi-plus-circle", "Skapa ny aktivitet", "/teacher/activities/create"),
+        new("bi bi-file-earmark-text", "Inlämningar", "/teacher/submissions"),
         new("bi bi-people", "Användare", "teacher/users")
     };
 
     protected override void OnInitialized()
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        //currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        //currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
         StateHasChanged();
     }
 

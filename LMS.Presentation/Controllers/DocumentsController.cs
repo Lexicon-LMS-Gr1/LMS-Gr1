@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Domain.Models.Exceptions;
 using LMS.Presentation.Models;
 using LMS.Shared.DTOs.Document;
 using Microsoft.AspNetCore.Authorization;
@@ -30,11 +31,11 @@ public class DocumentsController : ControllerBase
     public async Task<ActionResult<DocumentDto>> Upload([FromForm] DocumentUploadForm form)
     {
         if (form.File == null || form.File.Length == 0)
-            return BadRequest("No file was provided.");
+            throw new BadRequestException("No file was provided.", "Valideringsfel");
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId))
-            return Unauthorized();
+            throw new TokenValidationException();
 
         var dto = new DocumentCreateDto
         {
@@ -45,18 +46,11 @@ public class DocumentsController : ControllerBase
             ActivityId = form.ActivityId
         };
 
-        try
-        {
-            using var stream = form.File.OpenReadStream();
-            var result = await _serviceManager.DocumentService.UploadAsync(
-                dto, stream, form.File.FileName, form.File.ContentType, form.File.Length, userId);
+        using var stream = form.File.OpenReadStream();
+        var result = await _serviceManager.DocumentService.UploadAsync(
+            dto, stream, form.File.FileName, form.File.ContentType, form.File.Length, userId);
 
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
     /// <summary>
@@ -66,9 +60,6 @@ public class DocumentsController : ControllerBase
     public async Task<ActionResult<DocumentDto>> GetById(int id)
     {
         var document = await _serviceManager.DocumentService.GetByIdAsync(id);
-        if (document == null)
-            return NotFound($"Document with ID {id} not found.");
-
         return Ok(document);
     }
 
@@ -78,19 +69,10 @@ public class DocumentsController : ControllerBase
     [HttpGet("{id:int}/download")]
     public async Task<IActionResult> Download(int id)
     {
-        try
-        {
-            var result = await _serviceManager.DocumentService.DownloadAsync(id);
-            if (result == null)
-                return NotFound($"Document with ID {id} not found.");
+        var result = await _serviceManager.DocumentService.DownloadAsync(id);
 
-            var (fileStream, contentType, fileName) = result.Value;
-            return File(fileStream, contentType, fileName);
-        }
-        catch (FileNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        var (fileStream, contentType, fileName) = result;
+        return File(fileStream, contentType, fileName);
     }
 
     /// <summary>
@@ -111,7 +93,7 @@ public class DocumentsController : ControllerBase
         if (activityId.HasValue)
             return Ok(await _serviceManager.DocumentService.GetByActivityIdAsync(activityId.Value));
 
-        return BadRequest("Provide one of: courseId, moduleId, or activityId.");
+        throw new BadRequestException("Ange en av följande: courseId, moduleId, eller activityId.", "Valideringsfel");
     }
 
     /// <summary>
@@ -121,9 +103,7 @@ public class DocumentsController : ControllerBase
     [Authorize(Roles = "Teacher")]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _serviceManager.DocumentService.DeleteAsync(id);
-        if (!result)
-            return NotFound($"Document with ID {id} not found.");
+        await _serviceManager.DocumentService.DeleteAsync(id);
 
         return NoContent();
     }

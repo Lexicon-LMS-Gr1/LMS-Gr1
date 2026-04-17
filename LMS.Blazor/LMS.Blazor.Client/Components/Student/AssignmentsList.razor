@@ -1,4 +1,5 @@
-﻿@inject IApiService ApiService
+@using LMS.Shared.DTOs.Submission
+@inject IApiService ApiService
 
 <div class="card shadow-sm">
     <div class="card-header bg-white py-3">
@@ -8,7 +9,16 @@
         </h5>
     </div>
 
-    <div class="table-responsive">
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger m-3">
+            <span class="bi bi-exclamation-triangle me-2"></span>
+            @errorMessage
+        </div>
+    }
+
+    <div class="card-body">
+
         @if (assignments == null)
         {
             <div class="p-3">Laddar...</div>
@@ -19,72 +29,333 @@
         }
         else
         {
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-4">Namn</th>
-                        <th>Deadline</th>
-                        <th>Status</th>
-                        <th class="text-end pe-4">Åtgärder</th>
-                    </tr>
-                </thead>
+            <!-- SEKTION 1: Väntar på inlämning -->
+            <h6 class="fw-bold text-danger mb-3">Väntar på inlämning</h6>
 
-                <tbody>
-                    @foreach (var a in assignments)
-                    {
-                        <tr>
-                            <td class="ps-4 fw-semibold">@a.Name</td>
+            @if (!waiting.Any())
+            {
+                <div class="alert alert-light border">Inga uppgifter att lämna in.</div>
+            }
+            else
+            {
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover align-middle mb-0">
+                        <colgroup>
+                            <col style="width: 30%">
+                            <col style="width: 20%">
+                            <col style="width: 15%">
+                            <col style="width: 20%">
+                            <col style="width: 15%">
+                        </colgroup>
 
-                            <td>
-                                @(a.DueDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")
-                            </td>
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Namn</th>
+                                <th>Deadline</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Åtgärder</th>
+                                <th class="text-center">Feedback</th>
+                            </tr>
+                        </thead>
 
-                            <td>
-                                @if (a.IsSubmitted)
-                                {
-                                    <span class="badge bg-success">Inlämnad</span>
-                                }
-                                else if (a.IsLate)
-                                {
-                                    <span class="badge bg-danger">Försenad</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-warning text-dark">Ej inlämnad</span>
-                                }
-                            </td>
+                        <tbody>
+                            @foreach (var a in waiting)
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-semibold">@a.Name</td>
 
-                            <td class="text-end pe-4">
-                                @if (!a.IsSubmitted)
-                                {
-                                    <button class="btn btn-sm btn-outline-primary">
-                                        <span class="bi bi-upload me-1"></span>
-                                        Lämna in
-                                    </button>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>
-                                        <span class="bi bi-check2-circle me-1"></span>
-                                        Redan inlämnad
-                                    </button>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                                    <td>@(a.DueDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+
+                                    <td class="text-center">
+                                        @if (a.IsLate)
+                                        {
+                                            <span class="badge bg-danger">Försenad</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Ej inlämnad</span>
+                                        }
+                                    </td>
+
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                style="width:130px;"
+                                                @onclick="() => OpenSubmitModal(a)">
+                                            <span class="bi bi-upload me-1"></span>
+                                            Lämna in
+                                        </button>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <span class="text-muted small">—</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+
+            <!-- SEKTION 2: Kommande -->
+            <h6 class="fw-bold text-secondary mb-3">Kommande</h6>
+
+            @if (!upcoming.Any())
+            {
+                <div class="alert alert-light border">Inga kommande uppgifter.</div>
+            }
+            else
+            {
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover align-middle mb-0">
+                        <colgroup>
+                            <col style="width: 30%">
+                            <col style="width: 20%">
+                            <col style="width: 15%">
+                            <col style="width: 20%">
+                            <col style="width: 15%">
+                        </colgroup>
+
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Namn</th>
+                                <th>Deadline</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Åtgärder</th>
+                                <th class="text-center">Feedback</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var a in upcoming)
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-semibold">@a.Name</td>
+
+                                    <td>@(a.DueDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+
+                                    <td class="text-center">
+                                        <span class="text-muted small">@GetAvailabilityText(a)</span>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <span class="text-muted small">@GetAvailabilityText(a)</span>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <span class="text-muted small">—</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <!-- SEKTION 3: Inlämnade -->
+            <h6 class="fw-bold text-success mb-3">Inlämnade</h6>
+
+            @if (!submitted.Any())
+            {
+                <div class="alert alert-light border">Inga inlämnade uppgifter än.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <colgroup>
+                            <col style="width: 30%">
+                            <col style="width: 20%">
+                            <col style="width: 15%">
+                            <col style="width: 20%">
+                            <col style="width: 15%">
+                        </colgroup>
+
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Namn</th>
+                                <th>Deadline</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Åtgärder</th>
+                                <th class="text-center">Feedback</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var a in submitted)
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-semibold">@a.Name</td>
+
+                                    <td>@(a.DueDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+
+                                    <td class="text-center">
+                                        <span class="badge bg-success">Inlämnad</span>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <a class="btn btn-sm btn-outline-success"
+                                               style="width:130px;"
+                                               href="@($"/api/proxy/submissions/{a.SubmissionId}/download")"
+                                               target="_blank">
+                                            <i class="bi bi-download me-1"></i>
+                                            Hämta fil
+                                        </a>
+                                    </td>
+
+                                    <td class="text-center">
+                                        @if (a.HasFeedback)
+                                        {
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                    @onclick="() => OpenFeedbackModal(a)">
+                                                <i class="bi bi-chat-dots-fill fs-5"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Ingen feedback</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         }
+
+        <StudentFeedbackModal Assignment="selectedAssignment"
+                              Show="showFeedbackModal"
+                              OnClose="CloseFeedbackModal" />
     </div>
 </div>
+
+<SubmissionUploadModal Show="showSubmitModal"
+                       ActivityId="@(submitActivityId)"
+                       DueDate="@submitDueDate"
+                       OnSubmitted="HandleSubmissionUploaded"
+                       OnClose="CloseSubmitModal" />
 
 @code {
     private List<StudentAssignmentDto>? assignments;
 
+    private List<StudentAssignmentDto> upcoming = new();
+    private List<StudentAssignmentDto> waiting = new();
+    private List<StudentAssignmentDto> submitted = new();
+
+    private StudentAssignmentDto? selectedAssignment;
+    private bool showFeedbackModal = false;
+
+    private bool showSubmitModal = false;
+    private int submitActivityId;
+    private DateTime? submitDueDate;
+    private string? errorMessage;
+
     protected override async Task OnInitializedAsync()
     {
-        assignments = await ApiService.GetAsync<List<StudentAssignmentDto>>(
-            "api/student/assignments");
+        try
+        {
+            assignments = await ApiService.GetAsync<List<StudentAssignmentDto>>(
+                "api/student/assignments");
+
+            var now = DateTime.Now;
+
+            upcoming = assignments
+                .Where(a => a.ActivityStartDate.HasValue && now < a.ActivityStartDate.Value)
+                .OrderBy(a => a.ActivityStartDate)
+                .ToList();
+
+            waiting = assignments
+                .Where(a => !a.IsSubmitted &&
+                            (!a.ActivityStartDate.HasValue || now >= a.ActivityStartDate.Value))
+                .OrderBy(a => a.DueDate)
+                .ToList();
+
+            submitted = assignments
+                .Where(a => a.IsSubmitted)
+                .OrderByDescending(a => a.DueDate)
+                .ToList();
+        }
+        catch
+        {
+            errorMessage = "Kunde inte ladda inlämningarna.";
+            assignments = new List<StudentAssignmentDto>();
+        }
+    }
+
+    private void OpenSubmitModal(StudentAssignmentDto assignment)
+    {
+        submitActivityId = assignment.ActivityId;
+        submitDueDate = assignment.DueDate;
+        showSubmitModal = true;
+    }
+
+    private void CloseSubmitModal() => showSubmitModal = false;
+
+    private async Task HandleSubmissionUploaded(SubmissionDto dto)
+    {
+        showSubmitModal = false;
+
+        try
+        {
+            assignments = await ApiService.GetAsync<List<StudentAssignmentDto>>(
+                "api/student/assignments");
+
+            var now = DateTime.Now;
+
+            upcoming = assignments
+                .Where(a => a.ActivityStartDate.HasValue && now < a.ActivityStartDate.Value)
+                .ToList();
+
+            waiting = assignments
+                .Where(a => !a.IsSubmitted &&
+                            (!a.ActivityStartDate.HasValue || now >= a.ActivityStartDate.Value))
+                .ToList();
+
+            submitted = assignments
+                .Where(a => a.IsSubmitted)
+                .ToList();
+        }
+        catch
+        {
+            errorMessage = "Kunde inte uppdatera inlämningslistan.";
+        }
+    }
+
+    private void OpenFeedbackModal(StudentAssignmentDto assignment)
+    {
+        selectedAssignment = assignment;
+        showFeedbackModal = true;
+    }
+
+    private void CloseFeedbackModal()
+    {
+        showFeedbackModal = false;
+        selectedAssignment = null;
+    }
+
+    private string GetAvailabilityText(StudentAssignmentDto a)
+    {
+        if (!a.ActivityStartDate.HasValue)
+            return "";
+
+        var now = DateTime.Now;
+        var start = a.ActivityStartDate.Value;
+
+        if (now >= start)
+            return "";
+
+        var diff = start - now;
+
+        if (diff.TotalDays >= 1)
+            return $"Tillgänglig om {Math.Floor(diff.TotalDays)} dagar";
+
+        if (diff.TotalHours >= 1)
+            return $"Tillgänglig om {Math.Floor(diff.TotalHours)} timmar";
+
+        if (diff.TotalMinutes >= 1)
+            return $"Tillgänglig om {Math.Floor(diff.TotalMinutes)} minuter";
+
+        return "Tillgänglig snart";
     }
 }
-

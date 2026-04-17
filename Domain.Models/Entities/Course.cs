@@ -13,7 +13,7 @@ public class Course
 	public DateTime EndDate { get; set; }
 
     // Navigation Property that represents the relationship between Course and ApplicationUser (Students)
-    public ICollection<ApplicationUser> Students { get; set; } = new List<ApplicationUser>();
+    public ICollection<ApplicationUser> Users { get; set; } = new List<ApplicationUser>();
 
 	// Navigation Property that represents the relationship between Course and Module
 	public ICollection<Module> Modules { get; set; } = new List<Module>();

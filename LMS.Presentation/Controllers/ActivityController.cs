@@ -1,4 +1,5 @@
-﻿using LMS.Shared.DTOs.Activity;
+﻿using Domain.Models.Exceptions;
+using LMS.Shared.DTOs.Activity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
@@ -18,40 +19,22 @@ public class ActivityController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<ActivityDto>> UpdateActivity(int id, [FromBody] UpdateActivityDto dto)
+    public async Task<ActionResult<ActivityDto>> UpdateActivity(int id, [FromBody] ActivityUpdateDto dto)
     {
         if (id != dto.Id)
-            return BadRequest();
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+            throw new BadRequestException("Id i URL matchar inte aktivitetens id.", "Valideringsfel");
 
-        try
-        {
-            var result = await _serviceManager.ActivityService.UpdateActivityAsync(dto);
-            return Ok(result);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av aktivitet." });
-        }
+        if (!ModelState.IsValid)
+            throw new BadRequestException("Ogiltigt data skickades för aktiviteten.", "Valideringsfel");
+
+        var result = await _serviceManager.ActivityService.UpdateActivityAsync(dto);
+        return Ok(result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteActivity(int id)
     {
-        var success = await _serviceManager.ActivityService.DeleteActivityAsync(id);
-
-        if (!success)
-            return NotFound();
-
+        await _serviceManager.ActivityService.DeleteActivityAsync(id);
         return NoContent();
     }
 }

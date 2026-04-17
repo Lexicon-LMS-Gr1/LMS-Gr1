@@ -1,4 +1,5 @@
-﻿using LMS.Shared.DTOs.Course;
+﻿using Domain.Models.Exceptions;
+using LMS.Shared.DTOs.Course;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Contracts;
@@ -48,44 +49,21 @@ public class CourseController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CourseDto>> CreateCourse([FromBody] CourseCreateDto courseCreateDto)
     {
-        try
-        {
-            var createdCourse = await _serviceManager.CourseService.CreateCourseAsync(courseCreateDto);
-            return Ok(createdCourse);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid skapande av kurs." });
-        }
+        if (!ModelState.IsValid)
+            throw new BadRequestException("Ogiltiga data skickades för kursen.", "Valideringsfel");
+
+        var createdCourse = await _serviceManager.CourseService.CreateCourseAsync(courseCreateDto);
+        return Ok(createdCourse);
     }
 
     [HttpPut("{id}")]
     public async Task<ActionResult<CourseDto>> UpdateCourse(int id, [FromBody] CourseUpdateDto dto)
     {
         if (id != dto.Id)
-            return BadRequest("Kurs-id stämmer inte.");
+            throw new BadRequestException("Kurs-id stämmer inte.", "Valideringsfel");
 
-		try
-		{
-			var updated = await _serviceManager.CourseService.UpdateCourseAsync(dto);
-			return Ok(updated);
-		}
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid uppdatering av kurs." });
-        }
+        var updated = await _serviceManager.CourseService.UpdateCourseAsync(dto);
+        return Ok(updated);
     }
 
     [HttpDelete("{id}")]
@@ -98,6 +76,19 @@ public class CourseController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpGet("teachers")]
+    public async Task<IActionResult> GetTeachers()
+    {
+        var teachers = await _serviceManager.UserManagementService.GetTeachersAsync();
+
+        return Ok(teachers.Select(t => new {
+            t.Id,
+            FullName = $"{t.FirstName} {t.LastName}",
+            t.Email
+        }));
+    }
+
 
 
 }

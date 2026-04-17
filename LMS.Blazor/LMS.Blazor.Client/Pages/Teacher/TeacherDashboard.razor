@@ -1,10 +1,13 @@
 ﻿@page "/teacher/dashboard"
+@using Domain.Models.Entities
 @using LMS.Blazor.Client.Components.Teacher
+@using LMS.Shared.DTOs.Notification
 @using LMS.Shared.DTOs.TeacherDashboard
 @using LMS.Shared.DTOs.Course
 @using LMS.Shared.DTOs.User
 @inject IApiService ApiService
 @inject NavigationManager Nav
+@attribute [Authorize(Roles = "Teacher")]
 
 @if (selectedCourseId != null)
 {
@@ -13,14 +16,7 @@
     return;
 }
 
-@if (showCreateCourse)
-{
-    <CreateCourseSection OnCreated="RefreshCourses"
-                         OnCancel="CloseCreateCourse" />
-    return;
-}
-
-<div class="container py-4">
+<div class="container-fluid py-4">
     <h1 class="h3 mb-4">Dashboard</h1>
 
     <!-- Snabbåtgärder -->
@@ -31,16 +27,26 @@
                     <h5 class="mb-0">Snabbåtgärder</h5>
 
                     <button class="btn btn-primary d-flex align-items-center"
-                            @onclick="OpenCreateCourse">
-                        <i class="bi bi-plus-circle me-2"></i>
-                        Skapa ny kurs
+                            style="padding-top: .5rem; padding-bottom: .3rem;"
+                            @onclick="OpenCreateCourseModal">
+                        <span class="position-relative me-2" style="top: 0px;">
+                            <i class="bi bi-book fs-5"></i>
+                            <i class="bi bi-plus-circle position-absolute top-0 start-100 fs-6" style="transform: translate(-40%, -37%);"></i>
+                        </span>
+                        <span style="position: relative; top: 0px;">Skapa ny kurs</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Tabs -->
+
+
+    <!-- Notifications-->
+
+    <NotificationList Notifications="notifications"
+                      OnMarkAsRead="MarkAsRead" />
+     <!-- Tabs -->
     <ul class="nav nav-tabs mb-4">
         <li class="nav-item">
             <button class="nav-link @(activeTab == "overview" ? "active text-primary fw-semibold" : "text-dark")"
@@ -59,7 +65,7 @@
         <li class="nav-item">
             <button class="nav-link @(activeTab == "participants" ? "active text-primary fw-semibold" : "text-dark")"
                     @onclick='() => activeTab = "participants"'>
-                Studenter
+                Elever
             </button>
         </li>
     </ul>
@@ -72,7 +78,12 @@
     {
         @if (activeTab == "overview")
         {
-            <OverviewSection Dashboard="dashboard" />
+            <OverviewSection Dashboard="dashboard"
+                             OnOpenCourse="GoToCourse"
+                             OnEditCourse="OpenEditCourse"
+                             OnDeleteCourse="AskDeleteCourse" />
+
+
         }
         else if (activeTab == "courses")
         {
@@ -89,6 +100,35 @@
     }
 </div>
 
+<!-- ===================== CREATE COURSE MODAL ===================== -->
+@if (showCreateCourseModal)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="position-relative me-3">
+                            <i class="bi bi-book fs-5"></i>
+                            <i class="bi bi-plus-circle position-absolute top-0 start-100 translate-middle fs-6 bg-white rounded-circle"></i>
+                        </span>
+                        Skapa kurs
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseCreateCourse"></button>
+                </div>
+
+                <div class="modal-body mt-0">
+                    <CreateCourseSection OnCreated="RefreshCourses"
+                                         OnCancel="CloseCreateCourse" IsModal="true" />
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
 <!-- ===================== EDIT COURSE MODAL ===================== -->
 <EditCourseModal Show="showEditCourseModal"
                  FormModel="courseForm"
@@ -96,6 +136,14 @@
                  OnClose="CloseEditCourse"
                  IsSaving="isSavingCourse"
                  ErrorMessage="@courseError" />
+
+<!-- ===================== DELETE COURSE MODAL ===================== -->
+
+<ConfirmDialog @ref="confirmDeleteCourse"
+               Title="Ta bort kurs"
+               Message="Är du säker på att du vill ta bort hela kursen och allt innehåll?"
+               OnClose="OnConfirmDeleteCourse" />
+
 
 <!-- ===================== EDIT USER MODAL ===================== -->
 @if (showEditUserModal && userToEdit != null)
@@ -148,7 +196,7 @@
                                 <label class="form-label fw-semibold">Kurs</label>
                                 <select class="form-select" @bind="userForm.CourseId">
                                     <option value="">— Ingen kurs —</option>
-                                    @foreach (var c in allCourses)
+                                    @foreach (var c in allCourses.OrderBy(c => c.StartDate))
                                     {
                                         <option value="@c.Id">@c.Name</option>
                                     }
@@ -240,9 +288,14 @@
     private TeacherDashboardDto? dashboard;
     private List<CourseListDto> allCourses = new();
     private List<StudentListDto> allStudents = new();
+    private List<UserDto> allTeachers = new();
     private string activeTab = "overview";
     private int? selectedCourseId;
-    private bool showCreateCourse = false;
+    private bool showCreateCourseModal = false;
+    private ConfirmDialog? confirmDeleteCourse;
+    private int courseIdToDelete;
+    [Parameter] public EventCallback<int> OnView { get; set; }
+    [Parameter] public EventCallback<CourseListDto> OnEdit { get; set; }
 
     /* ---------------- COURSE EDIT ---------------- */
     private bool showEditCourseModal;
@@ -271,11 +324,14 @@
     /* ---------------- COURSE EDIT ---------------- */
     private void OpenEditCourse(CourseListDto course)
     {
+        var teacher = allTeachers.FirstOrDefault(t => t.CourseId == course.Id);
+
         courseForm = new CourseUpdateDto
         {
             Id = course.Id,
             Name = course.Name,
             Description = course.Description,
+            TeacherId = teacher?.Id,
             StartDate = course.StartDate,
             EndDate = course.EndDate
         };
@@ -304,6 +360,7 @@
             {
                 showEditCourseModal = false;
                 allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+                await LoadDashboard();
             }
             else
             {
@@ -440,69 +497,132 @@
 
     private async Task ReloadStudents()
     {
-        var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
+        try
+        {
+            var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
 
-        allStudents = allUsers
-            .Where(u => u.Role == "Student")
-            .Select(u => new StudentListDto
-            {
-                Id = u.Id,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                Email = u.Email,
-                CourseId = u.CourseId,
-                CourseName = u.CourseName ?? ""
-            })
-            .ToList();
+            allStudents = allUsers
+                .Where(u => u.Role == "Student")
+                .Select(u => new StudentListDto
+                    {
+                        Id = u.Id,
+                        FirstName = u.FirstName,
+                        LastName = u.LastName,
+                        Email = u.Email,
+                        CourseId = u.CourseId,
+                        CourseName = u.CourseName ?? ""
+                    })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fel vid omladdning av elever: {ex.Message}");
+        }
     }
 
+    /* -------- OPEN COURSE DETAILS -------- */
     private void GoToCourse(int id)
-        {
-            selectedCourseId = id;
-        }
+    {
+        selectedCourseId = id;
+    }
 
     private void CloseCourseDetails()
-        {
-            selectedCourseId = null;
-        }
-
-    private void OpenCreateCourse()
     {
-        showCreateCourse = true;
+        selectedCourseId = null;
+    }
+
+
+    /* ------ CREATE COURSE MODAL ------------*/
+
+    private void OpenCreateCourseModal()
+    {
+        showCreateCourseModal = true;
     }
 
     private void CloseCreateCourse()
     {
-        showCreateCourse = false;
+        showCreateCourseModal = false;
     }
 
     private async Task RefreshCourses(CourseDto course)
     {
-        showCreateCourse = false;
+        showCreateCourseModal = false;
 
         await LoadDashboard();
 
         StateHasChanged();
     }
 
+    private List<NotificationDto> notifications = new();
+
     private async Task LoadDashboard()
     {
-        dashboard = await ApiService.GetAsync<TeacherDashboardDto>("api/user/me/teacher-dashboard");
-        allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+        try
+        {
+            dashboard = await ApiService.GetAsync<TeacherDashboardDto>("api/user/me/teacher-dashboard");
+            allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+            notifications = await ApiService.GetAsync<List<NotificationDto>>("api/notifications/unread") ?? new();
+            var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
 
-        var allUsers = await ApiService.GetAsync<List<UserDto>>("api/users") ?? new();
+            allStudents = allUsers
+                .Where(u => u.Role == "Student")
+                .Select(u => new StudentListDto
+                    {
+                        Id = u.Id,
+                        FirstName = u.FirstName,
+                        LastName = u.LastName,
+                        Email = u.Email,
+                        CourseId = u.CourseId,
+                        CourseName = u.CourseName ?? ""
+                    })
+                .ToList();
 
-        allStudents = allUsers
-            .Where(u => u.Role == "Student")
-            .Select(u => new StudentListDto
-            {
-                Id = u.Id,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                Email = u.Email,
-                CourseId = u.CourseId,
-                CourseName = u.CourseName ?? ""
-            })
-            .ToList();
+            allTeachers = allUsers
+                .Where(u => u.Role == "Teacher")
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fel vid laddning av dashboarden: {ex.Message}");
+        }
+    }
+
+    /* -------- DELETE COURSE -------- */
+    private void AskDeleteCourse(int id)
+    {
+        courseIdToDelete = id;
+        confirmDeleteCourse!.Show();
+    }
+
+    private async Task OnConfirmDeleteCourse(bool confirmed)
+    {
+        if (!confirmed)
+            return;
+        try
+        {
+            await ApiService.DeleteAsync($"api/course/{courseIdToDelete}");
+
+            allCourses = await ApiService.GetAsync<List<CourseListDto>>("api/course/list");
+            await LoadDashboard();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fel vid borttagning av kurs: {ex.Message}");
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task MarkAsRead(int id)
+    {
+        try
+        {
+            await ApiService.PatchAsync($"api/notifications/{id}/read");
+            notifications.RemoveAll(n => n.Id == id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fel vid markering av notifikation som läst: {ex.Message}");
+        }
     }
 }

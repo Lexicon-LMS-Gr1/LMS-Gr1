@@ -8,11 +8,8 @@ public interface IModuleService
     Task<IEnumerable<ModuleDto>> GetAllModulesAsync();
     Task<IEnumerable<ModuleDto>> GetModulesByCourseIdAsync(int courseId);
     Task<ModuleDto?> GetModuleByIdAsync(int id);
-    Task<ModuleDto> CreateModuleAsync(ModuleCreateDto moduleDto);
     Task<ModuleDto> UpdateModuleAsync(ModuleUpdateDto moduleDto);
-    Task<bool> DeleteModuleAsync(int id);
-
+    Task DeleteModuleAsync(int id);
 	Task<IEnumerable<ActivityDto>> GetActivitiesAsync(int moduleId);
-
     Task<ModuleDto> CreateModuleAsync(int courseId, ModuleCreateDto moduleDto);
 }

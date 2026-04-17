@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
+using Domain.Models.Exceptions;
 using LMS.Infrastructure.Data;
 using LMS.Services.Mappers;
 using LMS.Shared.DTOs.Activity;
@@ -19,208 +20,435 @@ namespace LMS.Services
 		private readonly IUnitOfWork _unitOfWork;
 		private readonly IProgressService _progressService;
         private readonly IUserManagementService _userManagementService;
+        private readonly UserManager<ApplicationUser> _userManager;
+
         public CourseService(
 			IUnitOfWork unitOfWork,
 			IProgressService progressService,
-			IUserManagementService userManagementService)
+			IUserManagementService userManagementService,
+            UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _progressService = progressService;
             _userManagementService = userManagementService;
+			_userManager = userManager;
         }
 
         public async Task<IEnumerable<CourseListDto>> GetAllCoursesListAsync()
-		{
-			var courses = await _unitOfWork.CourseRepository.GetCoursesForListAsync();
+        {
+            var courses = await _unitOfWork.CourseRepository.GetCoursesForListAsync();
 
-			return courses.Select(CourseMapper.ToCourseListDto);
-		}
+            var result = new List<CourseListDto>();
 
-		public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
+            foreach (var course in courses)
+            {
+                int studentCount = 0;
+                ApplicationUser? teacher = null;
+
+                foreach (var user in course.Users)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+
+                    if (roles.Contains("Student"))
+                        studentCount++;
+
+                    if (roles.Contains("Teacher"))
+                        teacher = user;
+                }
+
+                result.Add(new CourseListDto
+                {
+                    Id = course.Id,
+                    Name = course.Name,
+                    Description = course.Description,
+                    StartDate = course.StartDate,
+                    EndDate = course.EndDate,
+                    StudentCount = studentCount,
+                    ModuleCount = course.Modules.Count,
+                    TeacherId = teacher?.Id
+                });
+            }
+
+
+            return result;
+        }
+
+
+
+        public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
 		{
 			var courses = await _unitOfWork.CourseRepository.GetAllAsync();
 
 			return courses.Select(CourseMapper.ToBasicCourseDto);
 		}
 
-		public async Task<CourseDto?> GetCourseForUserAsync(string userId)
-		{
-			var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(userId);
+        public async Task<CourseDto?> GetCourseForUserAsync(string userId)
+        {
+            var course = await _unitOfWork.CourseRepository.GetCourseForUserAsync(userId);
 
-			if (course == null)
-				return null;
+            if (course == null)
+                return null;
 
-			var dto = CourseMapper.ToDetailedCourseDto(course);
+            var dto = CourseMapper.ToDetailedCourseDto(course);
 
-			dto.Progress = await _progressService.GetCourseProgressAsync(userId, course.Id);
-			foreach (var module in dto.Modules)
-			{
-				module.Progress = await _progressService.GetModuleProgressAsync(userId, module.Id);
-			}
+            // Lägg till läraren
+            foreach (var user in course.Users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("Teacher"))
+                {
+                    dto.TeacherName = $"{user.FirstName} {user.LastName}";
+                    break;
+                }
+            }
 
-			return dto;
-		}
+            dto.Progress = await _progressService.GetCourseProgressAsync(userId, course.Id);
+            foreach (var module in dto.Modules)
+            {
+                module.Progress = await _progressService.GetModuleProgressAsync(userId, module.Id);
+            }
 
-		public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
-		{
-			// DTOn får ej vara null + Grundläggande validering av kursens egna fält
-			if (courseCreateDto is null)
-				throw new ArgumentNullException(nameof(courseCreateDto));
+            return dto;
+        }
 
-			if (string.IsNullOrWhiteSpace(courseCreateDto.Name))
-				throw new ArgumentException("Kursnamn saknas.");
 
-			if (string.IsNullOrWhiteSpace(courseCreateDto.Description))
-				throw new ArgumentException("Kursbeskrivning saknas.");
+        public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
+        {
+            // DTOn får ej vara null + Grundläggande validering av kursens egna fält
+            if (courseCreateDto is null)
+                throw new BadRequestException("Kursdata saknas.", "Valideringsfel");
 
-			// Kursens startdatum måste vara <= slutdatum
-			if (courseCreateDto.StartDate > courseCreateDto.EndDate)
-				throw new ArgumentException("Startdatum får inte vara senare än slutdatum.");
+            if (string.IsNullOrWhiteSpace(courseCreateDto.Name))
+                throw new BadRequestException("Kursnamn saknas.", "Valideringsfel");
 
-			// Modules är en lista (initierad till tom lista i DTOn)
-			var modules = courseCreateDto.Modules;
+            if (string.IsNullOrWhiteSpace(courseCreateDto.Description))
+                throw new BadRequestException("Kursbeskrivning saknas.", "Valideringsfel");
 
-			// Validera varje modul individuellt
-			foreach (var module in modules)
-			{
-				// TODO: Delvis duplicering av DataAnnotations-validerigen. Ev centralisera denna validering senare.
+            // Kursens startdatum måste vara <= slutdatum
+            if (courseCreateDto.StartDate > courseCreateDto.EndDate)
+                throw new BadRequestException("Startdatum får inte vara senare än slutdatum.", "Valideringsfel");
 
-				if (string.IsNullOrWhiteSpace(module.Name))
-					throw new ArgumentException("En modul saknar namn.");
+            // Modules är en lista (initierad till tom lista i DTOn)
+            var modules = courseCreateDto.Modules;
 
-				if (string.IsNullOrWhiteSpace(module.Description))
-					throw new ArgumentException($"Modul \"{module.Name}\" saknar beskrivning.");
+            // Validera varje modul individuellt
+            foreach (var module in modules)
+            {
+                // TODO: Delvis duplicering av DataAnnotations-validerigen. Ev centralisera denna validering senare.
 
-				// Modulens startdatum <= slutdatum
-				if (module.StartDate > module.EndDate)
-					throw new ArgumentException($"Modul \"{module.Name}\" har ett startdatum som ligger efter slutdatum.");
+                if (string.IsNullOrWhiteSpace(module.Name))
+                    throw new BadRequestException("En modul saknar namn.", "Valideringsfel");
 
-				// Modul måste ligga inom kursens datumintervall
-				if (module.StartDate < courseCreateDto.StartDate || module.EndDate > courseCreateDto.EndDate)
-					throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
-			}
+                if (string.IsNullOrWhiteSpace(module.Description))
+                    throw new BadRequestException($"Modul \"{module.Name}\" saknar beskrivning.", "Valideringsfel");
 
-			// Kontrollera att moduler inte överlappar varandra (inom samma request)
-			for (int i = 0; i < modules.Count; i++)
-			{
-				for (int j = i + 1; j < modules.Count; j++)
-				{
-					var a = modules[i];
-					var b = modules[j];
+                // Modulens startdatum <= slutdatum
+                if (module.StartDate > module.EndDate)
+                    throw new BadRequestException(
+                        $"Modul \"{module.Name}\" har ett startdatum som ligger efter slutdatum.",
+                        "Valideringsfel");
 
-					// Intervallöverlapp
-					bool overlaps = a.StartDate <= b.EndDate && a.EndDate >= b.StartDate;
+                // Modul måste ligga inom kursens datumintervall
+                if (module.StartDate < courseCreateDto.StartDate || module.EndDate > courseCreateDto.EndDate)
+                    throw new BadRequestException(
+                        $"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.",
+                        "Valideringsfel");
+            }
 
-					if (overlaps)
-					{
-						throw new ArgumentException(
-							$"Modulerna \"{a.Name}\" och \"{b.Name}\" överlappar varandra.");
-					}
-				}
-			}
+            // Kontrollera att moduler inte överlappar varandra (inom samma request)
+            for (int i = 0; i < modules.Count; i++)
+            {
+                for (int j = i + 1; j < modules.Count; j++)
+                {
+                    var a = modules[i];
+                    var b = modules[j];
 
-			// TODO: Om man senare tillåter att lägga till moduler i en befintlig kurs:
-			// måste man även kontrollera överlapp mot moduler i databasen (inte bara inom en request).
+                    // Intervallöverlapp
+                    bool overlaps = a.StartDate <= b.EndDate && a.EndDate >= b.StartDate;
 
-			// TODO: Bryt ut mappningslogik till en separat mappningsklass som har ansvar för att ta en Course till en CourseDto.
-			// Tex courseMapper.GetCourseDto(course); som automapper, men man mappar själv och har kontroll på vad som sker.
-			// Återanvändningsbar och om logiken förändras har man en single source of truth.
+                    if (overlaps)
+                    {
+                        throw new BadRequestException(
+                            $"Modulerna \"{a.Name}\" och \"{b.Name}\" överlappar varandra.",
+                            "Valideringsfel");
+                    }
+                }
+            }
 
-			// Skapa ny Course-entitet
-			var course = new Course
-			{
-				Name = courseCreateDto.Name.Trim(),          // Trim undviker whitespace-problem i DB
-				Description = courseCreateDto.Description.Trim(),
-				StartDate = courseCreateDto.StartDate,
-				EndDate = courseCreateDto.EndDate
-			};
+            // TODO: Om man senare tillåter att lägga till moduler i en befintlig kurs:
+            // måste man även kontrollera överlapp mot moduler i databasen (inte bara inom en request).
 
-			// Mappa och koppla moduler till kursen
-			foreach (var module in modules)
-			{
-				course.Modules.Add(new Module
-				{
-					Name = module.Name.Trim(),
-					Description = module.Description.Trim(),
-					StartDate = module.StartDate,
-					EndDate = module.EndDate,
-					Course = course // Navigation property så EF förstår relationen
+            // TODO: Bryt ut mappningslogik till en separat mappningsklass som har ansvar för att ta en Course till en CourseDto.
+            // Tex courseMapper.GetCourseDto(course); som automapper, men man mappar själv och har kontroll på vad som sker.
+            // Återanvändningsbar och om logiken förändras har man en single source of truth.
 
-					// Activities skapas inte här, utan i en separat controller och endpoint för att lägga till aktiviteter i en modul
-					//  - Create() i ModuleActivitiesController.
-					// Annars måste hela objektgrafen (Course + Modules + Activities) skapas i en och samma request.
-				});
-			}
+            // Skapa ny Course-entitet
+            var course = new Course
+            {
+                Name = courseCreateDto.Name.Trim(),          // Trim undviker whitespace-problem i DB
+                Description = courseCreateDto.Description.Trim(),
+                StartDate = courseCreateDto.StartDate,
+                EndDate = courseCreateDto.EndDate
+            };
 
-			// Sparar objektgrafen med Course + Modules (om moduler finns med i samma request)
-			_unitOfWork.CourseRepository.Create(course);
+            // Mappa och koppla moduler till kursen
+            foreach (var module in modules)
+            {
+                course.Modules.Add(new Module
+                {
+                    Name = module.Name.Trim(),
+                    Description = module.Description.Trim(),
+                    StartDate = module.StartDate,
+                    EndDate = module.EndDate,
+                    Course = course // Navigation property så EF förstår relationen
 
-			await _unitOfWork.CompleteAsync();
+                    // Activities skapas inte här, utan i en separat controller och endpoint för att lägga till aktiviteter i en modul
+                    //  - Create() i ModuleActivitiesController.
+                    // Annars måste hela objektgrafen (Course + Modules + Activities) skapas i en och samma request.
+                });
+            }
 
-			// Returnera DTO med ev. moduler - mappning från entitet till DTO
-			return new CourseDto
-			{
-				Id = course.Id,
-				Name = course.Name,
-				Description = course.Description,
-				StartDate = course.StartDate,
-				EndDate = course.EndDate,
+            // Sparar objektgrafen med Course + Modules (om moduler finns med i samma request)
+            _unitOfWork.CourseRepository.Create(course);
 
-				// TODO: Om listan blir stor i framtiden: pagination / lazy loading
-				Modules = course.Modules.Select(m => new ModuleDto
-				{
-					Id = m.Id,
-					Name = m.Name,
-					Description = m.Description,
-					StartDate = m.StartDate,
-					EndDate = m.EndDate
-				}).ToList()
-			};
-		}
+            await _unitOfWork.CompleteAsync();
 
-		public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
-		{
-			var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseUpdateDto.Id);
+            string teacherName = "";
+            if (!string.IsNullOrWhiteSpace(courseCreateDto.TeacherId))
+            {
+                var teacher = await _userManager.FindByIdAsync(courseCreateDto.TeacherId);
 
-			if (course == null)
-				throw new Exception("Kursen kunde inte hittas.");
+                if (teacher == null)
+                    throw new NotFoundException("Läraren kunde inte hittas.");
+
+                if (!await _userManager.IsInRoleAsync(teacher, "Teacher"))
+                    throw new BadRequestException("Vald användare är inte lärare.", "Valideringsfel");
+
+                teacher.CourseId = course.Id;
+
+                await _userManager.UpdateAsync(teacher);
+                teacherName = $"{teacher.FirstName} {teacher.LastName}";
+            }
+
+            // Returnera DTO med ev. moduler - mappning från entitet till DTO
+            return new CourseDto
+            {
+                Id = course.Id,
+                Name = course.Name,
+                Description = course.Description,
+                TeacherName = teacherName,
+                StartDate = course.StartDate,
+                EndDate = course.EndDate,
+                // TODO: Om listan blir stor i framtiden: pagination / lazy loading
+                Modules = course.Modules.Select(m => new ModuleDto
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    Description = m.Description,
+                    StartDate = m.StartDate,
+                    EndDate = m.EndDate
+                }).ToList()
+            };
+        }
+
+        //public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
+        //{
+        //          var course = await _unitOfWork.CourseRepository.GetCourseById(courseUpdateDto.Id);
+
+        //          if (course == null)
+        //		throw new Exception("Kursen kunde inte hittas.");
+
+        //          if (string.IsNullOrWhiteSpace(courseUpdateDto.Name))
+        //              throw new ArgumentException("Kursnamn saknas.");
+
+        //          if (string.IsNullOrWhiteSpace(courseUpdateDto.Description))
+        //              throw new ArgumentException("Kursbeskrivning saknas.");
+
+        //          if (courseUpdateDto.StartDate > courseUpdateDto.EndDate)
+        //              throw new Exception("Startdatum får inte vara senare än slutdatum.");
+
+
+        //          if (course.Modules.Count != 0 &&
+        //              (courseUpdateDto.StartDate != course.StartDate ||
+        //               courseUpdateDto.EndDate != course.EndDate))
+        //          {
+        //              throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
+        //          }
+
+        //              // Tillåt inte ändring av kursdatum om kursen innehåller moduler, för moduldatumen kan då
+        //              // hamna utanför kursdatumen.
+
+        //              /*
+        //              // Alternativt: Validera varje modul individuellt.
+        //              foreach (var module in course.Modules)
+        //              {
+        //                  // Modul måste ligga inom kursens datumintervall.
+        //                  if (module.StartDate < courseUpdateDto.StartDate || module.EndDate > courseUpdateDto.EndDate)
+        //                      throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
+        //              }
+        //              */
+
+        //          course.Name = courseUpdateDto.Name.Trim();
+        //	course.Description = courseUpdateDto.Description.Trim();
+        //	course.StartDate = courseUpdateDto.StartDate;
+        //	course.EndDate = courseUpdateDto.EndDate;
+
+        //          // TeacherId = null eller "" betyder: ta bort läraren
+        //          if (string.IsNullOrWhiteSpace(courseUpdateDto.TeacherId))
+        //          {
+        //              ApplicationUser? oldTeacher = null;
+
+        //              foreach (var user in course.Users)
+        //              {
+        //                  var roles = await _userManager.GetRolesAsync(user);
+        //                  if (roles.Contains("Teacher"))
+        //                  {
+        //                      oldTeacher = user;
+        //                      break;
+        //                  }
+        //              }
+
+        //              if (oldTeacher != null)
+        //              {
+        //                  oldTeacher.CourseId = null;
+        //                  await _userManager.UpdateAsync(oldTeacher);
+        //              }
+
+        //              await _unitOfWork.CompleteAsync();
+        //              return CourseMapper.ToBasicCourseDto(course);
+        //          }
+
+        //          // Annars: sätt ny lärare
+        //          {
+        //              ApplicationUser? oldTeacher = null;
+
+        //              foreach (var user in course.Users)
+        //              {
+        //                  var roles = await _userManager.GetRolesAsync(user);
+        //                  if (roles.Contains("Teacher"))
+        //                  {
+        //                      oldTeacher = user;
+        //                      break;
+        //                  }
+        //              }
+
+        //              var newTeacher = await _userManager.FindByIdAsync(courseUpdateDto.TeacherId);
+
+        //              if (newTeacher == null)
+        //                  throw new ArgumentException("Läraren kunde inte hittas.");
+
+        //              if (!await _userManager.IsInRoleAsync(newTeacher, "Teacher"))
+        //                  throw new ArgumentException("Vald användare är inte lärare.");
+
+        //              if (oldTeacher != null)
+        //              {
+        //                  oldTeacher.CourseId = null;
+        //                  await _userManager.UpdateAsync(oldTeacher);
+        //              }
+
+        //              newTeacher.CourseId = course.Id;
+        //              await _userManager.UpdateAsync(newTeacher);
+        //          }
+
+        //          //_unitOfWork.CourseRepository.Update(course);
+        //          await _unitOfWork.CompleteAsync();
+
+        //	return CourseMapper.ToBasicCourseDto(course);
+        //}
+
+        public async Task<CourseDto> UpdateCourseAsync(CourseUpdateDto courseUpdateDto)
+        {
+            var course = await _unitOfWork.CourseRepository.GetCourseById(courseUpdateDto.Id);
+
+            if (course == null)
+                throw new NotFoundException($"Kurs med id {courseUpdateDto.Id} hittades inte.");
 
             if (string.IsNullOrWhiteSpace(courseUpdateDto.Name))
-                throw new ArgumentException("Kursnamn saknas.");
+                throw new BadRequestException("Kursnamn saknas.", "Valideringsfel");
 
             if (string.IsNullOrWhiteSpace(courseUpdateDto.Description))
-                throw new ArgumentException("Kursbeskrivning saknas.");
+                throw new BadRequestException("Kursbeskrivning saknas.", "Valideringsfel");
 
             if (courseUpdateDto.StartDate > courseUpdateDto.EndDate)
-                throw new Exception("Startdatum får inte vara senare än slutdatum.");
+                throw new BadRequestException("Startdatum får inte vara senare än slutdatum.", "Valideringsfel");
 
-            if (course.Modules.Count != 0)
+            // Tillåt ändring av kursdatum MEN säkerställ att inga moduler hamnar utanför
+            foreach (var module in course.Modules)
             {
-                // Tillåt inte ändring av kursdatum om kursen innehåller moduler, för moduldatumen kan då
-                // hamna utanför kursdatumen.
-                throw new Exception("Start- och slutdatum får inte ändras på kurs som innehåller moduler.");
-
-                /*
-                // Alternativt: Validera varje modul individuellt.
-                foreach (var module in course.Modules)
+                if (module.StartDate < courseUpdateDto.StartDate || module.EndDate > courseUpdateDto.EndDate)
                 {
-                    // Modul måste ligga inom kursens datumintervall.
-                    if (module.StartDate < courseUpdateDto.StartDate || module.EndDate > courseUpdateDto.EndDate)
-                        throw new ArgumentException($"Modul \"{module.Name}\" har datum som ligger utanför kursens datum.");
+                    throw new BadRequestException(
+                        $"Kursens datum kan inte ändras eftersom modul \"{module.Name}\" hamnar utanför intervallet.",
+                        "Valideringsfel");
                 }
-                */
             }
 
             course.Name = courseUpdateDto.Name.Trim();
-			course.Description = courseUpdateDto.Description.Trim();
-			course.StartDate = courseUpdateDto.StartDate;
-			course.EndDate = courseUpdateDto.EndDate;
+            course.Description = courseUpdateDto.Description.Trim();
+            course.StartDate = courseUpdateDto.StartDate;
+            course.EndDate = courseUpdateDto.EndDate;
 
-			_unitOfWork.CourseRepository.Update(course);
-			await _unitOfWork.CompleteAsync();
+            // TeacherId = null eller "" => ta bort läraren
+            if (string.IsNullOrWhiteSpace(courseUpdateDto.TeacherId))
+            {
+                ApplicationUser? oldTeacher = null;
 
-			return CourseMapper.ToBasicCourseDto(course);
-		}
+                foreach (var user in course.Users)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    if (roles.Contains("Teacher"))
+                    {
+                        oldTeacher = user;
+                        break;
+                    }
+                }
+
+                if (oldTeacher != null)
+                {
+                    oldTeacher.CourseId = null;
+                    await _userManager.UpdateAsync(oldTeacher);
+                }
+
+                await _unitOfWork.CompleteAsync();
+                return CourseMapper.ToBasicCourseDto(course);
+            }
+
+            // Annars: sätt ny lärare
+            {
+                ApplicationUser? oldTeacher = null;
+
+                foreach (var user in course.Users)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    if (roles.Contains("Teacher"))
+                    {
+                        oldTeacher = user;
+                        break;
+                    }
+                }
+
+                var newTeacher = await _userManager.FindByIdAsync(courseUpdateDto.TeacherId);
+
+                if (newTeacher == null)
+                    throw new NotFoundException("Läraren kunde inte hittas.");
+
+                if (!await _userManager.IsInRoleAsync(newTeacher, "Teacher"))
+                    throw new BadRequestException("Vald användare är inte lärare.", "Valideringsfel");
+
+                if (oldTeacher != null)
+                {
+                    oldTeacher.CourseId = null;
+                    await _userManager.UpdateAsync(oldTeacher);
+                }
+
+                newTeacher.CourseId = course.Id;
+                await _userManager.UpdateAsync(newTeacher);
+            }
+
+            await _unitOfWork.CompleteAsync();
+
+            return CourseMapper.ToBasicCourseDto(course);
+        }
 
         public async Task<bool> DeleteCourseAsync(int courseId)
         {
@@ -262,12 +490,27 @@ namespace LMS.Services
 			});
 		}
 
-		public async Task<CourseDto?> GetCourseByIdAsync(int courseId)
-		{
-			var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
-			if (course == null)
-				return null;
-			return CourseMapper.ToDetailedCourseDto(course);
-		}
-	}
+        public async Task<CourseDto?> GetCourseByIdAsync(int courseId)
+        {
+            var course = await _unitOfWork.CourseRepository.GetCourseById(courseId);
+            if (course == null)
+                return null;
+
+            var dto = CourseMapper.ToDetailedCourseDto(course);
+
+            foreach (var user in course.Users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("Teacher"))
+                {
+                    dto.TeacherName = $"{user.FirstName} {user.LastName}";
+                    break;
+                }
+            }
+
+            return dto;
+        }
+
+
+    }
 }

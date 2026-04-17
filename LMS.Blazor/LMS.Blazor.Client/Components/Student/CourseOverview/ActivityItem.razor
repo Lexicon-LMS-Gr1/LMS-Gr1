@@ -1,0 +1,117 @@
+@namespace LMS.Blazor.Client.Components.CourseOverview
+@using LMS.Shared.DTOs.Module
+@using LMS.Shared.DTOs.Activity
+@using LMS.Shared.DTOs.Document
+@using LMS.Shared.DTOs.Submission
+
+<div class="list-group-item py-3">
+    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+
+        <div>
+            <span class="badge rounded-pill @BadgeHelper.GetBadgeColor(Activity.ActivityTypeName)">
+                @Activity.ActivityTypeName
+            </span>
+
+            <span class="mb-3 h5">@Activity.Name</span>
+
+            <p class="text-muted mb-0">
+                <i class="bi bi-calendar"></i>
+                @if (Activity.StartTime.Date == Activity.EndTime.Date)
+                {
+                    @Activity.StartTime.ToString("yyyy-MM-dd")
+
+                } else
+                {
+                    @(Activity.StartTime.Date.ToString("yyyy-MM-dd") + " - " + Activity.EndTime.Date.ToString("yyyy-MM-dd"))
+                }
+            </p>
+
+            @if (!string.IsNullOrWhiteSpace(Activity.Description))
+            {
+                <p class="text-muted small mt-1 mb-0">@Activity.Description</p>
+            }
+            @if (Activity.ActivityTypeName == "Inlämning")
+            {
+                <div class="mt-1">
+                    @if (Submission != null)
+                    {
+                        <span class="badge bg-success">Inlämnad</span>
+
+                        @if (!string.IsNullOrWhiteSpace(Submission.Feedback))
+                        {
+                            <div class="mt-2 p-2 border rounded bg-success-subtle">
+                                Feedback:
+                                <p class="mb-0 small">@Submission.Feedback</p>
+                                <p class="mb-0 small">@Submission.FeedbackGivenAt?.ToString("yyyy-MM-dd")</p>
+                                <p class="mb-0 small">@Submission.FeedbackGivenByTeacherName</p>
+                            </div>
+                        } else
+                        {
+                            <div class="mt-2 p-2 border rounded bg-info-subtle">
+                                <p class="mb-0 small">Väntar på rättning.</p>
+                            </div>
+                        }
+                    } else
+                    {
+                        <span class="badge bg-warning text-dark">Ej inlämnad</span>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (IsComplete)
+        {
+            <div class="d-flex align-items-center justify-content-end gap-2">
+                <span class="bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                    <i class="bi bi-check-circle"></i>
+                </span>
+                <span>Genomförd</span>
+            </div>
+        } else
+        {
+            <div class="d-flex align-items-center justify-content-end gap-2">
+                <span class="bg-light text-muted rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                    <i class="bi bi-circle"></i>
+                </span>
+                <span>Ej genomförd</span>
+            </div>
+        }
+    </div>
+
+    <!-- Activity-level documents for students -->
+    @if (Documents?.Any() == true)
+    {
+        <div class="d-inline-flex align-items-center gap-2 bg-success-subtle text-success px-2 py-1 rounded">
+            <span class="small text-secondary fw-semibold">
+                <i class="bi bi-paperclip me-1"></i>Dokument
+            </span>
+            <DocumentList Documents="@Documents" CanDelete="false" />
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public ActivityDto Activity { get; set; }
+    [Parameter] public List<DocumentDto>? Documents { get; set; }
+    [Parameter] public SubmissionDto? Submission { get; set; }
+
+    private bool IsComplete = false;
+
+    protected override void OnParametersSet()
+    {
+
+        if (Activity.ActivityTypeName == "Inlämning")
+        {
+            if (Submission != null)
+                IsComplete = true;
+        } else
+        {
+            if (DateTime.Now > Activity.EndTime)
+            {
+                IsComplete = true;
+            }
+        }
+
+    }
+
+}

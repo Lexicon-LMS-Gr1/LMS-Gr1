@@ -21,85 +21,97 @@
                         <div class="alert alert-danger">@errorMessage</div>
                     }
 
-                    @if (ModuleStartDate.HasValue && ModuleEndDate.HasValue)
+                    @if (!GetFirstAvailableDateRange().HasValue)
                     {
-                        <div class="alert alert-info mt-2">
-                            <div>Aktiviteten måste ligga inom modulens datumintervall:</div>
-                            <ul class="mb-0 mt-2">
-                                <li>@ModuleStartDate.Value.ToString("yyyy-MM-dd") – @ModuleEndDate.Value.ToString("yyyy-MM-dd")</li>
-                            </ul>
+                        <div class="alert alert-warning mt-2">
+                            Lediga datum saknas i modulen! <br />
+                            Ändra/ta bort befintliga aktiviteter för att frigöra datum.
                         </div>
                     }
+                    else
+                    {
 
-                    <div class="mb-3">
-                        <label class="form-label">Aktivitetsnamn</label>
-                        <InputText class="form-control" @bind-Value="model.Name" />
-                        <ValidationMessage For="() => model.Name" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Beskrivning</label>
-                        <InputTextArea class="form-control" @bind-Value="model.Description" />
-                        <ValidationMessage For="() => model.Description" />
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Startdatum</label>
-                            <InputDate class="form-control" @bind-Value="model.StartTime" />
-                            <ValidationMessage For="() => model.StartTime" />
+                        <div class="mb-3">
+                            <label class="form-label">Aktivitetsnamn</label>
+                            <InputText class="form-control" @bind-Value="model.Name" />
+                            <ValidationMessage For="() => model.Name" />
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Slutdatum</label>
-                            <InputDate class="form-control" @bind-Value="model.EndTime" />
-                            <ValidationMessage For="() => model.EndTime" />
+                        <div class="mb-3">
+                            <label class="form-label">Beskrivning</label>
+                            <InputTextArea class="form-control" @bind-Value="model.Description" />
+                            <ValidationMessage For="() => model.Description" />
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Deadline</label>
-                        <div class="d-flex gap-2">
-                            <InputDate class="form-control" @bind-Value="model.DueDate" />
-                            <button type="button"
-                                    class="btn btn-outline-danger"
-                                    title="Ta bort deadline"
-                                    @onclick="ClearDeadline">
-                                <i class="bi bi-x"></i>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Startdatum</label>
+                                <InputDate class="form-control"
+                                @bind-Value="model.StartTime"
+                                ParsingErrorMessage="Startdatum måste vara ett giltigt datum." />
+                                <ValidationMessage For="() => model.StartTime" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Slutdatum</label>
+                                <InputDate class="form-control"
+                                @bind-Value="model.EndTime"
+                                ParsingErrorMessage="Slutdatum måste vara ett giltigt datum." />
+                                <ValidationMessage For="() => model.EndTime" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <InputCheckbox class="form-check-input" @bind-Value="addDeadline" />
+                                <label class="form-check-label">Lägg till deadline</label>
+                            </div>
+                        </div>
+
+                        @if (addDeadline)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Deadline</label>
+                                <InputDate class="form-control" @bind-Value="model.DueDate" />
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Aktivitetstyp</label>
+                            <InputSelect class="form-select" @bind-Value="model.ActivityTypeId">
+                                <option value="0">Välj aktivitetstyp</option>
+
+                                @foreach (var type in activityTypes)
+                                {
+                                    <option value="@type.Id">@type.Name</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="() => model.ActivityTypeId" />
+                        </div>
+                       
+
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                                @(isSubmitting ? "Sparar..." : "Skapa aktivitet")
                             </button>
-                        </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Aktivitetstyp</label>
-                        <InputSelect class="form-select" @bind-Value="model.ActivityTypeId">
-                            <option value="0">Välj aktivitetstyp</option>
-
-                            @foreach (var type in activityTypes)
-                            {
-                                <option value="@type.Id">@type.Name</option>
-                            }
-                        </InputSelect>
-                        <ValidationMessage For="() => model.ActivityTypeId" />
-                    </div>
+                            <button type="button" class="btn btn-outline-secondary" @onclick="Close">
+                                Avbryt
+						</button>
+                       
+					</div>
+				}
                 </div>
-
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
-                        @(isSubmitting ? "Sparar..." : "Skapa aktivitet")
-                    </button>
-
-                    <button type="button" class="btn btn-outline-secondary" @onclick="Close">
-                        Avbryt
-                    </button>
-                </div>
-            </EditForm>
-
-        </div>
+              </EditForm>			
+            </div>
+        </div>                    
     </div>
-</div>
+                    
 
 @code {
+    // Tar in parametrar med modulens id, start- och slutdatum, samt ev aktiviteter som redan finns i modulen
+    // för att kunna kolla giltiga datum för den nya aktiviteten och spara ned den i rätt modul
+
     [Parameter, EditorRequired]
     public int ModuleId { get; set; }
 
@@ -122,6 +134,7 @@
     private List<ActivityTypeDto> activityTypes = new();
     private string? errorMessage;
     private bool isSubmitting;
+    private bool addDeadline;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -135,10 +148,11 @@
         {
             activityTypes = (await ApiService.GetAsync<List<ActivityTypeDto>>("api/activitytypes")) ?? new();
         }
-        catch
+        catch (Exception ex)
         {
             activityTypes = new();
-            errorMessage = "Kunde inte ladda aktivitetstyper.";
+            //errorMessage = "Kunde inte ladda aktivitetstyper.";
+            errorMessage = ex.Message;
         }
     }
 
@@ -149,6 +163,47 @@
 
         try
         {
+            // Kollar alla datum på klientsidan först
+            if (!addDeadline)
+            {
+                model.DueDate = null;
+            }
+
+            if (ModuleStartDate.HasValue && model.StartTime.Date < ModuleStartDate.Value.Date)
+            {
+                errorMessage = "Startdatum kan inte ligga före modulens startdatum.";
+                return;
+            }
+
+            if (ModuleEndDate.HasValue && model.EndTime.Date > ModuleEndDate.Value.Date)
+            {
+                errorMessage = "Slutdatum kan inte ligga efter modulens slutdatum.";
+                return;
+            }
+
+            if (model.StartTime.Date > model.EndTime.Date)
+            {
+                errorMessage = "Startdatum kan inte ligga efter slutdatum.";
+                return;
+            }
+
+            if (addDeadline && model.DueDate.HasValue)
+            {
+                var dueDate = model.DueDate.Value.Date;
+
+                if (dueDate < model.StartTime.Date || dueDate > model.EndTime.Date)
+                {
+                    errorMessage = "Deadline måste ligga inom aktivitetens datumintervall.";
+                    return;
+                }
+            }
+
+            if (HasOverlap())
+            {
+                errorMessage = "Aktiviteten överlappar en annan aktivitet i modulen.";
+                return;
+            }
+
             var result = await ApiService.PostAsync<ActivityCreateDto, ActivityDto>(
                 $"api/modules/{ModuleId}/activities",
                 model);
@@ -174,6 +229,18 @@
         }
     }
 
+    private bool HasOverlap()
+    {
+        if (ExistingActivities is null)
+            return false;
+
+        var start = model.StartTime.Date.AddHours(8);
+        var end = model.EndTime.Date.AddHours(17);
+
+        return ExistingActivities.Any(a =>
+            start < a.EndTime && end > a.StartTime);
+    }
+
     private async Task Close()
     {
         errorMessage = null;
@@ -183,19 +250,75 @@
             await OnClose.InvokeAsync();
     }
 
-    private void ClearDeadline()
-    {
-        model.DueDate = null;
-    }
-
+    // Sätter start- och slutdatum automatiskt till en ledig lucka 
     private void ResetForm()
     {
+        var range = GetFirstAvailableDateRange();
+
+        DateTime startDate;
+        DateTime endDate;
+
+        if (range.HasValue)
+        {
+            startDate = range.Value.Start;
+            endDate = range.Value.End;
+        }
+        else // Om datum saknas, egentligen onödig eftersom UI gömmer formuläret, men bra för robusthet
+        {
+            startDate = (ModuleStartDate ?? DateTime.Today).Date;
+            endDate = startDate;
+        }
+
         model = new ActivityCreateDto
         {
-            StartTime = ModuleStartDate ?? DateTime.Today,
-            EndTime = ModuleEndDate ?? DateTime.Today,
+            StartTime = startDate,
+            EndTime = endDate,
             DueDate = null,
             ActivityTypeId = 0
         };
+
+        addDeadline = false;
+        errorMessage = null;
+    }
+
+    // Metoden kollar första lediga datumintervall där den nya aktiviteten kan skapas
+    // Används för att fylla i strt- och slutdatum automatiskt vid öppnande av detta modala fönster
+	// Saknas datumintervall förhindras visningen av formuläret och en varning visas istället
+    private (DateTime Start, DateTime End)? GetFirstAvailableDateRange()
+    {
+        var moduleStart = ModuleStartDate?.Date ?? DateTime.Today;
+        var moduleEnd = ModuleEndDate?.Date ?? moduleStart;
+
+        var activities = (ExistingActivities ?? Enumerable.Empty<ActivityDto>())
+            .OrderBy(a => a.StartTime.Date)
+            .ToList();
+
+        if (!activities.Any())
+            return (moduleStart, moduleStart);
+
+        var currentStart = moduleStart;
+
+        foreach (var activity in activities)
+        {
+            var activityStart = activity.StartTime.Date;
+            var activityEnd = activity.EndTime.Date;
+
+            if (currentStart < activityStart)
+            {
+                return (currentStart, currentStart);
+            }
+
+            if (activityEnd.AddDays(1) > currentStart)
+            {
+                currentStart = activityEnd.AddDays(1);
+            }
+        }
+
+        if (currentStart <= moduleEnd)
+        {
+            return (currentStart, currentStart);
+        }
+
+        return null;
     }
 }

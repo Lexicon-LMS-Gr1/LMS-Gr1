@@ -1,4 +1,5 @@
-﻿using LMS.Shared.DTOs.StudentDashboard;
+﻿using Domain.Models.Exceptions;
+using LMS.Shared.DTOs.StudentDashboard;
 using LMS.Infrastructure.Queries.Dashboard;
 using Service.Contracts;
 
@@ -15,6 +16,9 @@ namespace LMS.Services
 
         public async Task<StudentDashboardDto> GetDashboardAsync(string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new BadRequestException("Användar-id saknas.", "Valideringsfel");
+
             var (startOfWeek, endOfWeek) = GetCurrentWeek();
 
             var weekly = await _dashboardQuery.GetWeeklyActivitiesAsync(

@@ -15,7 +15,7 @@ public static class CourseMapper
 			Description = course.Description,
 			StartDate = course.StartDate,
 			EndDate = course.EndDate,
-			StudentCount = course.Students.Count,
+			StudentCount = course.Users.Count,
 			ModuleCount = course.Modules.Count
 		};
 	}
@@ -27,7 +27,7 @@ public static class CourseMapper
 			Name = course.Name,
 			Description = course.Description,
 			StartDate = course.StartDate,
-			EndDate = course.EndDate,
+			EndDate = course.EndDate
 		};
 	}
 

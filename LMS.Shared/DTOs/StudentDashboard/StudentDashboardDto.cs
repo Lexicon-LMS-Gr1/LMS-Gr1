@@ -12,7 +12,7 @@ namespace LMS.Shared.DTOs.StudentDashboard
     public class WeeklyActivityDto
     {
         public string ModuleName { get; set; } = "";
-        public string ActivityType { get; set; } = "";
+        public string ActivityTypeName { get; set; } = "";
         public string Title { get; set; } = "";
         public DateTime Start { get; set; }
         public DateTime End { get; set; }

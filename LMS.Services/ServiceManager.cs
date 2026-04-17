@@ -14,6 +14,8 @@ public class ServiceManager : IServiceManager
     private readonly Lazy<IDocumentService> _documentService;
     private readonly Lazy<IStudentAssignmentService> studentAssignmentService;
     private readonly Lazy<IProgressService> progressService;
+	private readonly Lazy<ISubmissionService> submissionService;
+    private readonly Lazy<INotificationService> notificationService;
 
 	public IAuthService AuthService => authService.Value;
     public ICourseService CourseService => courseService.Value;
@@ -25,8 +27,11 @@ public class ServiceManager : IServiceManager
     public IDocumentService DocumentService => _documentService.Value;
     public IStudentAssignmentService StudentAssignmentService => studentAssignmentService.Value;
     public IProgressService ProgressService => progressService.Value;
+	public ISubmissionService SubmissionService => submissionService.Value;
+	public INotificationService NotificationService => notificationService.Value;
 
-    public ServiceManager(
+
+	public ServiceManager(
         Lazy<IAuthService> authService,
         Lazy<ICourseService> courseService,
         Lazy<IUserManagementService> userManagementService,
@@ -36,7 +41,9 @@ public class ServiceManager : IServiceManager
         Lazy<IActivityService> activityService,
         Lazy<IDocumentService> documentService,
         Lazy<IStudentAssignmentService> studentAssignmentService,
-        Lazy<IProgressService> progressService)
+        Lazy<IProgressService> progressService,
+	    Lazy<ISubmissionService> submissionService,
+        Lazy<INotificationService> notificationService)
     {
         this.authService = authService;
         this.courseService = courseService;
@@ -48,5 +55,7 @@ public class ServiceManager : IServiceManager
         this._documentService = documentService;
         this.studentAssignmentService = studentAssignmentService;
         this.progressService = progressService;
+        this.submissionService = submissionService;
+        this.notificationService = notificationService;
     }
 }

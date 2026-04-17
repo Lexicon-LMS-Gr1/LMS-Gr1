@@ -1,4 +1,4 @@
-﻿using LMS.Shared.DTOs.Course;
+﻿using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.Module;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,22 +28,10 @@ public class CourseModulesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ModuleDto>> Create(int courseId, [FromBody] ModuleCreateDto dto)
     {
-        try
-        {
-            var created = await _moduleService.CreateModuleAsync(courseId, dto);
-            return Ok(created);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "Ett oväntat fel uppstod vid skapande av modul." });
-        }
+        if (!ModelState.IsValid)
+            throw new BadRequestException("Ogiltiga data skickades för modulen.", "Valideringsfel");
+
+        var created = await _moduleService.CreateModuleAsync(courseId, dto);
+        return Ok(created);
     }
 }

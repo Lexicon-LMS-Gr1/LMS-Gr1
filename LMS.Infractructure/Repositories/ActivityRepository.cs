@@ -45,7 +45,9 @@ public class ActivityRepository : IActivityRepository
     {
         var query = _context.Activities
             .Include(a => a.ActivityType)
-            .AsQueryable();
+			.Include(a => a.Module)
+			    .ThenInclude(m => m.Course)
+			.AsQueryable();
 
         if (!trackChanges)
             query = query.AsNoTracking();
@@ -91,7 +93,7 @@ public class ActivityRepository : IActivityRepository
             .Include(a => a.ActivityType)
             .Include(a => a.Module)
             .Where(a =>
-                a.ActivityType.Name == "Assignment" &&
+                a.ActivityType.Name == "Inlämning" &&
                 a.Module.CourseId == courseId)
             .AsNoTracking()
             .ToListAsync();
@@ -114,7 +116,7 @@ public class ActivityRepository : IActivityRepository
 		return await _context.Activities
             .Include(a => a.ActivityType)
 			.Where(a =>
-                a.ActivityType.Name == "Assignment" &&
+                a.ActivityType.Name == "Inlämning" &&
 				a.ModuleId == moduleId)
 			.AsNoTracking()
 			.ToListAsync();

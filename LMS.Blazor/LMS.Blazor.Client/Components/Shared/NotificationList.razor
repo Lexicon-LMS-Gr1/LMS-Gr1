@@ -1,0 +1,128 @@
+﻿@using LMS.Shared.DTOs.Notification
+@using Domain.Models.Entities
+
+@if (Notifications != null && Notifications.Any())
+{
+    @foreach (var n in Notifications)
+    {
+        <div class="alert @GetAlertClass(n.Type) d-flex justify-content-between align-items-center mb-3" role="alert">
+            <div class="pe-3">
+                <div class="fw-semibold">
+                    @switch (n.Type)
+                    {
+                        case NotificationType.FeedbackReceived:
+                        <span>
+                            Du har fått feedback på <span class="fw-semibold">@n.ActivityName</span>
+                            @if (!string.IsNullOrWhiteSpace(n.ActorName))
+                            {
+                                <span> av <span class="fst-italic">@n.ActorName</span></span>
+                            }
+                        </span>
+                        break;
+
+                        case NotificationType.DocumentUploaded:
+                        <span>
+                            Nytt dokument
+                            @if (!string.IsNullOrWhiteSpace(n.ActivityName))
+                            {
+                                <span> i <span class="fw-semibold">@n.ActivityName</span></span>
+                            } else if (!string.IsNullOrWhiteSpace(n.ModuleName))
+                            {
+                                <span> i <span class="fw-semibold">@n.ModuleName</span></span>
+                            } else if (!string.IsNullOrWhiteSpace(n.CourseName))
+                            {
+                                <span> i kursen <span class="fst-italic">@n.CourseName</span></span>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(n.DocumentName))
+                            {
+                                <span>: <span class="fw-semibold">@n.DocumentName</span></span>
+                            }
+                        </span>
+                        break;
+
+                        case NotificationType.SubmissionCreated:
+                        <span>
+                            <span class="fst-italic">@n.ActorName</span> har lämnat in <span class="fw-semibold">@n.ActivityName</span>
+                            @if (!string.IsNullOrWhiteSpace(n.CourseName))
+                            {
+                                <span> i kursen <span class="fst-italic">@n.CourseName</span></span>
+                            }
+                        </span>
+                        break;
+
+                        default:
+                        <span>Ny händelse</span>
+                        break;
+                    }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(n.Message))
+                {
+                    <div class="small fst-italic mt-1">
+                        "@TruncateMessage(n.Message)"
+                    </div>
+                }
+
+                <div class="text-muted small mt-1">
+                    @GetTimeAgo(n.CreatedAt)
+                </div>
+            </div>
+
+            <button type="button"
+                    class="btn-close"
+                    aria-label="Markera som läst"
+                    @onclick="() => OnMarkAsRead.InvokeAsync(n.Id)">
+            </button>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public IEnumerable<NotificationDto> Notifications { get; set; } = [];
+    [Parameter] public EventCallback<int> OnMarkAsRead { get; set; }
+
+    private static string GetAlertClass(NotificationType type)
+    {
+        return type switch
+        {
+            NotificationType.FeedbackReceived => "alert-success",
+            NotificationType.DocumentUploaded => "alert-primary",
+            NotificationType.SubmissionCreated => "alert-info",
+            _ => "alert-secondary"
+        };
+    }
+
+    private static string GetTimeAgo(DateTime dateTime)
+    {
+        var timeSpan = DateTime.UtcNow - dateTime;
+
+        if (timeSpan.TotalSeconds < 60)
+            return "Nyss";
+
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes} min sedan";
+
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours} h sedan";
+
+        if (timeSpan.TotalDays < 2)
+            return "Igår";
+
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays} dagar sedan";
+
+        return dateTime.ToLocalTime().ToString("yyyy-MM-dd");
+    }
+
+    private static string TruncateMessage(string message, int maxLength = 90)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+            return string.Empty;
+
+        if (message.Length <= maxLength)
+            return message;
+
+        return message[..maxLength].TrimEnd() + "...";
+    }
+}

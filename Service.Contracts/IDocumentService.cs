@@ -8,7 +8,7 @@ public interface IDocumentService
     Task<DocumentDto> UploadAsync(DocumentCreateDto dto, Stream fileStream, string fileName, string contentType, long fileSize, string uploadedByUserId);
 
     /// <summary>Get document metadata by ID.</summary>
-    Task<DocumentDto?> GetByIdAsync(int id);
+    Task<DocumentDto> GetByIdAsync(int id);
 
     /// <summary>List documents by parent entity.</summary>
     Task<IEnumerable<DocumentDto>> GetByCourseIdAsync(int courseId);
@@ -16,8 +16,8 @@ public interface IDocumentService
     Task<IEnumerable<DocumentDto>> GetByActivityIdAsync(int activityId);
 
     /// <summary>Get file stream for download. Returns null if document not found.</summary>
-    Task<(Stream FileStream, string ContentType, string FileName)?> DownloadAsync(int id);
+    Task<(Stream FileStream, string ContentType, string FileName)> DownloadAsync(int id);
 
     /// <summary>Delete a document (removes file from disk + DB record).</summary>
-    Task<bool> DeleteAsync(int id);
+    Task DeleteAsync(int id);
 }

@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Repositories;
 using Domain.Models.Entities;
+using Domain.Models.Exceptions;
 using LMS.Services.Validation;
 using LMS.Shared.DTOs.Activity;
 using Service.Contracts;
@@ -29,45 +30,56 @@ public class ActivityService : IActivityService
         return activities.Select(MapToDto);
     }
 
-    public async Task<ActivityDto?> GetActivityByIdAsync(int id)
+    public async Task<ActivityDto> GetActivityByIdAsync(int id)
     {
         var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(id);
 
-        return activity is null ? null : MapToDto(activity);
+        if (activity is null)
+            throw new NotFoundException($"Aktivitet med id {id} hittades inte.");
+
+        return MapToDto(activity);
     }
 
     public async Task<ActivityDto> CreateActivityAsync(int moduleId, ActivityCreateDto activityDto)
     {
         if (activityDto is null)
-            throw new ArgumentNullException(nameof(activityDto));
+            throw new BadRequestException("Aktivitetsdata saknas.", "Valideringsfel");
 
         if (string.IsNullOrWhiteSpace(activityDto.Name))
-            throw new ArgumentException("Aktivitetsnamn saknas.");
+            throw new BadRequestException("Aktivitetsnamn saknas.", "Valideringsfel");
 
         if (string.IsNullOrWhiteSpace(activityDto.Description))
-            throw new ArgumentException("Aktivitetsbeskrivning saknas.");
+            throw new BadRequestException("Aktivitetsbeskrivning saknas.", "Valideringsfel");
 
-        // Businessregel: aktivitet startar alltid 08:00 och slutar alltid 17:00
+        // Affärssregel: aktivitet startar alltid 08:00 och slutar alltid 17:00
         var normalizedStart = activityDto.StartTime.Date.AddHours(8);
         var normalizedEnd = activityDto.EndTime.Date.AddHours(17);
 
         if (normalizedStart > normalizedEnd)
-            throw new ArgumentException("Aktivitetens starttidpunkt kan inte ligga efter sluttidpunkt.");
+            throw new BadRequestException("Aktivitetens starttidpunkt kan inte ligga efter sluttidpunkt.", "Valideringsfel");
 
         var module = await _unitOfWork.ModuleRepository.GetModuleWithActivitiesAsync(moduleId, trackChanges: false);
 
         if (module is null)
-            throw new KeyNotFoundException($"Modul med id \"{moduleId}\" hittades inte.");
+            throw new NotFoundException($"Modul med id \"{moduleId}\" hittades inte.");
 
-        // Modulens StartDate/EndDate används som datumgränser
+        // Aktiviteten måste ligga inom modulens datumintervall
         if (normalizedStart.Date < module.StartDate.Date || normalizedEnd.Date > module.EndDate.Date)
-            throw new ArgumentException("Aktiviteten ligger utanför modulens datumintervall.");
+            throw new BadRequestException("Aktiviteten ligger utanför modulens datumintervall.", "Valideringsfel");
 
         if (!await _unitOfWork.ActivityRepository.ActivityTypeExistsAsync(activityDto.ActivityTypeId))
-            throw new ArgumentException("Angiven aktivitetstyp finns inte.");
+            throw new BadRequestException("Angiven aktivitetstyp finns inte.", "Valideringsfel");
 
-        if (activityDto.DueDate.HasValue && activityDto.DueDate.Value > normalizedEnd)
-            throw new ArgumentException("Förfallodatum kan inte ligga efter aktivitetens sluttidpunkt.");
+        DateTime? normalizedDueDate = null;
+
+        // Om man valt ett duedate (deadline) så måste det ligga inom aktivitetens datumintervall, sätts till kl 17.00 den dagen
+        if (activityDto.DueDate.HasValue)
+        {
+            normalizedDueDate = activityDto.DueDate.Value.Date.AddHours(17);
+
+            if (normalizedDueDate < normalizedStart || normalizedDueDate > normalizedEnd)
+                throw new BadRequestException("Deadline måste ligga inom aktivitetens datumintervall.", "Valideringsfel");
+        }
 
         // Regeln är "en aktivitet per dag och modul" och en aktivitet kan sträcka sig över flera dagar,
         // Då räcker det med en vanlig intervallöverlapp för att stoppa alla krockar.
@@ -75,7 +87,7 @@ public class ActivityService : IActivityService
             normalizedStart < a.EndTime && normalizedEnd > a.StartTime);
 
         if (overlaps)
-            throw new ArgumentException("Aktiviteten överlappar en annan aktivitet i modulen.");
+            throw new BadRequestException("Aktiviteten överlappar en annan aktivitet i modulen.", "Valideringsfel");
 
         // Sätt endast FK-värden vid create.
         // Navigation properties behöver inte sättas här och kan orsaka problem
@@ -87,7 +99,7 @@ public class ActivityService : IActivityService
             Description = activityDto.Description.Trim(),
             StartTime = normalizedStart,
             EndTime = normalizedEnd,
-            DueDate = activityDto.DueDate,
+            DueDate = normalizedDueDate,
             ActivityTypeId = activityDto.ActivityTypeId,
             ModuleId = moduleId,
             Module = null!,
@@ -104,89 +116,27 @@ public class ActivityService : IActivityService
 
         return MapToDto(savedActivity);
     }
-	/*
-    public async Task<ActivityDto> UpdateActivityAsync(ActivityUpdateDto activityDto)
-    {
-        if (activityDto is null)
-            throw new ArgumentNullException(nameof(activityDto));
 
-        var existingActivity = await _unitOfWork.ActivityRepository.GetByIdAsync(activityDto.Id, trackChanges: true);
-
-        if (existingActivity is null)
-            throw new KeyNotFoundException($"Aktivitet med id \"{activityDto.Id}\" hittades inte.");
-
-        if (string.IsNullOrWhiteSpace(activityDto.Name))
-            throw new ArgumentException("Aktivitetsnamn saknas.");
-
-        if (string.IsNullOrWhiteSpace(activityDto.Description))
-            throw new ArgumentException("Aktivitetsbeskrivning saknas.");
-
-        var normalizedStart = activityDto.StartTime.Date.AddHours(8);
-        var normalizedEnd = activityDto.EndTime.Date.AddHours(17);
-
-        if (normalizedStart > normalizedEnd)
-            throw new ArgumentException("Aktivitetens starttidpunkt kan inte ligga efter sluttidpunkt.");
-
-        var module = await _unitOfWork.ModuleRepository.GetModuleWithActivitiesAsync(existingActivity.ModuleId, trackChanges: false);
-
-        if (module is null)
-            throw new KeyNotFoundException($"Modul med id \"{existingActivity.ModuleId}\" hittades inte.");
-
-        if (normalizedStart.Date < module.StartDate.Date || normalizedEnd.Date > module.EndDate.Date)
-            throw new ArgumentException("Aktiviteten ligger utanför modulens datumintervall.");
-
-        if (!await _unitOfWork.ActivityRepository.ActivityTypeExistsAsync(activityDto.ActivityTypeId))
-            throw new ArgumentException("Angiven aktivitetstyp finns inte.");
-
-        if (activityDto.DueDate.HasValue && activityDto.DueDate.Value > normalizedEnd)
-            throw new ArgumentException("Förfallodatum kan inte ligga efter aktivitetens sluttidpunkt.");
-
-        bool overlaps = module.Activities
-            .Where(a => a.Id != activityDto.Id)
-            .Any(a => normalizedStart < a.EndTime && normalizedEnd > a.StartTime);
-
-        if (overlaps)
-            throw new ArgumentException("Aktiviteten överlappar en annan aktivitet i modulen.");
-
-        existingActivity.Name = activityDto.Name.Trim();
-        existingActivity.Description = activityDto.Description.Trim();
-        existingActivity.StartTime = normalizedStart;
-        existingActivity.EndTime = normalizedEnd;
-        existingActivity.DueDate = activityDto.DueDate;
-        existingActivity.ActivityTypeId = activityDto.ActivityTypeId;
-
-        _unitOfWork.ActivityRepository.Update(existingActivity);
-        await _unitOfWork.CompleteAsync();
-
-        var updated = await _unitOfWork.ActivityRepository.GetByIdAsync(existingActivity.Id);
-
-        if (updated is null)
-            throw new InvalidOperationException("Aktiviteten uppdaterades, men kunde inte läsas tillbaka.");
-
-        return MapToDto(updated);
-    }
-    */
-
-	public async Task<ActivityDto> UpdateActivityAsync(UpdateActivityDto dto)
+   	public async Task<ActivityDto> UpdateActivityAsync(ActivityUpdateDto dto)
 	{
 		if (dto is null)
-			throw new ArgumentNullException(nameof(dto));
+            throw new BadRequestException("Aktivitetsdata saknas.", "Valideringsfel");
 
-		if (string.IsNullOrWhiteSpace(dto.Name))
-			throw new ArgumentException("Namn saknas.");
+        if (string.IsNullOrWhiteSpace(dto.Name))
+			throw new BadRequestException("Namn saknas.", "Valideringsfel");
 
 		if (string.IsNullOrWhiteSpace(dto.Description))
-			throw new ArgumentException("Beskrivning saknas.");
+			throw new BadRequestException("Beskrivning saknas.", "Valideringsfel");
 
 		var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(dto.Id, trackChanges: true);
 
 		if (activity is null)
-			throw new KeyNotFoundException("Aktiviteten saknas.");
+			throw new NotFoundException("Aktiviteten saknas.");
 
 		var module = await _unitOfWork.ModuleRepository.GetModuleWithActivitiesAsync(activity.ModuleId, trackChanges: false);
 
 		if (module is null)
-			throw new KeyNotFoundException("Modul saknas.");
+			throw new NotFoundException("Modul saknas.");
 
 		var normalizedStart = dto.StartTime.Date.AddHours(8);
 		var normalizedEnd = dto.EndTime.Date.AddHours(17);
@@ -205,17 +155,15 @@ public class ActivityService : IActivityService
 		return MapToDto(activity);
 	}
 
-	public async Task<bool> DeleteActivityAsync(int id)
+    public async Task DeleteActivityAsync(int id)
     {
         var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(id, trackChanges: true);
 
         if (activity is null)
-            return false;
+            throw new NotFoundException($"Aktivitet med id {id} hittades inte.");
 
         _unitOfWork.ActivityRepository.Delete(activity);
         await _unitOfWork.CompleteAsync();
-
-        return true;
     }
 
     public async Task<IEnumerable<ActivityTypeDto>> GetAllActivityTypesAsync()

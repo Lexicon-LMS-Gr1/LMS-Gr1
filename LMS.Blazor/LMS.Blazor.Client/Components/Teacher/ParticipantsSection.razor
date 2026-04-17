@@ -12,7 +12,7 @@
                     </span>
                     <input type="text"
                            class="form-control"
-                           placeholder="Sök student..."
+                           placeholder="Sök elev..."
                            @bind="searchQuery"
                            @bind:event="oninput" />
                 </div>
@@ -22,7 +22,7 @@
             <div class="col-auto">
                 <select class="form-select" @bind="courseFilter">
                     <option value="">Alla kurser</option>
-                    @foreach (var c in Students.Select(s => s.CourseName).Distinct())
+                    @foreach (var c in Students.Select(s => s.CourseName).Distinct().OrderBy(cn => cn))
                     {
                         <option value="@c">@c</option>
                     }
@@ -58,12 +58,12 @@
                             <td class="text-end pe-4">
                                 <button class="btn btn-sm btn-outline-primary me-2"
                                         @onclick="() => OnEdit.InvokeAsync(s)">
-                                    <span class="bi bi-pencil-fill me-1"></span> Redigera
+                                    <span class="bi bi-pencil-fill me-1"></span>
                                 </button>
 
                                 <button class="btn btn-sm btn-outline-danger"
                                         @onclick="() => OnDelete.InvokeAsync(s)">
-                                    <span class="bi bi-trash-fill me-1"></span> Ta bort
+                                    <span class="bi bi-trash-fill me-1"></span>
                                 </button>
                             </td>
                         </tr>

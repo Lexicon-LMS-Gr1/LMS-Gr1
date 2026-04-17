@@ -38,11 +38,11 @@ public class DocumentUploadProxyController : ControllerBase
         [FromForm] int? activityId)
     {
         if (file == null || file.Length == 0)
-            return BadRequest("No file was provided.");
+            return BadRequest(new { title = "Valideringsfel", detail = "Ingen fil har valts." });
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId))
-            return Unauthorized();
+            return Unauthorized(new { title = "Unauthorized", detail = "Ogiltig eller saknad token." });
 
         var client = _httpClientFactory.CreateClient("LmsApiClient");
 
@@ -71,6 +71,50 @@ public class DocumentUploadProxyController : ControllerBase
             content.Add(new StringContent(activityId.Value.ToString()), "activityId");
 
         var response = await client.PostAsync("api/documents/upload", content);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+            return StatusCode((int)response.StatusCode, responseBody);
+
+        return Content(responseBody, "application/json");
+    }
+
+    [HttpPost("submission/{activityId:int}")]
+    [Authorize(Roles = "Student")]
+    [RequestSizeLimit(52_428_800)]
+    public async Task<IActionResult> UploadSubmission(
+        int activityId,
+        [FromForm] IFormFile file,
+        [FromForm] string? comment)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { title = "Valideringsfel", detail = "Ingen fil har valts." });
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+            return Unauthorized(new { title = "Unauthorized", detail = "Ogiltig eller saknad token." });
+
+        var client = _httpClientFactory.CreateClient("LmsApiClient");
+
+        var token = await _tokenStorage.GetAccessTokenAsync(userId);
+        if (!string.IsNullOrEmpty(token))
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        using var content = new MultipartFormDataContent();
+
+        var contentType = file.ContentType;
+        if (string.IsNullOrWhiteSpace(contentType))
+            contentType = "application/octet-stream";
+
+        var streamContent = new StreamContent(file.OpenReadStream());
+        streamContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        content.Add(streamContent, "File", file.FileName);
+
+        if (!string.IsNullOrWhiteSpace(comment))
+            content.Add(new StringContent(comment), "Comment");
+
+        var response = await client.PostAsync($"api/submissions/{activityId}", content);
 
         var responseBody = await response.Content.ReadAsStringAsync();
 

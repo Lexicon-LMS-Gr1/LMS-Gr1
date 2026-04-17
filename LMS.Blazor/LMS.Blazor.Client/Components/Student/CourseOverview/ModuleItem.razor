@@ -1,0 +1,110 @@
+@namespace LMS.Blazor.Client.Components.CourseOverview
+@using LMS.Shared.DTOs.Activity
+@using LMS.Shared.DTOs.Document
+@using LMS.Shared.DTOs.Module
+@using LMS.Shared.DTOs.Submission
+
+<div class="list-group-item">
+    <div class="d-flex justify-content-between align-items-start @(isExpanded ? "mb-3" : "mb-0")"
+         role="button"
+         @onclick="ToggleExpandModule">
+
+        <div class="flex-grow-1">
+            <div class="d-flex justify-content-between align-items-center mb-2 gap-3 flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-book text-primary"></i>
+                    <span class="fw-semibold">@Module.Name</span>
+                </div>
+
+                @if (Module.Progress >= 100)
+                {
+                    <span class="badge bg-success">Genomförd</span>
+                } else
+                {
+                    <span class="small text-muted">@Module.Progress %</span>
+                }
+            </div>
+
+            @if (Module.Progress < 100)
+            {
+                <div class="progress mb-2"
+                     role="progressbar"
+                     aria-valuenow="@Module.Progress"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                    <div class="progress-bar bg-primary"
+                         style="@($"width: {Module.Progress}%;")">
+                    </div>
+                </div>
+            }
+
+            <p class="text-muted small mb-0">
+                <i class="bi bi-calendar me-1"></i>
+                @Module.DateRange
+            </p>
+        </div>
+    </div>
+
+    @if (isExpanded)
+    {
+        @if (!string.IsNullOrWhiteSpace(Module.Description))
+        {
+            <p class="text-muted mb-3">@Module.Description</p>
+        }
+
+        @if (ModuleDocuments?.Any() == true)
+        {
+            <div class="mb-3">
+                <h5 class="h6 fw-semibold mb-2">Moduldokument</h5>
+                <DocumentList Documents="@ModuleDocuments" CanDelete="false" />
+            </div>
+        }
+
+        <div class="mb-2">
+            <h5 class="h6 fw-semibold mb-0">Aktiviteter</h5>
+        </div>
+
+        <div class="list-group list-group-flush border rounded">
+            @if (Module.Activities != null && Module.Activities.Any())
+            {
+                @foreach (var activity in Module.Activities)
+                {
+                    var submission = Submissions?.FirstOrDefault(s => s.ActivityId == activity.Id);
+
+                    <ActivityItem Activity="activity"
+                                  Submission="submission"
+                                  Documents="@GetActivityDocs(activity.Id)" />
+                }
+            } else
+            {
+                <div class="list-group-item py-3 text-muted">
+                    Inga aktiviteter tillagda än.
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public ModuleDto Module { get; set; } = default!;
+    [Parameter] public List<DocumentDto>? ModuleDocuments { get; set; }
+    [Parameter] public Dictionary<int, List<DocumentDto>>? ActivityDocuments { get; set; }
+    [Parameter] public List<SubmissionDto>? Submissions { get; set; }
+
+    private bool isExpanded;
+
+    private void ToggleExpandModule()
+    {
+        isExpanded = !isExpanded;
+    }
+
+    private List<DocumentDto>? GetActivityDocs(int activityId)
+    {
+        if (ActivityDocuments != null && ActivityDocuments.TryGetValue(activityId, out var docs))
+        {
+            return docs;
+        }
+
+        return null;
+    }
+}

@@ -4,7 +4,15 @@
 @using LMS.Shared.DTOs.Document
 @inject IApiService ApiService
 
-<div class="container py-4">
+<div class="container-fluid py-4">
+
+    @if (!string.IsNullOrEmpty(documentError))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-1"></i> @documentError
+            <button type="button" class="btn-close" @onclick="() => documentError = null"></button>
+        </div>
+    }
 
     @if (OnBack.HasDelegate) {
         <button class="btn btn-outline-secondary mb-3"
@@ -23,6 +31,21 @@
 		<h5>@Course.DateRange</h5>
             <p class="text-muted">@Course.Description</p>
 
+        @if (!string.IsNullOrWhiteSpace(Course.TeacherName))
+        {
+            <p class="fw-semibold mt-2">
+                <i class="bi bi-person-badge me-1"></i>
+                Lärare: @Course.TeacherName
+            </p>
+        }
+        else
+        {
+            <p class="text-muted mt-2">
+                <i class="bi bi-person-badge me-1"></i>
+                Ingen lärare tilldelad
+            </p>
+        }
+
             <!-- Course-level documents -->
             <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
                 <h6 class="mb-0 text-secondary">Kursdokument</h6>
@@ -37,17 +60,15 @@
                 <p class="text-muted small">Inga dokument.</p>
             }
 
-            <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
-                <h4 class="mb-0">Moduler</h4>
+        <div class="mt-4 mb-3">
+            <h4 class="mb-2">Moduler</h4>
 
-                <!-- Öppna skapa modul i modalt fönster, med CourseId som argument -->
-                <button class="btn btn-primary d-flex align-items-center"
-                        @onclick="OpenCreateModuleModal">
-
-                    <i class="bi bi-plus-circle me-2"></i>
-                    Skapa ny modul
-                </button>
-            </div>
+            <button class="btn btn-primary d-flex align-items-center"
+                    @onclick="OpenCreateModuleModal">
+                <i class="bi bi-plus-circle me-2"></i>
+                Skapa ny modul
+            </button>
+        </div>
 
         @foreach (var module in Course.Modules) {
             <div class="card mb-3"
@@ -57,26 +78,10 @@
                     <div class="flex-grow-1">
                         <h5 class="mb-1">@module.Name</h5>
                         <p class="text-muted mb-1">@module.Description</p>
-                        <p class="small text-secondary mb-0">
+                        <p class="small text-secondary mb-2">
                             @module.StartDate.ToString("yyyy-MM-dd") -
                             @module.EndDate.ToString("yyyy-MM-dd")
                         </p>
-                    </div>
-                   
-                    <div class="d-flex flex-column align-items-end gap-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
-                                    @onclick:stopPropagation="true"
-                                    @onclick="() => OpenModuleModal(module)">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-
-                            <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
-                                    @onclick:stopPropagation="true"
-                                    @onclick="() => AskDeleteModule(module.Id)">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
 
                         <button class="btn btn-sm btn-primary d-flex align-items-center gap-1"
                                 @onclick:stopPropagation="true"
@@ -86,6 +91,19 @@
                         </button>
                     </div>
 
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => OpenModuleModal(module)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => AskDeleteModule(module.Id)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -177,7 +195,7 @@
         }
     }
 </div>
-<!-- SKAPA NY MODUL I MODALT FÖNSTER-->
+<!-- SKAPA NY MODUL I MODALT FÖNSTER -->
 @if (showCreateModuleModal && Course != null)
 {
     <CreateModuleModal CourseId="@CourseId"
@@ -207,7 +225,7 @@
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit activity</h5>
+                    <h5 class="modal-title">Redigera aktivitet</h5>
                     <button type="button" class="btn-close" @onclick="CloseActivityModal"></button>
                 </div>
 
@@ -224,24 +242,42 @@
                         <div class="mb-3">
                             <label class="form-label">Namn</label>
                             <InputText class="form-control" @bind-Value="activityForm.Name" />
+                            <ValidationMessage For="() => activityForm.Name" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Beskrivning</label>
                             <InputTextArea class="form-control" @bind-Value="activityForm.Description" />
+                            <ValidationMessage For="() => activityForm.Description" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Start</label>
-                            <InputDate class="form-control" @bind-Value="activityForm.StartTime" />
+                            <InputDate class="form-control" @bind-Value="activityForm.StartTime" ParsingErrorMessage="Start måste vara ett giltigt datum." />
+                            <ValidationMessage For="() => activityForm.StartTime" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Slut</label>
-                            <InputDate class="form-control" @bind-Value="activityForm.EndTime" />
+                            <InputDate class="form-control" @bind-Value="activityForm.EndTime" ParsingErrorMessage="Slut måste vara ett giltigt datum." />
+                            <ValidationMessage For="() => activityForm.EndTime" />
                         </div>
 
                         <div class="mb-3">
+                            <div class="form-check">
+                                <InputCheckbox class="form-check-input" @bind-Value="addDeadline" />
+                                <label class="form-check-label">Lägg till deadline</label>
+                            </div>
+                        </div>
+
+                        @if (addDeadline)
+                        {
+                            <div class="mb-3">                                
+                                <InputDate class="form-control" @bind-Value="activityForm.DueDate" />
+                            </div>
+                        }
+
+                       @*  <div class="mb-3">
                             <label class="form-label">Deadline</label>
 
                             <div class="d-flex gap-2">
@@ -255,7 +291,7 @@
                                     <i class="bi bi-x"></i>
                                 </button>
                             </div>
-                        </div>
+                        </div> *@
                     </div>
 
                     <div class="modal-footer">
@@ -277,7 +313,7 @@
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit module</h5>
+                    <h5 class="modal-title">Redigera modul</h5>
                     <button type="button" class="btn-close" @onclick="CloseModuleModal"></button>
                 </div>
 
@@ -293,21 +329,25 @@
                         <div class="mb-3">
                             <label class="form-label">Namn</label>
                             <InputText class="form-control" @bind-Value="moduleForm.Name" />
+                            <ValidationMessage For="() => moduleForm.Name" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Beskrivning</label>
                             <InputTextArea class="form-control" @bind-Value="moduleForm.Description" />
+                            <ValidationMessage For="() => moduleForm.Description" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Startdatum</label>
-                            <InputDate class="form-control" @bind-Value="moduleForm.StartDate" />
+                            <InputDate class="form-control" @bind-Value="moduleForm.StartDate" ParsingErrorMessage="Startdatum måste vara ett giltigt datum." />
+                            <ValidationMessage For="() => moduleForm.StartDate" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Slutdatum</label>
-                            <InputDate class="form-control" @bind-Value="moduleForm.EndDate" />
+                            <InputDate class="form-control" @bind-Value="moduleForm.EndDate" ParsingErrorMessage="Slutdatum måste vara ett giltigt datum." />
+                            <ValidationMessage For="() => moduleForm.EndDate" />
                         </div>
                     </div>
 
@@ -356,7 +396,7 @@
 
     // ACTIVITY EDIT
     private bool showActivityModal;
-    private UpdateActivityDto activityForm = new();
+    private ActivityUpdateDto activityForm = new();
     private string? activityError;
     private EditContext? activityEditContext;
     private int? highlightedActivityId;
@@ -381,6 +421,8 @@
     private int? uploadCourseId;
     private int? uploadModuleId;
     private int? uploadActivityId;
+    private string? documentError;
+	private bool addDeadline;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -390,7 +432,8 @@
 
     private void OpenActivityModal(ActivityDto activity)
     {
-        activityForm = new UpdateActivityDto {
+        activityForm = new ActivityUpdateDto
+        {
             Id = activity.Id,
             Name = activity.Name,
             Description = activity.Description,
@@ -402,6 +445,15 @@
         activityEditContext = new EditContext(activityForm);
         activityError = null;
         showActivityModal = true;
+
+        if(activity.DueDate.HasValue)
+        {
+            addDeadline = true;
+        }
+        else
+        {
+            addDeadline = false;
+		}
     }
 
     private void CloseActivityModal()
@@ -459,7 +511,29 @@
         activityError = null;
 
         try {
-            var result = await ApiService.PutAsync<UpdateActivityDto, ActivityDto>(
+
+            if (addDeadline && !activityForm.DueDate.HasValue)
+            {
+                activityError = "Datum för deadline måste anges.";
+                return;
+            }
+
+            if (addDeadline && activityForm.DueDate.HasValue)
+            {
+                var dueDate = activityForm.DueDate.Value.Date;
+
+                if (dueDate < activityForm.StartTime.Date || dueDate > activityForm.EndTime.Date)
+                {
+                    activityError = "Deadline måste ligga inom aktivitetens datumintervall.";
+                    return;
+                }
+            }
+            else if (!addDeadline)
+            {
+                activityForm.DueDate = null;
+			}
+
+            var result = await ApiService.PutAsync<ActivityUpdateDto, ActivityDto>(
                 $"api/activity/{activityForm.Id}", activityForm);
 
             if (result != null) {
@@ -518,29 +592,36 @@
     // DOCUMENT METHODS
     private async Task LoadDocumentsAsync()
     {
-        courseDocuments = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?courseId={CourseId}");
-
-        allModuleDocuments = new List<DocumentDto>();
-        allActivityDocuments = new List<DocumentDto>();
-
-        if (Course?.Modules != null)
+        try
         {
-            foreach (var module in Course.Modules)
-            {
-                var moduleDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?moduleId={module.Id}");
-                if (moduleDocs != null)
-                    allModuleDocuments.AddRange(moduleDocs);
+            courseDocuments = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?courseId={CourseId}");
 
-                if (module.Activities != null)
+            allModuleDocuments = new List<DocumentDto>();
+            allActivityDocuments = new List<DocumentDto>();
+
+            if (Course?.Modules != null)
+            {
+                foreach (var module in Course.Modules)
                 {
-                    foreach (var activity in module.Activities)
+                    var moduleDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?moduleId={module.Id}");
+                    if (moduleDocs != null)
+                        allModuleDocuments.AddRange(moduleDocs);
+
+                    if (module.Activities != null)
                     {
-                        var actDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?activityId={activity.Id}");
-                        if (actDocs != null)
-                            allActivityDocuments.AddRange(actDocs);
+                        foreach (var activity in module.Activities)
+                        {
+                            var actDocs = await ApiService.GetAsync<List<DocumentDto>>($"api/documents?activityId={activity.Id}");
+                            if (actDocs != null)
+                                allActivityDocuments.AddRange(actDocs);
+                        }
                     }
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            documentError = ex.Message;
         }
     }
 
@@ -571,9 +652,16 @@
 
     private async Task HandleDeleteDocument(int documentId)
     {
+        documentError = null;
         var result = await ApiService.DeleteAsync($"api/documents/{documentId}");
         if (result.Success)
+        {
             await LoadDocumentsAsync();
+        }
+        else if (!string.IsNullOrEmpty(result.Error))
+        {
+            documentError = result.Error;
+        }
     }
 
     private void AskDeleteActivity(int id)
@@ -593,7 +681,13 @@
         if (!confirmed)
             return;
 
-        await ApiService.DeleteAsync($"api/activity/{activityIdToDelete}");
+        var result = await ApiService.DeleteAsync($"api/activity/{activityIdToDelete}");
+
+        if (!result.Success)
+        {
+            activityError = result.Error;
+            return;
+        }
 
         await LoadCourseAsync();
         await LoadDocumentsAsync();
@@ -604,7 +698,13 @@
         if (!confirmed)
             return;
 
-        await ApiService.DeleteAsync($"api/module/{moduleIdToDelete}");
+        var result = await ApiService.DeleteAsync($"api/module/{moduleIdToDelete}");
+
+        if (!result.Success)
+        {
+            moduleError = result.Error;
+            return;
+        }
 
         await LoadCourseAsync();
         await LoadDocumentsAsync();

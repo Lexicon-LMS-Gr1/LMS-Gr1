@@ -1,4 +1,5 @@
 using Domain.Models.Entities;
+using Domain.Models.Exceptions;
 using LMS.Shared.DTOs.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -73,7 +74,7 @@ public class UserManagementService : IUserManagementService
             .FirstOrDefaultAsync(u => u.Id == id);
 
         if (user == null)
-            return null;
+            throw new NotFoundException($"Användare med id \"{id}\" hittades inte.");
 
         var roles = await _userManager.GetRolesAsync(user);
         return MapToDto(user, roles.FirstOrDefault() ?? string.Empty);
@@ -81,21 +82,28 @@ public class UserManagementService : IUserManagementService
 
     public async Task<UserDto> CreateUserAsync(UserCreateDto dto)
     {
+        if (dto is null)
+            throw new BadRequestException("Användardata saknas.", "Valideringsfel");
+
         // Validate role exists
         if (!await _roleManager.RoleExistsAsync(dto.Role))
             throw new ArgumentException($"Rollen \"{dto.Role}\" finns inte.");
 
         // Validate email uniqueness
+        if (!await _roleManager.RoleExistsAsync(dto.Role))
+            throw new BadRequestException($"Rollen \"{dto.Role}\" finns inte.", "Valideringsfel");
+
+        // Validate email uniqueness
         var existingUserWithSameEmail = await _userManager.FindByEmailAsync(dto.Email);
         if (existingUserWithSameEmail != null)
-            throw new ArgumentException($"En användare med e-postadressen \"{dto.Email}\" finns redan.");
+            throw new BadRequestException($"En användare med e-postadressen \"{dto.Email}\" finns redan.", "Valideringsfel");
 
         // Validate business rules
         if (dto.Role == "Teacher" && dto.CourseId.HasValue)
-            throw new ArgumentException("En lärare kan inte kopplas till en kurs på samma sätt som en student.");
+            throw new BadRequestException("En lärare kan inte kopplas till en kurs på samma sätt som en elev.", "Valideringsfel");
 
         if (dto.Role == "Student" && !dto.CourseId.HasValue)
-            throw new ArgumentException("En student måste kopplas till en kurs.");
+            throw new BadRequestException("En elev måste kopplas till en kurs.", "Valideringsfel");
 
         var user = new ApplicationUser
         {
@@ -127,6 +135,9 @@ public class UserManagementService : IUserManagementService
 
     public async Task<UserDto> UpdateUserAsync(UserUpdateDto dto)
     {
+        if (dto is null)
+            throw new BadRequestException("Användardata saknas.", "Valideringsfel");
+
         var user = await _userManager.Users
             .Include(u => u.Course)
             .FirstOrDefaultAsync(u => u.Id == dto.Id);
@@ -139,7 +150,7 @@ public class UserManagementService : IUserManagementService
         {
             var existingUserWithSameEmail = await _userManager.FindByEmailAsync(dto.Email);
             if (existingUserWithSameEmail != null)
-                throw new ArgumentException($"En användare med e-postadressen \"{dto.Email}\" finns redan.");
+                throw new BadRequestException($"En användare med e-postadressen \"{dto.Email}\" finns redan.", "Valideringsfel");
         }
 
         var roles = await _userManager.GetRolesAsync(user);
@@ -147,10 +158,11 @@ public class UserManagementService : IUserManagementService
 
         // Teachers cannot have CourseId
         if (currentRole == "Teacher" && dto.CourseId.HasValue)
-            throw new ArgumentException("En lärare kan inte kopplas till en kurs på samma sätt som en student.");
+            throw new BadRequestException("En lärare kan inte kopplas till en kurs på samma sätt som en elev.", "Valideringsfel");
 
         if (currentRole == "Student" && !dto.CourseId.HasValue)
-            throw new ArgumentException("En student måste kopplas till en kurs.");
+            throw new BadRequestException("En elev måste kopplas till en kurs.", "Valideringsfel");
+
 
         user.FirstName = dto.FirstName.Trim();
         user.LastName = dto.LastName.Trim();
@@ -168,11 +180,11 @@ public class UserManagementService : IUserManagementService
         return MapToDto(user, currentRole);
     }
 
-    public async Task<bool> DeleteUserAsync(string id)
+    public async Task DeleteUserAsync(string id)
     {
         var user = await _userManager.FindByIdAsync(id);
         if (user == null)
-            return false;
+            throw new NotFoundException($"Användare med id \"{id}\" hittades inte.");
 
         // Prevent deleting the last teacher
         var roles = await _userManager.GetRolesAsync(user);
@@ -185,7 +197,11 @@ public class UserManagementService : IUserManagementService
         }
 
         var result = await _userManager.DeleteAsync(user);
-        return result.Succeeded;
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new InvalidOperationException($"Kunde inte ta bort användare: {errors}");
+        }
     }
 
     public async Task DeleteStudentsByCourseAsync(int courseId)
@@ -196,9 +212,30 @@ public class UserManagementService : IUserManagementService
 
         foreach (var student in students)
         {
-            await _userManager.DeleteAsync(student);
+            var result = await _userManager.DeleteAsync(student);
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Kunde inte ta bort elev: {errors}");
+            }
         }
     }
+
+    public async Task<IEnumerable<UserDto>> GetTeachersAsync()
+    {
+        var teachers = await _userManager.GetUsersInRoleAsync("Teacher");
+
+        var result = new List<UserDto>();
+
+        foreach (var teacher in teachers)
+        {
+            result.Add(MapToDto(teacher, "Teacher"));
+        }
+
+        return result;
+    }
+
 
 
     private static UserDto MapToDto(ApplicationUser user, string role)
